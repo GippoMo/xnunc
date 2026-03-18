@@ -11,13 +11,13 @@ const C = {
 const AREA_COLOR = {
   "Finanza agevolata":C.aurum,"Beni strumentali":C.caelum,
   "Societario":C.purpura,"Fiscale":C.viridis,
-  "Verifiche sindacali":"#D4845A","Chiusura bilancio":"#4AADA4",
-  "Valutazione Aziendale":"#2C7BE5",
+  "Verifiche sindacali":"#C97A5A","Chiusura bilancio":"#3DA89C",
+  "Valutazione Aziendale":"#5B9DD4",
 };
 const AREA_BG = {
   "Finanza agevolata":"#FDF3E3","Beni strumentali":"#E3EEF9",
   "Societario":"#EEEDF9","Fiscale":"#E3F7F0",
-  "Verifiche sindacali":"#FBF0EB","Chiusura bilancio":"#E8F7F6",
+  "Verifiche sindacali":"#F9EDE7","Chiusura bilancio":"#E4F5F3",
   "Valutazione Aziendale":"#EBF2FD",
 };
 const COMP_COLOR={alta:"#C0392B",media:C.aurum,bassa:C.viridis};
@@ -666,11 +666,11 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
   function copyPrompt(){navigator.clipboard.writeText(PROMPTS[skill.id]||"").then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}
 
   const tabs=["usa","dettagli","storia","miglioramenti"];
-  const tl={usa:skill.tipo==="tool"?"⚙ Strumento":"Usa",dettagli:"Dettagli",storia:"Storia",miglioramenti:"Miglioramenti"};
+  const tl={usa:skill.tipo==="tool"?"📊 Calcolatore":"▶ Esegui skill",dettagli:"Dettagli",storia:"Storia",miglioramenti:"Miglioramenti"};
 
   return(
     <div style={{position:"fixed",inset:0,background:"#00000077",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px",overflowY:"auto"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"100%",maxWidth:800,boxShadow:"0 8px 48px #0004",border:`2px solid ${ac}`,marginTop:16,marginBottom:16}}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"100%",maxWidth:920,boxShadow:"0 8px 48px #0004",border:`2px solid ${ac}`,marginTop:16,marginBottom:16}}>
         <div style={{background:C.nox,padding:"20px 24px 0",borderRadius:"12px 12px 0 0"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
             <div>
@@ -688,7 +688,10 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
           </div>
           <div style={{display:"flex",gap:0}}>
             {tabs.map(t=>(
-              <button key={t} onClick={()=>setTab(t)} style={{padding:"8px 16px",border:"none",cursor:"pointer",background:"transparent",color:tab===t?"#fff":"#888",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:tab===t?700:400,borderBottom:tab===t?`2px solid ${ac}`:"2px solid transparent"}}>{tl[t]}</button>
+              <button key={t} onClick={()=>setTab(t)} style={{padding:"8px 16px",border:"none",cursor:"pointer",background:"transparent",color:tab===t?"#fff":"#888",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:tab===t?700:400,borderBottom:tab===t?`2px solid ${skill.tipo==="tool"&&t==="usa"?C.viridis:ac}`:"2px solid transparent",display:"flex",alignItems:"center",gap:5}}>
+                {tl[t]}
+                {skill.tipo==="tool"&&t==="usa"&&<span style={{fontSize:8,background:C.viridis,color:"#fff",padding:"1px 5px",borderRadius:3,fontWeight:700,letterSpacing:"0.08em"}}>LIVE</span>}
+              </button>
             ))}
           </div>
         </div>
@@ -703,10 +706,10 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
               </div>
               <label style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em",display:"block",marginBottom:5}}>INPUT RICHIESTO</label>
               <div style={{background:abg,borderRadius:8,padding:"9px 13px",borderLeft:`3px solid ${ac}`,marginBottom:10,fontSize:13,color:"#555",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{skill.input_atteso}</div>
-              <textarea value={input} onChange={e=>setInput(e.target.value)} placeholder={`Inserisci: ${skill.input_atteso}`} rows={5}
+              <textarea value={input} onChange={e=>setInput(e.target.value)} placeholder={`Es.: ${skill.input_atteso.substring(0,60)}${skill.input_atteso.length>60?"...":""}`} rows={5}
                 style={{width:"100%",padding:"11px",borderRadius:8,border:`1.5px solid ${input.trim()?"#ccc":"#eee"}`,fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box",background:input.trim()?"#fff":"#fafaf8"}}/>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8,marginBottom:20}}>
-                <span style={{fontSize:11,color:C.gray}}>{input.length} car.</span>
+                <span style={{fontSize:11,color:C.gray,fontFamily:"Arial,sans-serif"}}>{input.length} caratteri</span>
                 <button onClick={execSkill} disabled={running||(isLogged&&!input.trim())}
                   style={{padding:"9px 22px",borderRadius:8,border:"none",background:running?"#ccc":(isLogged&&!input.trim()?"#eee":ac),color:(isLogged&&!input.trim())?"#aaa":"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:8}}>
                   {running?<><span style={{display:"inline-block",animation:"spin 1s linear infinite"}}>⟳</span>Elaborazione…</>:!isLogged?"🔒 Accedi per eseguire":"▶ Esegui skill"}
@@ -736,7 +739,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
           {tab==="dettagli"&&(
             <div>
               <p style={{fontFamily:"Arial,sans-serif",fontSize:14,color:"#333",lineHeight:1.7,marginBottom:16}}>{skill.descrizione}</p>
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:14}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:12,marginBottom:14}}>
                 <div style={{background:abg,borderRadius:8,padding:"12px 14px",borderLeft:`3px solid ${ac}`}}>
                   <div style={{fontSize:10,fontWeight:700,color:ac,letterSpacing:"0.1em",marginBottom:5,fontFamily:"Arial,sans-serif"}}>INPUT ATTESO</div>
                   <div style={{fontSize:13,color:"#333",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{skill.input_atteso}</div>
@@ -749,7 +752,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
               {skill.normativa&&<div style={{background:"#f5f3ee",borderRadius:8,padding:"10px 14px",marginBottom:14,display:"flex",gap:8}}><span style={{fontSize:10,fontWeight:700,color:"#888",fontFamily:"Arial,sans-serif",flexShrink:0,marginTop:2}}>NORMATIVA</span><span style={{fontSize:12.5,color:"#555",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{skill.normativa}</span></div>}
               <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:16}}>{(skill.tags||[]).map(t=><Badge key={t} label={t} color={ac} bg={abg}/>)}</div>
               <div style={{borderTop:"1px solid #eee",paddingTop:14,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div><div style={{fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:700,color:C.gray,marginBottom:2}}>System prompt</div><div style={{fontFamily:"Arial,sans-serif",fontSize:11,color:"#aaa"}}>Testo originale — funziona su qualsiasi AI</div></div>
+                <div><div style={{fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:700,color:C.gray,marginBottom:2}}>Istruzioni IA (System Prompt)</div><div style={{fontFamily:"Arial,sans-serif",fontSize:11,color:"#aaa"}}>Le istruzioni che guidano l'intelligenza artificiale. Identiche su Claude, ChatGPT, Copilot e Gemini.</div></div>
                 <button onClick={copyPrompt} style={{padding:"7px 16px",borderRadius:8,border:`1px solid ${copied?"#1D9E75":"#ddd"}`,background:copied?"#E3F7F0":"#fff",color:copied?"#1D9E75":"#555",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:copied?700:400,transition:"all .2s"}}>{copied?"✓ Copiato":"📋 Copia prompt"}</button>
               </div>
               <DownloadPanel skill={skill} allSkills={SKILLS}/>
@@ -802,7 +805,7 @@ function SkillCard({skill,onClick,isLogged}){
   const ac=AREA_COLOR[skill.area]||C.gray;
   const abg=AREA_BG[skill.area]||"#f5f3ee";
   return(
-    <div onClick={onClick} style={{cursor:"pointer",border:"1.5px solid #e8e4dc",borderRadius:10,background:"#fff",padding:"14px 16px 12px",marginBottom:8,boxShadow:"0 1px 4px #0001",position:"relative"}}>
+    <div onClick={onClick} className="xnunc-card" style={{cursor:"pointer",border:"1.5px solid #e8e4dc",borderRadius:10,background:"#fff",padding:"14px 16px 12px",marginBottom:8,boxShadow:"0 1px 4px #0001",position:"relative"}}>
       {!isLogged&&<div style={{position:"absolute",top:10,right:10,fontSize:13,color:C.gray}}>🔒</div>}
       <div style={{display:"flex",justifyContent:"space-between",gap:8}}>
         <div style={{flex:1}}>
@@ -814,9 +817,15 @@ function SkillCard({skill,onClick,isLogged}){
             {(skill.tags||[]).length>3&&<span style={{fontSize:10,color:C.gray,fontFamily:"Arial,sans-serif"}}>+{skill.tags.length-3}</span>}
           </div>
         </div>
-        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:4,flexShrink:0}}>
-          <Badge label={skill.complessita} color={COMP_COLOR[skill.complessita]} bg={COMP_COLOR[skill.complessita]+"22"} small/>
-          <Badge label={skill.frequenza} color={FREQ_COLOR[skill.frequenza]} bg={FREQ_COLOR[skill.frequenza]+"22"} small/>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:9,color:C.gray,fontFamily:"Arial,sans-serif",fontWeight:600,marginBottom:2,letterSpacing:"0.06em"}}>DIFFICOLTÀ</div>
+            <Badge label={skill.complessita} color={COMP_COLOR[skill.complessita]} bg={COMP_COLOR[skill.complessita]+"22"} small/>
+          </div>
+          <div style={{textAlign:"right"}}>
+            <div style={{fontSize:9,color:C.gray,fontFamily:"Arial,sans-serif",fontWeight:600,marginBottom:2,letterSpacing:"0.06em"}}>FREQUENZA</div>
+            <Badge label={skill.frequenza} color={FREQ_COLOR[skill.frequenza]} bg={FREQ_COLOR[skill.frequenza]+"22"} small/>
+          </div>
         </div>
       </div>
     </div>
@@ -828,6 +837,16 @@ function SkillCard({skill,onClick,isLogged}){
 // ─────────────────────────────────────────────────────
 export default function App(){
   const[isLogged,setIsLogged]=useState(false);
+  // CSS globale per hover effects (inline style non supporta :hover)
+  if(typeof document!=="undefined"){
+    const id="xnunc-styles";
+    if(!document.getElementById(id)){
+      const s=document.createElement("style");
+      s.id=id;
+      s.textContent=`.xnunc-card{transition:box-shadow .18s,border-color .18s;}.xnunc-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.10)!important;border-color:#BA7517!important;}`;
+      document.head.appendChild(s);
+    }
+  }
   const[showLogin,setShowLogin]=useState(false);
   const[showFAQ,setShowFAQ]=useState(false);
   const[search,setSearch]=useState("");
@@ -868,10 +887,11 @@ export default function App(){
         {/* Hero */}
         {!isLogged&&(
           <div style={{background:C.nox,borderRadius:14,padding:"28px 36px",marginBottom:24,border:"1px solid #1a1c24"}}>
-            <div style={{fontFamily:"Georgia,serif",fontSize:26,fontWeight:700,color:"#fff",marginBottom:8,lineHeight:1.3}}>Da adesso, lavori diversamente.</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:28,fontWeight:700,color:"#fff",marginBottom:10,lineHeight:1.3}}>Da adesso, lavori diversamente.</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:400,color:C.aurum,marginBottom:6,fontStyle:"italic",letterSpacing:"0.01em"}}>Utilizza. Collabora. Crea.</div>
             <div style={{fontSize:14,color:"#aaa",fontFamily:"Arial,sans-serif",marginBottom:20,lineHeight:1.6}}>
-              xNunc è il catalogo AI per commercialisti italiani — skill, formulari e tool costruiti da voi, per voi.<br/>
-              <span style={{color:C.aurum}}>Open source · I tuoi dati non escono mai · Funziona su qualsiasi AI.</span>
+              Skill che lavorano. Professionisti che crescono.<br/>
+              <span style={{color:"#999",fontSize:12}}>Open source · I tuoi dati non escono mai · Funziona su qualsiasi AI.</span>
             </div>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}}>
               <button onClick={()=>setShowLogin(true)} style={{background:C.aurum,border:"none",color:"#fff",borderRadius:8,padding:"10px 22px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Accedi gratis</button>
@@ -887,27 +907,39 @@ export default function App(){
         {/* Filters */}
         <div style={{background:"#fff",borderRadius:12,padding:"14px 18px",boxShadow:"0 2px 8px #0001",marginBottom:20,border:"1.5px solid #e8e4dc"}}>
           <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cerca skill per nome, area, tag, normativa…"
-            style={{width:"100%",padding:"9px 13px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13.5,fontFamily:"Arial,sans-serif",outline:"none",marginBottom:10,boxSizing:"border-box",background:"#fafaf8"}}/>
+            style={{width:"100%",padding:"9px 13px",borderRadius:8,border:`1.5px solid ${search.trim()?C.aurum:"#ddd"}`,fontSize:13.5,fontFamily:"Arial,sans-serif",outline:"none",marginBottom:10,boxSizing:"border-box",background:search.trim()?"#fff":"#fafaf8",transition:"border-color .2s"}}/>
           <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
             <div style={{display:"flex",gap:3,alignItems:"center",flexWrap:"wrap"}}>
-              <span style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginRight:2}}>AREA</span>
+              <span style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginRight:2}}>AREA FUNZIONALE</span>
               {areas.map(a=><Pill key={a} label={a} active={filterArea===a} onClick={()=>setFilterArea(a)} color={AREA_COLOR[a]||C.nox}/>)}
             </div>
             <div style={{display:"flex",gap:3,alignItems:"center"}}>
-              <span style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginRight:2}}>COMP.</span>
+              <span style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginRight:2}}>DIFFICOLTÀ</span>
               {["Tutte","alta","media","bassa"].map(c=><Pill key={c} label={c} active={filterComp===c} onClick={()=>setFilterComp(c)} color={COMP_COLOR[c]||C.nox}/>)}
             </div>
             <div style={{display:"flex",gap:3,alignItems:"center"}}>
-              <span style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginRight:2}}>FREQ.</span>
+              <span style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginRight:2}}>FREQUENZA D'USO</span>
               {["Tutte","ricorrente","occasionale"].map(f=><Pill key={f} label={f} active={filterFreq===f} onClick={()=>setFilterFreq(f)} color={FREQ_COLOR[f]||C.nox}/>)}
             </div>
-            <span style={{marginLeft:"auto",fontSize:12,color:C.gray,fontFamily:"Arial,sans-serif"}}>{filtered.length} skill</span>
+            <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
+              {(filterArea!=="Tutte"||filterComp!=="Tutte"||filterFreq!=="Tutte"||search.trim())&&(
+                <span style={{fontSize:11,color:C.viridis,background:"#E3F7F0",padding:"2px 9px",borderRadius:12,fontWeight:700,fontFamily:"Arial,sans-serif",cursor:"pointer"}}
+                  onClick={()=>{setFilterArea("Tutte");setFilterComp("Tutte");setFilterFreq("Tutte");setSearch("");}}>
+                  {[filterArea!=="Tutte",filterComp!=="Tutte",filterFreq!=="Tutte",!!search.trim()].filter(Boolean).length} filtri attivi · ✕
+                </span>
+              )}
+              <span style={{fontSize:12,color:C.gray,fontFamily:"Arial,sans-serif"}}>{filtered.length} skill</span>
+            </div>
           </div>
         </div>
 
         {/* Grid */}
         {filtered.length===0?(
-          <div style={{textAlign:"center",padding:"60px 0",color:C.gray}}><div style={{fontSize:32,marginBottom:8}}>🔍</div><div style={{fontFamily:"Georgia,serif",fontSize:18}}>Nessuna skill trovata</div></div>
+          <div style={{textAlign:"center",padding:"60px 0",color:C.gray}}>
+            <div style={{fontSize:32,marginBottom:8}}>🔍</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:18,color:C.nox,marginBottom:8}}>Nessuna skill trovata</div>
+            <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",maxWidth:380,margin:"0 auto",lineHeight:1.6}}>Prova a rimuovere uno o più filtri oppure cerca con un termine diverso. Se cerchi una skill specifica, contattaci — potremmo crearla per te.</div>
+          </div>
         ):(()=>{
           const g={};
           for(const s of filtered){if(!g[s.area])g[s.area]={};if(!g[s.area][s.sotto_area])g[s.area][s.sotto_area]=[];g[s.area][s.sotto_area].push(s);}
