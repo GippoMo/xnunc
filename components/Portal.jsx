@@ -769,7 +769,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
                 </div>
                 <div style={{flex:1,paddingTop:4}}>
                   <div style={{fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:700,color:C.nox}}>v1.0 <span style={{color:C.viridis,fontSize:11}}>● Corrente</span></div>
-                  <div style={{fontSize:12,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:4}}>16 Mar 2026 · FiscoGPT</div>
+                  <div style={{fontSize:12,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:4}}>16 Mar 2026 · <span style={{color:C.aurum,fontWeight:700}}>Redazione</span></div>
                   <div style={{fontSize:13,color:"#444",fontFamily:"Arial,sans-serif"}}>Versione iniziale pubblicata</div>
                 </div>
               </div>
@@ -777,20 +777,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
             </div>
           )}
 
-          {tab==="miglioramenti"&&(
-            <div>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
-                <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:C.gray}}>0 proposte · 3/3 per v2.0</div>
-                {isLogged?<button style={{padding:"7px 16px",borderRadius:8,border:"none",background:ac,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Proponi miglioramento</button>
-                :<button onClick={onLoginRequest} style={{padding:"7px 16px",borderRadius:8,border:`1px solid ${ac}`,background:"#fff",color:ac,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>🔒 Accedi per proporre</button>}
-              </div>
-              <div style={{background:"#f9f8f5",borderRadius:10,padding:"32px",textAlign:"center",border:"1.5px dashed #ddd"}}>
-                <div style={{fontSize:28,marginBottom:8}}>💡</div>
-                <div style={{fontFamily:"Georgia,serif",fontSize:16,color:C.nox,marginBottom:6}}>Sii il primo a migliorare questa skill</div>
-                <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif"}}>Ogni miglioramento approvato vale +5 punti e contribuisce alla v2.0.</div>
-              </div>
-            </div>
-          )}
+          {tab==="miglioramenti"&&<MiglioramentiTab skill={skill} isLogged={isLogged} onLoginRequest={onLoginRequest} ac={ac}/>}
         </div>
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -835,6 +822,490 @@ function SkillCard({skill,onClick,isLogged}){
 // ─────────────────────────────────────────────────────
 // App
 // ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────
+// MiglioramentiTab — discussione + proposte
+// ─────────────────────────────────────────────────────
+function MiglioramentiTab({skill,isLogged,onLoginRequest,ac}){
+  const[posts,setPosts]=useState([
+    {id:1,autore:"Redazione",ruolo:"creator",avatar:"R",testo:"Skill pubblicata. Proposte di miglioramento benvenute — ogni contributo approvato vale +5 punti e avvicina la v2.0.",data:"16 Mar 2026",tipo:"nota"},
+  ]);
+  const[testo,setTesto]=useState("");
+  const[tipo,setTipo]=useState("proposta");
+
+  function invia(){
+    if(!testo.trim())return;
+    setPosts(p=>[...p,{id:Date.now(),autore:"Tu",ruolo:"contributor",avatar:"G",testo,data:"Oggi",tipo}]);
+    setTesto("");
+  }
+
+  const approvateCnt=posts.filter(p=>p.tipo==="proposta"&&p.approvata).length;
+
+  return(
+    <div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+        <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:"#666"}}>
+          <span style={{fontWeight:700,color:ac}}>{approvateCnt}/3</span> <span style={{color:"#888"}}>miglioramenti approvati per avanzare a v2.0</span>
+        </div>
+        <div style={{background:"#f5f3ee",borderRadius:20,padding:"3px 12px",fontSize:11,color:"#888",fontFamily:"Arial,sans-serif"}}>{posts.filter(p=>p.tipo==="proposta").length} proposte</div>
+      </div>
+
+      {/* progress bar */}
+      <div style={{height:4,borderRadius:2,background:"#eee",marginBottom:20,overflow:"hidden"}}>
+        <div style={{height:"100%",width:`${Math.min(100,(approvateCnt/3)*100)}%`,background:ac,transition:"width .4s",borderRadius:2}}/>
+      </div>
+
+      {/* thread */}
+      <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
+        {posts.map(p=>(
+          <div key={p.id} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+            <div style={{width:30,height:30,borderRadius:"50%",background:p.ruolo==="creator"?ac:"#7F77DD",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <span style={{color:"#fff",fontSize:11,fontWeight:700}}>{p.avatar}</span>
+            </div>
+            <div style={{flex:1,background:p.tipo==="nota"?"#f9f8f5":"#fff",borderRadius:10,padding:"10px 14px",border:`1px solid ${p.tipo==="proposta"?"#e8e4dc":"#f0ede8"}`}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                <span style={{fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:700,color:p.ruolo==="creator"?ac:"#333"}}>{p.autore} {p.ruolo==="creator"&&<span style={{fontSize:9,background:ac+"22",color:ac,padding:"1px 6px",borderRadius:4,fontWeight:700}}>CREATOR</span>}</span>
+                <span style={{fontSize:10,color:"#bbb",fontFamily:"Arial,sans-serif"}}>{p.data}</span>
+              </div>
+              <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:"#333",lineHeight:1.6}}>{p.testo}</div>
+              {p.tipo==="proposta"&&<div style={{marginTop:6,fontSize:10,color:"#888",fontFamily:"Arial,sans-serif",fontStyle:"italic"}}>💡 Proposta in attesa di revisione</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* input */}
+      {isLogged?(
+        <div style={{background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1.5px solid #e8e4dc"}}>
+          <div style={{display:"flex",gap:8,marginBottom:10}}>
+            {["proposta","commento"].map(t=>(
+              <button key={t} onClick={()=>setTipo(t)} style={{padding:"5px 14px",borderRadius:20,border:`1px solid ${tipo===t?ac:"#ddd"}`,background:tipo===t?ac+"22":"#fff",color:tipo===t?ac:"#888",fontSize:11,fontWeight:tipo===t?700:400,cursor:"pointer",fontFamily:"Arial,sans-serif",textTransform:"capitalize"}}>
+                {t==="proposta"?"💡 Proposta":"💬 Commento"}
+              </button>
+            ))}
+          </div>
+          <textarea value={testo} onChange={e=>setTesto(e.target.value)}
+            placeholder={tipo==="proposta"?"Descrivi il miglioramento che vorresti vedere: cosa cambieresti nel prompt, negli esempi, nei campi…":"Scrivi un commento o una domanda sulla skill…"}
+            rows={3} style={{width:"100%",padding:"10px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
+            <span style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif"}}>{tipo==="proposta"?"+5 punti se approvata":"+2 punti"}</span>
+            <button onClick={invia} disabled={!testo.trim()} style={{padding:"7px 18px",borderRadius:8,border:"none",background:testo.trim()?ac:"#eee",color:testo.trim()?"#fff":"#aaa",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Invia →</button>
+          </div>
+        </div>
+      ):(
+        <div style={{textAlign:"center",padding:"20px",background:"#f9f8f5",borderRadius:10,border:"1.5px dashed #ddd"}}>
+          <button onClick={onLoginRequest} style={{padding:"8px 20px",borderRadius:8,border:`1px solid ${ac}`,background:"#fff",color:ac,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>🔒 Accedi per partecipare</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────
+// ManifestoModal
+// ─────────────────────────────────────────────────────
+function ManifestoModal({onClose}){
+  return(
+    <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:C.nox,borderRadius:16,width:"100%",maxWidth:640,boxShadow:"0 8px 48px #0008",border:`2px solid ${C.aurum}`,padding:"36px 40px",maxHeight:"85vh",overflowY:"auto",color:"#fff"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:28}}>
+          <div>
+            <div style={{fontSize:10,color:C.aurum,fontWeight:700,letterSpacing:"0.15em",fontFamily:"Arial,sans-serif",marginBottom:8}}>MANIFESTO</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:24,fontWeight:700,lineHeight:1.3}}><span style={{color:C.aurum}}>x</span>Nunc.ai</div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer"}}>×</button>
+        </div>
+
+        {[
+          {num:"I",tit:"Ex nunc — da ora in poi",testo:"Il nome viene dal latino giuridico. Ex nunc significa effetto immediato, senza retroattività. È la nostra promessa: non stiamo ripensando il passato del tuo studio. Stiamo cambiando cosa succede da domani mattina."},
+          {num:"II",tit:"Il tempo professionale non si spreca",testo:"I commercialisti italiani passano ore su adempimenti meccanici che una macchina può fare meglio, più velocemente, senza errori. Questo è uno spreco — di competenza, di energia, di valore. xNunc esiste per eliminarlo."},
+          {num:"III",tit:"La conoscenza appartiene a chi la genera",testo:"I workflow che usi ogni giorno li hai costruiti tu — con anni di pratica, errori, clienti difficili. Non appartengono a un vendor. Non devono stare chiusi in un sistema proprietario. Qui restano tuoi, aperti, modificabili, forkabili."},
+          {num:"IV",tit:"Open source non è ideologia — è garanzia",testo:"Se il codice è pubblico, puoi verificare cosa fa. Se il formato è aperto, puoi portare le tue skill altrove. Se la licenza è AGPL v3, nessuno può chiuderlo. La trasparenza non è un valore aggiunto: è la struttura portante."},
+          {num:"V",tit:"L'AI non sostituisce il commercialista",testo:"Sostituisce la parte che ti annoia. La parte complessa — interpretare, consigliare, decidere, stare accanto al cliente — rimane tua. Sempre. È lì che vale davvero il tuo lavoro."},
+          {num:"VI",tit:"La community è il prodotto",testo:"Il catalogo non lo costruiamo noi. Lo costruisci tu, con i tuoi colleghi. Ogni skill è un pezzo di conoscenza condivisa. Ogni miglioramento proposto avvicina la v2.0. Ogni punto guadagnato è un contributo reale alla professione."},
+        ].map(({num,tit,testo})=>(
+          <div key={num} style={{marginBottom:24,paddingBottom:24,borderBottom:"1px solid #ffffff11"}}>
+            <div style={{fontFamily:"Arial,sans-serif",fontSize:9,color:C.aurum,fontWeight:700,letterSpacing:"0.15em",marginBottom:6}}>{num}</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:700,marginBottom:8,color:"#fff"}}>{tit}</div>
+            <div style={{fontFamily:"Arial,sans-serif",fontSize:13.5,color:"#aaa",lineHeight:1.8}}>{testo}</div>
+          </div>
+        ))}
+
+        <div style={{textAlign:"center",paddingTop:8}}>
+          <div style={{fontFamily:"Georgia,serif",fontSize:15,color:C.aurum,fontStyle:"italic"}}>Da adesso, lavori diversamente.</div>
+          <div style={{fontSize:11,color:"#555",fontFamily:"Arial,sans-serif",marginTop:8}}>AGPL v3 · Open source · ex nunc</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────
+// ClassificaModal
+// ─────────────────────────────────────────────────────
+function ClassificaModal({onClose}){
+  const top=[
+    {pos:1,nome:"Redazione",studio:"xNunc.ai",punti:140,skills:14,badge:"👑",color:C.aurum},
+    {pos:2,nome:"—",studio:"In attesa del primo contributor",punti:0,skills:0,badge:"🥈",color:"#aaa"},
+    {pos:3,nome:"—",studio:"In attesa del primo contributor",punti:0,skills:0,badge:"🥉",color:"#888"},
+  ];
+  const aree=[
+    {area:"Fiscale",leader:"Redazione",punti:60},
+    {area:"Societario",leader:"Redazione",punti:30},
+    {area:"Finanza agevolata",leader:"Redazione",punti:20},
+    {area:"Valutazione Aziendale",leader:"Redazione",punti:10},
+  ];
+  return(
+    <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:540,boxShadow:"0 8px 48px #0004",border:`2px solid ${C.aurum}`,overflow:"hidden",maxHeight:"85vh",display:"flex",flexDirection:"column"}}>
+        <div style={{background:C.nox,padding:"20px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:10,color:C.aurum,fontWeight:700,letterSpacing:"0.15em",fontFamily:"Arial,sans-serif",marginBottom:4}}>CLASSIFICA CONTRIBUTOR</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:18,color:"#fff",fontWeight:700}}>Top della community</div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer"}}>×</button>
+        </div>
+        <div style={{padding:"20px 24px",overflowY:"auto"}}>
+          {top.map(u=>(
+            <div key={u.pos} style={{display:"flex",alignItems:"center",gap:14,padding:"12px 0",borderBottom:"1px solid #f0ede8"}}>
+              <div style={{fontSize:20,width:28,textAlign:"center"}}>{u.badge}</div>
+              <div style={{width:36,height:36,borderRadius:"50%",background:u.color,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <span style={{color:"#fff",fontSize:12,fontWeight:700}}>{u.nome[0]}</span>
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:700,color:C.nox}}>{u.nome}</div>
+                <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif"}}>{u.studio}</div>
+              </div>
+              <div style={{textAlign:"right"}}>
+                <div style={{fontFamily:"Arial,sans-serif",fontSize:15,fontWeight:700,color:u.punti>0?C.aurum:"#ddd"}}>{u.punti}</div>
+                <div style={{fontSize:10,color:"#bbb",fontFamily:"Arial,sans-serif"}}>{u.skills} skill</div>
+              </div>
+            </div>
+          ))}
+
+          <div style={{marginTop:20}}>
+            <div style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.12em",fontFamily:"Arial,sans-serif",marginBottom:10}}>LEADER PER AREA</div>
+            {aree.map(({area,leader,punti})=>(
+              <div key={area} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 0",borderBottom:"1px solid #f5f3ee"}}>
+                <div>
+                  <div style={{fontSize:12,fontWeight:700,color:C.nox,fontFamily:"Arial,sans-serif"}}>{area}</div>
+                  <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif"}}>{leader}</div>
+                </div>
+                <div style={{fontSize:13,fontWeight:700,color:C.aurum,fontFamily:"Arial,sans-serif"}}>{punti} pt</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{marginTop:20,background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1.5px dashed #ddd",textAlign:"center"}}>
+            <div style={{fontSize:13,color:C.nox,fontFamily:"Georgia,serif",marginBottom:4}}>Vuoi comparire in classifica?</div>
+            <div style={{fontSize:12,color:C.gray,fontFamily:"Arial,sans-serif"}}>Registrati e crea la tua prima skill. +10 punti immediati.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────
+// ProfileModal — profilo utente + BYOK API key
+// ─────────────────────────────────────────────────────
+function ProfileModal({onClose,userProfile,setUserProfile}){
+  const[nome,setNome]=useState(userProfile.nome||"Giampiero Morales");
+  const[studio,setStudio]=useState(userProfile.studio||"BC&");
+  const[byok,setByok]=useState(userProfile.byokKey||"");
+  const[showKey,setShowKey]=useState(false);
+  const[saved,setSaved]=useState(false);
+
+  function salva(){
+    setUserProfile({nome,studio,byokKey:byok});
+    setSaved(true);
+    setTimeout(()=>setSaved(false),2000);
+  }
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:480,boxShadow:"0 8px 48px #0004",border:`2px solid ${C.aurum}`,overflow:"hidden"}}>
+        <div style={{background:C.nox,padding:"20px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:10,color:C.aurum,fontWeight:700,letterSpacing:"0.15em",fontFamily:"Arial,sans-serif",marginBottom:4}}>PROFILO</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:18,color:"#fff",fontWeight:700}}>Il tuo account</div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer"}}>×</button>
+        </div>
+
+        <div style={{padding:"24px"}}>
+          {/* Avatar */}
+          <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:24,paddingBottom:20,borderBottom:"1px solid #f0ede8"}}>
+            <div style={{width:52,height:52,borderRadius:"50%",background:C.aurum,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 2px 12px ${C.aurum}44`}}>
+              <span style={{color:"#fff",fontSize:18,fontWeight:700}}>{nome?nome[0].toUpperCase():"G"}</span>
+            </div>
+            <div>
+              <div style={{fontFamily:"Arial,sans-serif",fontSize:14,fontWeight:700,color:C.nox}}>{nome||"—"}</div>
+              <div style={{fontSize:12,color:"#aaa",fontFamily:"Arial,sans-serif"}}>{studio||"—"}</div>
+              <div style={{fontSize:10,color:C.viridis,fontFamily:"Arial,sans-serif",marginTop:2,fontWeight:700}}>● CONTRIBUTOR · 10 pt</div>
+            </div>
+          </div>
+
+          <div style={{display:"flex",flexDirection:"column",gap:14}}>
+            <div>
+              <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"block",marginBottom:5}}>NOME COMPLETO</label>
+              <input value={nome} onChange={e=>setNome(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box"}}/>
+            </div>
+            <div>
+              <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"block",marginBottom:5}}>STUDIO / ENTE</label>
+              <input value={studio} onChange={e=>setStudio(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box"}}/>
+            </div>
+
+            {/* BYOK */}
+            <div style={{background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1.5px solid #e8e4dc"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em"}}>API KEY ANTHROPIC (BYOK)</label>
+                <span style={{fontSize:9,background:"#E3F7F0",color:C.viridis,padding:"2px 7px",borderRadius:4,fontWeight:700,fontFamily:"Arial,sans-serif"}}>OPZIONALE</span>
+              </div>
+              <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif",marginBottom:8,lineHeight:1.5}}>Usa la tua chiave personale. I tuoi dati transitano sotto il tuo account Anthropic — mai sotto quello di xNunc. Salvata cifrata AES-256, mai visibile agli amministratori.</div>
+              <div style={{position:"relative"}}>
+                <input type={showKey?"text":"password"} value={byok} onChange={e=>setByok(e.target.value)}
+                  placeholder="sk-ant-api03-…"
+                  style={{width:"100%",padding:"9px 40px 9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"monospace",outline:"none",boxSizing:"border-box",letterSpacing:byok&&!showKey?"0.08em":"normal"}}/>
+                <button onClick={()=>setShowKey(v=>!v)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#aaa"}}>{showKey?"🙈":"👁"}</button>
+              </div>
+              {byok&&<div style={{fontSize:10,color:C.viridis,fontFamily:"Arial,sans-serif",marginTop:5,fontWeight:700}}>✓ Modalità BYOK attiva</div>}
+            </div>
+          </div>
+
+          <div style={{display:"flex",gap:10,marginTop:20}}>
+            <button onClick={onClose} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>Annulla</button>
+            <button onClick={salva} style={{flex:2,padding:"9px",borderRadius:8,border:"none",background:saved?C.viridis:C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"background .2s"}}>{saved?"✓ Salvato":"Salva profilo"}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────
+// CreateSkillWizard — wizard multi-step con AI
+// ─────────────────────────────────────────────────────
+const WIZARD_STEPS=["Idea","Agenti","Struttura","Revisione","Pubblica"];
+const WIZARD_AGENTS=[
+  {id:"fiscale",nome:"Esperto Fiscale",emoji:"⚖️",color:C.viridis,desc:"Verifica aderenza alla normativa tributaria e contabile"},
+  {id:"legale",nome:"Consulente Legale",emoji:"📜",color:C.purpura,desc:"Controlla correttezza giuridica e riferimenti normativi"},
+  {id:"cfo",nome:"CFO Fractional",emoji:"📊",color:C.caelum,desc:"Valuta applicabilità pratica e impatto su processi"},
+  {id:"ux",nome:"Alex — UX Specialist",emoji:"✨",color:C.aurum,desc:"Ottimizza chiarezza, struttura dell'output, usabilità"},
+];
+
+function CreateSkillWizard({onClose,userProfile}){
+  const[step,setStep]=useState(0);
+  const[idea,setIdea]=useState("");
+  const[agenti,setAgenti]=useState(["fiscale","ux"]);
+  const[area,setArea]=useState("Fiscale");
+  const[nome,setNome]=useState("");
+  const[descrizione,setDescrizione]=useState("");
+  const[inputAtteso,setInputAtteso]=useState("");
+  const[outputAtteso,setOutputAtteso]=useState("");
+  const[normativa,setNormativa]=useState("");
+  const[elaborating,setElaborating]=useState(false);
+  const[elaborated,setElaborated]=useState(false);
+  const[published,setPublished]=useState(false);
+
+  const areas=Object.keys(AREA_COLOR);
+
+  function elaboraConAI(){
+    if(!idea.trim())return;
+    setElaborating(true);
+    setTimeout(()=>{
+      // Simula risposta AI che genera i campi della skill
+      const exNome=idea.split(" ").slice(0,4).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
+      setNome(exNome);
+      setDescrizione(`Skill che ${idea.toLowerCase()}. Genera un output strutturato e professionale, con riferimenti normativi aggiornati.`);
+      setInputAtteso("Dati identificativi del cliente o del caso: ragione sociale, settore, periodo di riferimento, importi rilevanti.");
+      setOutputAtteso("Report strutturato con analisi, riferimenti normativi, raccomandazioni operative e next step.");
+      setNormativa("Da definire in base al contesto specifico.");
+      setElaborating(false);
+      setElaborated(true);
+      setStep(2);
+    },2200);
+  }
+
+  function pubblica(){
+    setPublished(true);
+    setTimeout(()=>onClose(),2500);
+  }
+
+  const stepStyle=(i)=>({
+    width:28,height:28,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",
+    background:i<step?C.viridis:i===step?C.aurum:"#eee",
+    color:i<=step?"#fff":"#bbb",fontSize:11,fontWeight:700,fontFamily:"Arial,sans-serif",flexShrink:0,
+    transition:"background .3s"
+  });
+
+  if(published){
+    return(
+      <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}}>
+        <div style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:400,padding:"48px 32px",textAlign:"center",boxShadow:"0 8px 48px #0004"}}>
+          <div style={{fontSize:48,marginBottom:12}}>🎉</div>
+          <div style={{fontFamily:"Georgia,serif",fontSize:20,color:C.nox,marginBottom:8}}>Skill inviata per revisione!</div>
+          <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:4}}>Riceverai una notifica quando la Redazione approverà la skill.</div>
+          <div style={{fontSize:12,color:C.viridis,fontFamily:"Arial,sans-serif",fontWeight:700}}>+10 punti al momento della pubblicazione</div>
+        </div>
+      </div>
+    );
+  }
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px",overflowY:"auto"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:600,boxShadow:"0 8px 48px #0004",border:`2px solid ${C.aurum}`,marginTop:16,marginBottom:16}}>
+        {/* Header */}
+        <div style={{background:C.nox,padding:"20px 24px",borderRadius:"14px 14px 0 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontSize:10,color:C.aurum,fontWeight:700,letterSpacing:"0.15em",fontFamily:"Arial,sans-serif",marginBottom:4}}>CREA UNA NUOVA SKILL</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:18,color:"#fff",fontWeight:700}}>{WIZARD_STEPS[step]}</div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer"}}>×</button>
+        </div>
+
+        {/* Step indicators */}
+        <div style={{padding:"16px 24px",background:"#fafaf8",borderBottom:"1px solid #eee",display:"flex",alignItems:"center",gap:8}}>
+          {WIZARD_STEPS.map((s,i)=>(
+            <div key={s} style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={stepStyle(i)}>{i<step?"✓":i+1}</div>
+              <span style={{fontSize:11,color:i===step?C.aurum:i<step?C.viridis:"#bbb",fontFamily:"Arial,sans-serif",fontWeight:i===step?700:400}}>{s}</span>
+              {i<WIZARD_STEPS.length-1&&<div style={{width:16,height:1,background:"#ddd"}}/>}
+            </div>
+          ))}
+        </div>
+
+        <div style={{padding:"24px"}}>
+          {/* Step 0: Idea */}
+          {step===0&&(
+            <div>
+              <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:C.gray,marginBottom:16,lineHeight:1.6}}>Descrivi in italiano cosa vuoi che faccia la skill. Più sei specifico, migliore sarà il risultato dell'AI.</div>
+              <textarea value={idea} onChange={e=>setIdea(e.target.value)}
+                placeholder="Es.: Analizza un contratto di locazione commerciale e verifica la conformità alle norme fiscali per il locatore, identificando le detrazioni applicabili e le scadenze di registrazione…"
+                rows={5} style={{width:"100%",padding:"11px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
+              <div style={{marginTop:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif"}}>{idea.length} caratteri</div>
+                <button onClick={()=>setStep(1)} disabled={idea.trim().length<20} style={{padding:"9px 20px",borderRadius:8,border:"none",background:idea.trim().length>=20?C.aurum:"#eee",color:idea.trim().length>=20?"#fff":"#aaa",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Avanti →</button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 1: Agenti */}
+          {step===1&&(
+            <div>
+              <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:C.gray,marginBottom:16,lineHeight:1.6}}>Seleziona gli agenti AI che revisioneranno la skill prima della pubblicazione. Ogni agente aggiunge una prospettiva specialistica.</div>
+              <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:20}}>
+                {WIZARD_AGENTS.map(ag=>(
+                  <div key={ag.id} onClick={()=>setAgenti(prev=>prev.includes(ag.id)?prev.filter(x=>x!==ag.id):[...prev,ag.id])}
+                    style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:10,border:`1.5px solid ${agenti.includes(ag.id)?ag.color:"#e8e4dc"}`,background:agenti.includes(ag.id)?ag.color+"11":"#fafaf8",cursor:"pointer",transition:"all .15s"}}>
+                    <div style={{width:36,height:36,borderRadius:"50%",background:ag.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{ag.emoji}</div>
+                    <div style={{flex:1}}>
+                      <div style={{fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:700,color:C.nox}}>{ag.nome}</div>
+                      <div style={{fontSize:11,color:"#888",fontFamily:"Arial,sans-serif"}}>{ag.desc}</div>
+                    </div>
+                    <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${agenti.includes(ag.id)?ag.color:"#ddd"}`,background:agenti.includes(ag.id)?ag.color:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      {agenti.includes(ag.id)&&<span style={{color:"#fff",fontSize:9,fontWeight:700}}>✓</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:10}}>
+                <button onClick={()=>setStep(0)} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>← Indietro</button>
+                <button onClick={elaboraConAI} disabled={elaborating||agenti.length===0}
+                  style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:elaborating?"#ddd":C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                  {elaborating?<><span style={{display:"inline-block",animation:"spin 1s linear infinite"}}>⟳</span>Gli agenti stanno elaborando…</>:"✨ Genera con AI →"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Struttura */}
+          {step===2&&(
+            <div style={{display:"flex",flexDirection:"column",gap:14}}>
+              <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:C.gray,marginBottom:4,lineHeight:1.6}}>Rivedi e perfeziona i campi generati dall'AI.</div>
+              <div>
+                <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"block",marginBottom:5}}>NOME SKILL</label>
+                <input value={nome} onChange={e=>setNome(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box"}}/>
+              </div>
+              <div>
+                <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"block",marginBottom:5}}>AREA FUNZIONALE</label>
+                <select value={area} onChange={e=>setArea(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",background:"#fff"}}>
+                  {areas.map(a=><option key={a}>{a}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"block",marginBottom:5}}>DESCRIZIONE</label>
+                <textarea value={descrizione} onChange={e=>setDescrizione(e.target.value)} rows={3} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                <div>
+                  <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"block",marginBottom:5}}>INPUT ATTESO</label>
+                  <textarea value={inputAtteso} onChange={e=>setInputAtteso(e.target.value)} rows={3} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:12,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
+                </div>
+                <div>
+                  <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"block",marginBottom:5}}>OUTPUT ATTESO</label>
+                  <textarea value={outputAtteso} onChange={e=>setOutputAtteso(e.target.value)} rows={3} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:12,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
+                </div>
+              </div>
+              <div>
+                <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"block",marginBottom:5}}>NORMATIVA DI RIFERIMENTO</label>
+                <input value={normativa} onChange={e=>setNormativa(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box"}}/>
+              </div>
+              <div style={{display:"flex",gap:10}}>
+                <button onClick={()=>setStep(1)} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>← Indietro</button>
+                <button onClick={()=>setStep(3)} disabled={!nome.trim()} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:nome.trim()?C.aurum:"#eee",color:nome.trim()?"#fff":"#aaa",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Avanti →</button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Revisione */}
+          {step===3&&(
+            <div>
+              <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:C.gray,marginBottom:16}}>Controlla tutti i dati prima di inviare per approvazione.</div>
+              {[
+                {label:"NOME",val:nome},{label:"AREA",val:area},{label:"DESCRIZIONE",val:descrizione},
+                {label:"INPUT",val:inputAtteso},{label:"OUTPUT",val:outputAtteso},{label:"NORMATIVA",val:normativa},
+              ].map(({label,val})=>(
+                <div key={label} style={{marginBottom:10,padding:"10px 14px",background:"#f9f8f5",borderRadius:8,borderLeft:`3px solid ${C.aurum}`}}>
+                  <div style={{fontSize:9,fontWeight:700,color:C.gray,letterSpacing:"0.12em",fontFamily:"Arial,sans-serif",marginBottom:4}}>{label}</div>
+                  <div style={{fontSize:13,color:C.nox,fontFamily:"Arial,sans-serif",lineHeight:1.5}}>{val||<span style={{color:"#ccc",fontStyle:"italic"}}>non specificato</span>}</div>
+                </div>
+              ))}
+              <div style={{background:"#E3F7F0",borderRadius:8,padding:"10px 14px",marginTop:16,marginBottom:16,display:"flex",gap:8,alignItems:"center"}}>
+                <span>✅</span>
+                <span style={{fontSize:12,color:C.viridis,fontFamily:"Arial,sans-serif",lineHeight:1.5}}>La skill verrà inviata alla Redazione per revisione. Riceverai una notifica quando sarà approvata e pubblicata nel catalogo.</span>
+              </div>
+              <div style={{display:"flex",gap:10}}>
+                <button onClick={()=>setStep(2)} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>← Modifica</button>
+                <button onClick={()=>setStep(4)} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Invia per approvazione →</button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Pubblica */}
+          {step===4&&(
+            <div style={{textAlign:"center",padding:"12px 0"}}>
+              <div style={{fontSize:40,marginBottom:12}}>📬</div>
+              <div style={{fontFamily:"Georgia,serif",fontSize:18,color:C.nox,marginBottom:8}}>Tutto pronto!</div>
+              <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:20,lineHeight:1.6}}>
+                Stai per inviare <strong>"{nome}"</strong> alla Redazione.<br/>
+                Gli agenti selezionati ({agenti.map(id=>WIZARD_AGENTS.find(a=>a.id===id)?.nome).join(", ")}) effettueranno una revisione finale prima della pubblicazione.
+              </div>
+              <div style={{background:"#f9f8f5",borderRadius:10,padding:"12px 16px",marginBottom:20,display:"flex",gap:8,alignItems:"center",justifyContent:"center"}}>
+                <span style={{fontSize:13,color:"#555",fontFamily:"Arial,sans-serif"}}>+10 punti al momento della pubblicazione</span>
+              </div>
+              <div style={{display:"flex",gap:10}}>
+                <button onClick={()=>setStep(3)} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>← Indietro</button>
+                <button onClick={pubblica} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:C.viridis,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>🚀 Pubblica skill</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
+}
+
 export default function App(){
   const[isLogged,setIsLogged]=useState(false);
   // CSS globale per hover effects (inline style non supporta :hover)
@@ -849,11 +1320,17 @@ export default function App(){
   }
   const[showLogin,setShowLogin]=useState(false);
   const[showFAQ,setShowFAQ]=useState(false);
+  const[showProfile,setShowProfile]=useState(false);
+  const[showCreateSkill,setShowCreateSkill]=useState(false);
+  const[showManifesto,setShowManifesto]=useState(false);
+  const[showClassifica,setShowClassifica]=useState(false);
   const[search,setSearch]=useState("");
   const[filterArea,setFilterArea]=useState("Tutte");
   const[filterComp,setFilterComp]=useState("Tutte");
   const[filterFreq,setFilterFreq]=useState("Tutte");
   const[activeSkill,setActiveSkill]=useState(null);
+  const[userSkills,setUserSkills]=useState([]);
+  const[userProfile,setUserProfile]=useState({nome:"",studio:"",byokKey:""});
 
   const areas=useMemo(()=>["Tutte",...Array.from(new Set(SKILLS.map(s=>s.area)))],[]);
   const filtered=useMemo(()=>SKILLS.filter(s=>(filterArea==="Tutte"||s.area===filterArea)&&(filterComp==="Tutte"||s.complessita===filterComp)&&(filterFreq==="Tutte"||s.frequenza===filterFreq)&&matchSearch(s,search)),[search,filterArea,filterComp,filterFreq]);
@@ -865,13 +1342,18 @@ export default function App(){
       <div style={{background:C.nox,borderBottom:`2px solid ${C.aurum}`,position:"sticky",top:0,zIndex:500}}>
         <div style={{maxWidth:1100,margin:"0 auto",padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           <div style={{display:"flex",alignItems:"center",gap:20}}>
-            <span style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:700}}><span style={{color:C.aurum}}>x</span><span style={{color:"#fff"}}>Nunc</span></span>
-            {["Catalogo","Classifica","Manifesto"].map(n=><span key={n} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>{n}</span>)}
+            <span onClick={()=>{setSearch("");setFilterArea("Tutte");setFilterComp("Tutte");setFilterFreq("Tutte");}} style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:700,cursor:"pointer"}}><span style={{color:C.aurum}}>x</span><span style={{color:"#fff"}}>Nunc</span></span>
+            <span onClick={()=>document.getElementById("catalogo-section")?.scrollIntoView({behavior:"smooth"})} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Catalogo</span>
+            <span onClick={()=>setShowClassifica(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Classifica</span>
+            <span onClick={()=>setShowManifesto(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Manifesto</span>
             <span onClick={()=>setShowFAQ(true)} style={{color:C.aurum,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>FAQ</span>
           </div>
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             {isLogged?(
-              <div style={{width:32,height:32,borderRadius:"50%",background:C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}><span style={{color:"#fff",fontSize:13,fontWeight:700}}>G</span></div>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <button onClick={()=>setShowCreateSkill(true)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${C.aurum}`,background:"transparent",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>
+                <div onClick={()=>setShowProfile(true)} title="Il tuo profilo" style={{width:32,height:32,borderRadius:"50%",background:C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"0 2px 8px #BA751744"}}><span style={{color:"#fff",fontSize:13,fontWeight:700}}>{userProfile.nome?userProfile.nome[0].toUpperCase():"G"}</span></div>
+              </div>
             ):(
               <>
                 <button onClick={()=>setShowLogin(true)} style={{background:"none",border:"1px solid #555",color:"#aaa",borderRadius:6,padding:"5px 14px",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Accedi</button>
@@ -934,11 +1416,17 @@ export default function App(){
         </div>
 
         {/* Grid */}
+        <div id="catalogo-section"/>
         {filtered.length===0?(
           <div style={{textAlign:"center",padding:"60px 0",color:C.gray}}>
             <div style={{fontSize:32,marginBottom:8}}>🔍</div>
             <div style={{fontFamily:"Georgia,serif",fontSize:18,color:C.nox,marginBottom:8}}>Nessuna skill trovata</div>
-            <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",maxWidth:380,margin:"0 auto",lineHeight:1.6}}>Prova a rimuovere uno o più filtri oppure cerca con un termine diverso. Se cerchi una skill specifica, contattaci — potremmo crearla per te.</div>
+            <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",maxWidth:380,margin:"0 auto",lineHeight:1.6,marginBottom:20}}>Prova a rimuovere i filtri o cerca con parole diverse.</div>
+            {isLogged?(
+              <button onClick={()=>setShowCreateSkill(true)} style={{padding:"10px 24px",borderRadius:8,border:"none",background:C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea una nuova skill</button>
+            ):(
+              <button onClick={()=>setShowLogin(true)} style={{padding:"10px 24px",borderRadius:8,border:`1px solid ${C.aurum}`,background:"#fff",color:C.aurum,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>🔒 Accedi per creare una skill</button>
+            )}
           </div>
         ):(()=>{
           const g={};
@@ -966,7 +1454,9 @@ export default function App(){
             {" "}· open source · AGPL v3 · ex nunc, da ora in poi
           </div>
           <div style={{display:"flex",justifyContent:"center",gap:16,fontSize:12,color:"#bbb",marginBottom:8}}>
-            {["Manifesto","Privacy Policy","Termini di servizio","Contatti"].map(l=><span key={l} style={{cursor:"pointer"}}>{l}</span>)}
+            <span onClick={()=>setShowManifesto(true)} style={{cursor:"pointer",color:"#bbb"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#bbb"}>Manifesto</span>
+            <span onClick={()=>setShowClassifica(true)} style={{cursor:"pointer",color:"#bbb"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#bbb"}>Classifica</span>
+            {["Privacy Policy","Termini di servizio","Contatti"].map(l=><span key={l} style={{cursor:"pointer"}}>{l}</span>)}
             <span onClick={()=>setShowFAQ(true)} style={{cursor:"pointer",color:C.aurum,fontWeight:700}}>FAQ</span>
           </div>
           <div style={{fontSize:11,color:"#ccc"}}>Input mai salvati · Solo metadati anonimi · GDPR compliant · Platform-agnostic</div>
@@ -975,6 +1465,10 @@ export default function App(){
 
       {showLogin&&<LoginModal onClose={()=>setShowLogin(false)} onLogin={()=>{setIsLogged(true);setShowLogin(false);}}/>}
       {showFAQ&&<FAQModal onClose={()=>setShowFAQ(false)}/>}
+      {showManifesto&&<ManifestoModal onClose={()=>setShowManifesto(false)}/>}
+      {showClassifica&&<ClassificaModal onClose={()=>setShowClassifica(false)}/>}
+      {showProfile&&<ProfileModal onClose={()=>setShowProfile(false)} userProfile={userProfile} setUserProfile={setUserProfile}/>}
+      {showCreateSkill&&<CreateSkillWizard onClose={()=>setShowCreateSkill(false)} userProfile={userProfile}/>}
       {activeSkill&&<SkillModal skill={activeSkill} isLogged={isLogged} onClose={()=>setActiveSkill(null)} onLoginRequest={()=>{setActiveSkill(null);setShowLogin(true);}}/>}
     </div>
   );
