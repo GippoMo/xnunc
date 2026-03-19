@@ -1251,7 +1251,7 @@ async function notificaEmail({destinatario,oggetto,corpo}){
 const STATO_LABEL={bozza:"🔧 Bozza",in_revisione:"⏳ In revisione",approvata:"✓ Approvata"};
 const STATO_COLOR={bozza:C.caelum,in_revisione:C.aurum,approvata:C.viridis};
 
-function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,onTestSkill,onOpenProfile}){
+function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,onTestSkill,onOpenProfile,onCreateSkill}){
   const[tab,setTab]=useState(0);
   const[activeThread,setActiveThread]=useState(null);
   const[msgTesto,setMsgTesto]=useState("");
@@ -1389,7 +1389,7 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
                   <div style={{fontSize:32,marginBottom:8}}>🔧</div>
                   <div style={{fontFamily:"Georgia,serif",fontSize:16,color:C.nox,marginBottom:6}}>Nessuna skill in sviluppo</div>
                   <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:16}}>Crea la tua prima skill — resta qui finché non sei pronto a inviarla alla Redazione.</div>
-                  <button onClick={onClose} style={{padding:"9px 20px",borderRadius:8,border:"none",background:C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>
+                  <button onClick={()=>{onClose();onCreateSkill&&onCreateSkill();}} style={{padding:"9px 20px",borderRadius:8,border:"none",background:C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>
                 </div>
               ):(
                 draftSkills.filter(d=>d.stato!=="approvata").map(d=>{
@@ -1943,6 +1943,7 @@ export default function App(){
         userProfile={userProfile}
         onTestSkill={s=>{setShowDashboard(false);setActiveSkill(s);}}
         onOpenProfile={()=>{setShowDashboard(false);setShowProfile(true);}}
+        onCreateSkill={()=>{setShowDashboard(false);setShowCreateSkill(true);}}
       />}
       {showCreateSkill&&<CreateSkillWizard
         onClose={()=>setShowCreateSkill(false)}
