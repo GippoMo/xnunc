@@ -788,17 +788,29 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
 // ─────────────────────────────────────────────────────
 // Skill Card
 // ─────────────────────────────────────────────────────
-function SkillCard({skill,onClick,isLogged}){
+function SkillCard({skill,onClick,isLogged,favorites,setFavorites,compact}){
   const ac=AREA_COLOR[skill.area]||C.gray;
   const abg=AREA_BG[skill.area]||"#f5f3ee";
+  const isFav=favorites&&favorites.includes(skill.id);
+  function toggleFav(e){
+    e.stopPropagation();
+    if(!setFavorites)return;
+    setFavorites(prev=>isFav?prev.filter(id=>id!==skill.id):[...prev,skill.id]);
+  }
   return(
     <div onClick={onClick} className="xnunc-card" style={{cursor:"pointer",border:"1.5px solid #e8e4dc",borderRadius:10,background:"#fff",padding:"14px 16px 12px",marginBottom:8,boxShadow:"0 1px 4px #0001",position:"relative"}}>
+      {isLogged&&setFavorites&&(
+        <button onClick={toggleFav} title={isFav?"Rimuovi dai preferiti":"Aggiungi ai preferiti"}
+          style={{position:"absolute",top:9,right:10,background:"none",border:"none",cursor:"pointer",fontSize:15,color:isFav?C.aurum:"#ddd",lineHeight:1,padding:2,transition:"color .15s"}}>
+          {isFav?"★":"☆"}
+        </button>
+      )}
       {!isLogged&&<div style={{position:"absolute",top:10,right:10,fontSize:13,color:C.gray}}>🔒</div>}
       <div style={{display:"flex",justifyContent:"space-between",gap:8}}>
         <div style={{flex:1}}>
-          <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:700,color:C.nox,marginBottom:4,lineHeight:1.3,paddingRight:20}}>{skill.nome}</div>
+          <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:700,color:C.nox,marginBottom:4,lineHeight:1.3,paddingRight:26}}>{skill.nome}</div>
           <div style={{fontSize:11,color:ac,fontFamily:"Arial,sans-serif",marginBottom:5,fontWeight:600}}>{skill.id} · {skill.sotto_area}</div>
-          <div style={{fontSize:12.5,color:"#444",fontFamily:"Arial,sans-serif",lineHeight:1.5}}>{truncate(skill.descrizione,110)}</div>
+          {!compact&&<div style={{fontSize:12.5,color:"#444",fontFamily:"Arial,sans-serif",lineHeight:1.5}}>{truncate(skill.descrizione,110)}</div>}
           <div style={{marginTop:7,display:"flex",flexWrap:"wrap",gap:2}}>
             {(skill.tags||[]).slice(0,3).map(t=><span key={t} style={{fontSize:10,color:ac,background:abg,padding:"1px 7px",borderRadius:8,fontFamily:"Arial,sans-serif"}}>{t}</span>)}
             {(skill.tags||[]).length>3&&<span style={{fontSize:10,color:C.gray,fontFamily:"Arial,sans-serif"}}>+{skill.tags.length-3}</span>}
@@ -1203,6 +1215,319 @@ function ProfileModal({onClose,userProfile,setUserProfile}){
 }
 
 // ─────────────────────────────────────────────────────
+// Email notification via EmailJS (configurazione opzionale)
+// Per attivare le notifiche:
+// 1. Vai su https://emailjs.com → crea account gratuito
+// 2. Crea un Service (collega Gmail/Outlook) → copia Service ID
+// 3. Crea un Template con variabili {{to_email}} {{subject}} {{message}}
+// 4. Copia Template ID e Public Key (tab Account → API Keys)
+// 5. Sostituisci i valori EMAILJS_* qui sotto
+// ─────────────────────────────────────────────────────
+const EMAILJS_SERVICE  = "YOUR_SERVICE_ID";   // es. "service_gmail"
+const EMAILJS_TEMPLATE = "YOUR_TEMPLATE_ID";  // es. "template_xnunc"
+const EMAILJS_KEY      = "YOUR_PUBLIC_KEY";   // tab Account → API Keys
+const ADMIN_EMAIL      = "morales@bcand.it";
+
+async function notificaEmail({destinatario,oggetto,corpo}){
+  if(EMAILJS_SERVICE.startsWith("YOUR"))return; // non ancora configurato
+  try{
+    await fetch("https://api.emailjs.com/api/v1.0/email/send",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        service_id:EMAILJS_SERVICE,
+        template_id:EMAILJS_TEMPLATE,
+        user_id:EMAILJS_KEY,
+        template_params:{to_email:destinatario,subject:oggetto,message:corpo}
+      })
+    });
+  }catch(e){console.log("Email non inviata:",e);}
+}
+
+// ─────────────────────────────────────────────────────
+// DashboardModal — area riservata utente
+// Tabs: ⭐ Preferiti | 🔧 In sviluppo | 💬 Messaggi
+// ─────────────────────────────────────────────────────
+const STATO_LABEL={bozza:"🔧 Bozza",in_revisione:"⏳ In revisione",approvata:"✓ Approvata"};
+const STATO_COLOR={bozza:C.caelum,in_revisione:C.aurum,approvata:C.viridis};
+
+function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,onTestSkill,onOpenProfile}){
+  const[tab,setTab]=useState(0);
+  const[activeThread,setActiveThread]=useState(null);
+  const[msgTesto,setMsgTesto]=useState("");
+  const[newMsg,setNewMsg]=useState(false);
+  const[newMsgOgg,setNewMsgOgg]=useState("");
+  const[newMsgTesto,setNewMsgTesto]=useState("");
+
+  const nomeCompl=`${userProfile.nome||""} ${userProfile.cognome||""}`.trim()||"Utente";
+  const nonLettiTot=threads.reduce((n,t)=>n+(t.nonLetti||0),0);
+  const favSkills=SKILLS.filter(s=>favorites.includes(s.id));
+
+  function inviaAllRedazione(draft){
+    setDraftSkills(prev=>prev.map(d=>d.id===draft.id?{...d,stato:"in_revisione"}:d));
+    notificaEmail({
+      destinatario:ADMIN_EMAIL,
+      oggetto:`[xNunc] Nuova skill in revisione: ${draft.nome}`,
+      corpo:`L'utente ${nomeCompl} ha inviato la skill "${draft.nome}" (${draft.area}) per revisione.\n\nDescrizione: ${draft.descrizione}\n\nInput atteso: ${draft.inputAtteso}\nOutput atteso: ${draft.outputAtteso}\nNormativa: ${draft.normativa}`
+    });
+    // Aggiungi thread di notifica nella messaggistica
+    setThreads(prev=>[...prev,{
+      id:Date.now(),titolo:`Skill inviata: ${draft.nome}`,con:"Redazione",avatar:"R",avatarColor:C.aurum,
+      messaggi:[{id:1,da:"Sistema",testo:`Hai inviato la skill "${draft.nome}" alla Redazione. Riceverai una risposta qui appena revisionata. Di solito entro 48 ore.`,data:new Date().toLocaleDateString("it-IT"),letto:true}],
+      nonLetti:0
+    }]);
+    setTab(2); // vai alla tab messaggi
+  }
+
+  function inviaMsgThread(thread){
+    if(!msgTesto.trim())return;
+    const nuovoMsg={id:Date.now(),da:nomeCompl,testo:msgTesto,data:new Date().toLocaleDateString("it-IT"),letto:true};
+    setThreads(prev=>prev.map(t=>t.id===thread.id?{...t,messaggi:[...t.messaggi,nuovoMsg]}:t));
+    setActiveThread(prev=>prev?{...prev,messaggi:[...prev.messaggi,nuovoMsg]}:prev);
+    notificaEmail({
+      destinatario:ADMIN_EMAIL,
+      oggetto:`[xNunc Messaggi] Nuovo messaggio da ${nomeCompl}`,
+      corpo:`Thread: ${thread.titolo}\n\nMessaggio: ${msgTesto}\n\nDa: ${nomeCompl} (${userProfile.email||"email non impostata"})`
+    });
+    setMsgTesto("");
+  }
+
+  function nuovoThread(){
+    if(!newMsgOgg.trim()||!newMsgTesto.trim())return;
+    const thread={id:Date.now(),titolo:newMsgOgg,con:"Redazione",avatar:"R",avatarColor:C.aurum,
+      messaggi:[{id:1,da:nomeCompl,testo:newMsgTesto,data:new Date().toLocaleDateString("it-IT"),letto:true}],nonLetti:0};
+    setThreads(prev=>[...prev,thread]);
+    notificaEmail({
+      destinatario:ADMIN_EMAIL,
+      oggetto:`[xNunc] Nuovo messaggio da ${nomeCompl}: ${newMsgOgg}`,
+      corpo:newMsgTesto+`\n\nDa: ${nomeCompl} (${userProfile.email||"email non impostata"})`
+    });
+    setNewMsg(false);setNewMsgOgg("");setNewMsgTesto("");
+    setActiveThread(thread);
+  }
+
+  const tabBar=[
+    {label:"⭐ Preferiti",count:favSkills.length+draftSkills.filter(d=>d.stato==="approvata").length},
+    {label:"🔧 In sviluppo",count:draftSkills.filter(d=>d.stato!=="approvata").length},
+    {label:"💬 Messaggi",count:nonLettiTot},
+  ];
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"#00000099",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"0"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",width:"100%",maxWidth:860,height:"100vh",display:"flex",flexDirection:"column",boxShadow:"4px 0 32px #0004",borderRight:`2px solid ${C.aurum}`,marginLeft:0,marginRight:"auto"}}>
+
+        {/* Header */}
+        <div style={{background:C.nox,padding:"16px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:14}}>
+            <div style={{width:40,height:40,borderRadius:"50%",background:C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:`0 2px 10px ${C.aurum}55`}} onClick={onOpenProfile}>
+              <span style={{color:"#fff",fontSize:15,fontWeight:700}}>{nomeCompl[0]?.toUpperCase()||"?"}</span>
+            </div>
+            <div>
+              <div style={{fontFamily:"Georgia,serif",fontSize:16,color:"#fff",fontWeight:700}}>{nomeCompl}</div>
+              <div style={{fontSize:11,color:"#666",fontFamily:"Arial,sans-serif"}}>{userProfile.studio||userProfile.email||"—"} · <span style={{color:C.viridis,fontWeight:700}}>10 pt</span></div>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:10,alignItems:"center"}}>
+            <button onClick={onOpenProfile} style={{padding:"5px 12px",borderRadius:6,border:"1px solid #333",background:"transparent",color:"#888",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>⚙️ Profilo</button>
+            <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer",lineHeight:1}}>×</button>
+          </div>
+        </div>
+
+        {/* Tab bar */}
+        <div style={{background:"#f9f8f5",borderBottom:"1px solid #e8e4dc",display:"flex",flexShrink:0}}>
+          {tabBar.map(({label,count},i)=>(
+            <button key={i} onClick={()=>setTab(i)} style={{flex:1,padding:"12px 8px",border:"none",cursor:"pointer",background:"transparent",color:tab===i?C.nox:"#888",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:tab===i?700:400,borderBottom:tab===i?`2px solid ${C.aurum}`:"2px solid transparent",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              {label}
+              {count>0&&<span style={{background:tab===i?C.aurum:"#ddd",color:tab===i?"#fff":"#888",borderRadius:10,fontSize:10,padding:"1px 6px",fontWeight:700}}>{count}</span>}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
+
+          {/* TAB 0 — Preferiti */}
+          {tab===0&&(
+            <div>
+              {favSkills.length===0&&draftSkills.filter(d=>d.stato==="approvata").length===0?(
+                <div style={{textAlign:"center",padding:"48px 0"}}>
+                  <div style={{fontSize:32,marginBottom:8}}>☆</div>
+                  <div style={{fontFamily:"Georgia,serif",fontSize:16,color:C.nox,marginBottom:6}}>Nessuna skill nei preferiti</div>
+                  <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif"}}>Clicca la stella ★ su una skill del catalogo per aggiungerla qui.</div>
+                </div>
+              ):(
+                <>
+                  {favSkills.length>0&&(
+                    <>
+                      <div style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:10,fontFamily:"Arial,sans-serif"}}>DAL CATALOGO · {favSkills.length}</div>
+                      {favSkills.map(s=>(
+                        <SkillCard key={s.id} skill={s} isLogged favorites={favorites} setFavorites={setFavorites} onClick={()=>onTestSkill(s)} compact/>
+                      ))}
+                    </>
+                  )}
+                  {draftSkills.filter(d=>d.stato==="approvata").length>0&&(
+                    <>
+                      <div style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginTop:16,marginBottom:10,fontFamily:"Arial,sans-serif"}}>MIE SKILL PUBBLICATE · {draftSkills.filter(d=>d.stato==="approvata").length}</div>
+                      {draftSkills.filter(d=>d.stato==="approvata").map(d=>(
+                        <div key={d.id} style={{border:"1.5px solid #e8e4dc",borderRadius:10,background:"#fff",padding:"12px 16px",marginBottom:8}}>
+                          <div style={{fontFamily:"Georgia,serif",fontSize:14,fontWeight:700,color:C.nox}}>{d.nome}</div>
+                          <div style={{fontSize:11,color:C.viridis,fontFamily:"Arial,sans-serif",marginTop:3,fontWeight:700}}>✓ Pubblicata nel catalogo</div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* TAB 1 — In sviluppo */}
+          {tab===1&&(
+            <div>
+              {draftSkills.filter(d=>d.stato!=="approvata").length===0?(
+                <div style={{textAlign:"center",padding:"48px 0"}}>
+                  <div style={{fontSize:32,marginBottom:8}}>🔧</div>
+                  <div style={{fontFamily:"Georgia,serif",fontSize:16,color:C.nox,marginBottom:6}}>Nessuna skill in sviluppo</div>
+                  <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:16}}>Crea la tua prima skill — resta qui finché non sei pronto a inviarla alla Redazione.</div>
+                  <button onClick={onClose} style={{padding:"9px 20px",borderRadius:8,border:"none",background:C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>
+                </div>
+              ):(
+                draftSkills.filter(d=>d.stato!=="approvata").map(d=>{
+                  const stColor=STATO_COLOR[d.stato]||C.gray;
+                  return(
+                    <div key={d.id} style={{border:`1.5px solid ${stColor}33`,borderRadius:12,background:"#fff",padding:"16px",marginBottom:12,boxShadow:"0 1px 6px #0001"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                        <div>
+                          <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:700,color:C.nox}}>{d.nome}</div>
+                          <div style={{fontSize:11,color:stColor,fontFamily:"Arial,sans-serif",marginTop:3,fontWeight:700}}>{STATO_LABEL[d.stato]}</div>
+                        </div>
+                        <div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif",textAlign:"right"}}>{d.area}<br/>{d.data}</div>
+                      </div>
+                      <div style={{fontSize:12,color:"#666",fontFamily:"Arial,sans-serif",lineHeight:1.6,marginBottom:12}}>{truncate(d.descrizione,120)}</div>
+                      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                        <button onClick={()=>onTestSkill({...d,id:d.id,sotto_area:d.sottoArea||d.area,complessita:"media",frequenza:"occasionale",tags:d.tags||[]})}
+                          style={{padding:"6px 14px",borderRadius:7,border:`1px solid ${C.caelum}`,background:"#fff",color:C.caelum,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+                          ▶ Testa
+                        </button>
+                        {d.stato==="bozza"&&(
+                          <>
+                            <button onClick={()=>inviaAllRedazione(d)}
+                              style={{padding:"6px 14px",borderRadius:7,border:"none",background:C.aurum,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+                              📬 Invia alla Redazione
+                            </button>
+                            <button onClick={()=>setDraftSkills(prev=>prev.filter(x=>x.id!==d.id))}
+                              style={{padding:"6px 14px",borderRadius:7,border:"1px solid #fcc",background:"#fff",color:"#C0392B",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+                              × Elimina
+                            </button>
+                          </>
+                        )}
+                        {d.stato==="in_revisione"&&(
+                          <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif",alignSelf:"center",fontStyle:"italic"}}>In attesa di revisione dalla Redazione</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
+
+          {/* TAB 2 — Messaggi */}
+          {tab===2&&(
+            <div>
+              {!activeThread?(
+                <>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+                    <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:C.gray}}>{threads.length} conversazioni</div>
+                    <button onClick={()=>setNewMsg(true)} style={{padding:"7px 14px",borderRadius:8,border:"none",background:C.aurum,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Nuovo messaggio</button>
+                  </div>
+
+                  {newMsg&&(
+                    <div style={{background:"#f9f8f5",borderRadius:10,padding:"16px",marginBottom:16,border:`1.5px solid ${C.aurum}`}}>
+                      <div style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:8}}>NUOVO MESSAGGIO ALLA REDAZIONE</div>
+                      <input value={newMsgOgg} onChange={e=>setNewMsgOgg(e.target.value)} placeholder="Oggetto…"
+                        style={{width:"100%",padding:"8px 12px",borderRadius:7,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box",marginBottom:8}}/>
+                      <textarea value={newMsgTesto} onChange={e=>setNewMsgTesto(e.target.value)} placeholder="Scrivi il tuo messaggio…" rows={3}
+                        style={{width:"100%",padding:"8px 12px",borderRadius:7,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
+                      <div style={{display:"flex",gap:8,marginTop:8,justifyContent:"flex-end"}}>
+                        <button onClick={()=>{setNewMsg(false);setNewMsgOgg("");setNewMsgTesto("");}} style={{padding:"6px 14px",borderRadius:7,border:"1px solid #ddd",background:"#fff",color:"#555",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Annulla</button>
+                        <button onClick={nuovoThread} disabled={!newMsgOgg.trim()||!newMsgTesto.trim()} style={{padding:"6px 14px",borderRadius:7,border:"none",background:C.aurum,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Invia →</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {threads.length===0&&!newMsg&&(
+                    <div style={{textAlign:"center",padding:"40px 0"}}>
+                      <div style={{fontSize:32,marginBottom:8}}>💬</div>
+                      <div style={{fontFamily:"Georgia,serif",fontSize:15,color:C.nox,marginBottom:6}}>Nessun messaggio</div>
+                      <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif"}}>Puoi scrivere alla Redazione o avviare una conversazione con un altro professionista.</div>
+                    </div>
+                  )}
+
+                  {threads.map(t=>(
+                    <div key={t.id} onClick={()=>{setActiveThread(t);setThreads(prev=>prev.map(x=>x.id===t.id?{...x,nonLetti:0}:x));}}
+                      style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:10,border:"1.5px solid #e8e4dc",background:"#fff",marginBottom:8,cursor:"pointer",boxShadow:"0 1px 4px #0001"}}>
+                      <div style={{width:36,height:36,borderRadius:"50%",background:t.avatarColor||C.aurum,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                        <span style={{color:"#fff",fontSize:13,fontWeight:700}}>{t.avatar||"R"}</span>
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:t.nonLetti>0?700:400,color:C.nox,marginBottom:2}}>{t.titolo}</div>
+                        <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.messaggi[t.messaggi.length-1]?.testo||""}</div>
+                      </div>
+                      <div style={{textAlign:"right",flexShrink:0}}>
+                        {t.nonLetti>0&&<div style={{background:C.aurum,color:"#fff",borderRadius:10,fontSize:10,padding:"1px 6px",fontWeight:700,marginBottom:3}}>{t.nonLetti}</div>}
+                        <div style={{fontSize:10,color:"#ccc",fontFamily:"Arial,sans-serif"}}>{t.messaggi[t.messaggi.length-1]?.data||""}</div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ):(
+                /* Thread detail */
+                <div style={{display:"flex",flexDirection:"column",height:"100%"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,paddingBottom:12,borderBottom:"1px solid #e8e4dc"}}>
+                    <button onClick={()=>setActiveThread(null)} style={{background:"none",border:"none",fontSize:18,cursor:"pointer",color:"#888",padding:"0 4px"}}>←</button>
+                    <div style={{width:32,height:32,borderRadius:"50%",background:activeThread.avatarColor||C.aurum,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      <span style={{color:"#fff",fontSize:11,fontWeight:700}}>{activeThread.avatar||"R"}</span>
+                    </div>
+                    <div style={{fontFamily:"Arial,sans-serif",fontSize:14,fontWeight:700,color:C.nox}}>{activeThread.titolo}</div>
+                  </div>
+
+                  <div style={{flex:1,display:"flex",flexDirection:"column",gap:10,marginBottom:16,minHeight:0,overflowY:"auto",paddingRight:4}}>
+                    {activeThread.messaggi.map(m=>{
+                      const isMine=m.da!=="Redazione"&&m.da!=="Sistema";
+                      return(
+                        <div key={m.id} style={{display:"flex",justifyContent:isMine?"flex-end":"flex-start"}}>
+                          <div style={{maxWidth:"75%",background:isMine?C.aurum+"22":"#f5f3ee",borderRadius:isMine?"12px 12px 4px 12px":"12px 12px 12px 4px",padding:"10px 14px",border:isMine?`1px solid ${C.aurum}44`:"1px solid #eee"}}>
+                            {!isMine&&<div style={{fontSize:10,fontWeight:700,color:C.aurum,fontFamily:"Arial,sans-serif",marginBottom:3}}>{m.da}</div>}
+                            <div style={{fontSize:13,fontFamily:"Arial,sans-serif",color:"#333",lineHeight:1.6}}>{m.testo}</div>
+                            <div style={{fontSize:10,color:"#bbb",fontFamily:"Arial,sans-serif",marginTop:4,textAlign:"right"}}>{m.data}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div style={{borderTop:"1px solid #e8e4dc",paddingTop:12,flexShrink:0}}>
+                    <textarea value={msgTesto} onChange={e=>setMsgTesto(e.target.value)}
+                      placeholder="Scrivi un messaggio…" rows={2}
+                      style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box",resize:"none",marginBottom:8}}
+                      onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();inviaMsgThread(activeThread);}}}/>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span style={{fontSize:11,color:"#bbb",fontFamily:"Arial,sans-serif"}}>↵ Invio per mandare · Shift+↵ per andare a capo</span>
+                      <button onClick={()=>inviaMsgThread(activeThread)} disabled={!msgTesto.trim()} style={{padding:"7px 18px",borderRadius:8,border:"none",background:msgTesto.trim()?C.aurum:"#eee",color:msgTesto.trim()?"#fff":"#aaa",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Invia →</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────
 // CreateSkillWizard — wizard multi-step con AI
 // ─────────────────────────────────────────────────────
 const WIZARD_STEPS=["Idea","Agenti","Struttura","Revisione","Pubblica"];
@@ -1213,7 +1538,7 @@ const WIZARD_AGENTS=[
   {id:"ux",nome:"Alex — UX Specialist",emoji:"✨",color:C.aurum,desc:"Ottimizza chiarezza, struttura dell'output, usabilità"},
 ];
 
-function CreateSkillWizard({onClose,userProfile}){
+function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
   const[step,setStep]=useState(0);
   const[idea,setIdea]=useState("");
   const[agenti,setAgenti]=useState(["fiscale","ux"]);
@@ -1246,9 +1571,17 @@ function CreateSkillWizard({onClose,userProfile}){
     },2200);
   }
 
-  function pubblica(){
+  function salvaNelleBoze(){
+    const draft={
+      id:"DRAFT-"+Date.now(),
+      nome,area,descrizione,inputAtteso,outputAtteso,normativa,
+      tags:[],sottoArea:area,stato:"bozza",
+      data:new Date().toLocaleDateString("it-IT"),
+      agenti
+    };
+    if(onSaveDraft)onSaveDraft(draft);
     setPublished(true);
-    setTimeout(()=>onClose(),2500);
+    setTimeout(()=>onClose(),2800);
   }
 
   const stepStyle=(i)=>({
@@ -1260,12 +1593,12 @@ function CreateSkillWizard({onClose,userProfile}){
 
   if(published){
     return(
-      <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}}>
+      <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}}>
         <div style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:400,padding:"48px 32px",textAlign:"center",boxShadow:"0 8px 48px #0004"}}>
-          <div style={{fontSize:48,marginBottom:12}}>🎉</div>
-          <div style={{fontFamily:"Georgia,serif",fontSize:20,color:C.nox,marginBottom:8}}>Skill inviata per revisione!</div>
-          <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:4}}>Riceverai una notifica quando la Redazione approverà la skill.</div>
-          <div style={{fontSize:12,color:C.viridis,fontFamily:"Arial,sans-serif",fontWeight:700}}>+10 punti al momento della pubblicazione</div>
+          <div style={{fontSize:48,marginBottom:12}}>💾</div>
+          <div style={{fontFamily:"Georgia,serif",fontSize:20,color:C.nox,marginBottom:8}}>Skill salvata in bozze!</div>
+          <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:4}}>La trovi nella tua Dashboard → <strong>In sviluppo</strong>.<br/>Puoi testarla, modificarla e poi inviarla alla Redazione quando sei pronto.</div>
+          <div style={{fontSize:12,color:C.caelum,fontFamily:"Arial,sans-serif",fontWeight:700,marginTop:8}}>🔧 In sviluppo</div>
         </div>
       </div>
     );
@@ -1405,17 +1738,20 @@ function CreateSkillWizard({onClose,userProfile}){
           {step===4&&(
             <div style={{textAlign:"center",padding:"12px 0"}}>
               <div style={{fontSize:40,marginBottom:12}}>📬</div>
-              <div style={{fontFamily:"Georgia,serif",fontSize:18,color:C.nox,marginBottom:8}}>Tutto pronto!</div>
+              <div style={{fontFamily:"Georgia,serif",fontSize:18,color:C.nox,marginBottom:8}}>Quasi pronto!</div>
               <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:20,lineHeight:1.6}}>
-                Stai per inviare <strong>"{nome}"</strong> alla Redazione.<br/>
-                Gli agenti selezionati ({agenti.map(id=>WIZARD_AGENTS.find(a=>a.id===id)?.nome).join(", ")}) effettueranno una revisione finale prima della pubblicazione.
+                <strong>"{nome}"</strong> verrà salvata nella tua area <strong>In sviluppo</strong>.<br/>
+                Puoi testarla, modificarla e quando sei soddisfatto inviarla alla Redazione con un click.
               </div>
-              <div style={{background:"#f9f8f5",borderRadius:10,padding:"12px 16px",marginBottom:20,display:"flex",gap:8,alignItems:"center",justifyContent:"center"}}>
-                <span style={{fontSize:13,color:"#555",fontFamily:"Arial,sans-serif"}}>+10 punti al momento della pubblicazione</span>
+              <div style={{background:"#E3EEF9",borderRadius:10,padding:"12px 16px",marginBottom:20,display:"flex",gap:10,alignItems:"center"}}>
+                <span style={{fontSize:18}}>🔧</span>
+                <div style={{fontSize:12,color:"#378ADD",fontFamily:"Arial,sans-serif",lineHeight:1.5}}>
+                  <strong>Flusso:</strong> Bozza → Testa → Invia alla Redazione → Revisione → Pubblicata nel catalogo
+                </div>
               </div>
               <div style={{display:"flex",gap:10}}>
                 <button onClick={()=>setStep(3)} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>← Indietro</button>
-                <button onClick={pubblica} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:C.viridis,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>🚀 Pubblica skill</button>
+                <button onClick={salvaNelleBoze} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:C.caelum,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>💾 Salva in bozze</button>
               </div>
             </div>
           )}
@@ -1444,13 +1780,21 @@ export default function App(){
   const[showCreateSkill,setShowCreateSkill]=useState(false);
   const[showManifesto,setShowManifesto]=useState(false);
   const[showClassifica,setShowClassifica]=useState(false);
+  const[showDashboard,setShowDashboard]=useState(false);
   const[search,setSearch]=useState("");
   const[filterArea,setFilterArea]=useState("Tutte");
   const[filterComp,setFilterComp]=useState("Tutte");
   const[filterFreq,setFilterFreq]=useState("Tutte");
   const[activeSkill,setActiveSkill]=useState(null);
-  const[userSkills,setUserSkills]=useState([]);
+  const[favorites,setFavorites]=useState([]);
+  const[draftSkills,setDraftSkills]=useState([]);
+  const[threads,setThreads]=useState([
+    {id:1,titolo:"Benvenuto in xNunc",con:"Redazione",avatar:"R",avatarColor:C.aurum,
+     messaggi:[{id:1,da:"Redazione",testo:"Benvenuto nella piattaforma! Siamo qui per supportarti nella creazione e revisione delle skill. Quando sei pronto a inviare una skill per la pubblicazione, usala pure o scrivici direttamente qui.",data:"16 Mar 2026",letto:true}],
+     nonLetti:0}
+  ]);
   const[userProfile,setUserProfile]=useState({nome:"",cognome:"",studio:"",ruolo:"",email:"",cell:"",citta:"",albo:"",web:"",byokKey:""});
+  const nonLettiTot=threads.reduce((n,t)=>n+(t.nonLetti||0),0);
 
   const areas=useMemo(()=>["Tutte",...Array.from(new Set(SKILLS.map(s=>s.area)))],[]);
   const filtered=useMemo(()=>SKILLS.filter(s=>(filterArea==="Tutte"||s.area===filterArea)&&(filterComp==="Tutte"||s.complessita===filterComp)&&(filterFreq==="Tutte"||s.frequenza===filterFreq)&&matchSearch(s,search)),[search,filterArea,filterComp,filterFreq]);
@@ -1472,7 +1816,10 @@ export default function App(){
             {isLogged?(
               <div style={{display:"flex",alignItems:"center",gap:10}}>
                 <button onClick={()=>setShowCreateSkill(true)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${C.aurum}`,background:"transparent",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>
-                <div onClick={()=>setShowProfile(true)} title="Il tuo profilo" style={{width:32,height:32,borderRadius:"50%",background:C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"0 2px 8px #BA751744"}}><span style={{color:"#fff",fontSize:13,fontWeight:700}}>{userProfile.nome?userProfile.nome[0].toUpperCase():"G"}</span></div>
+                <div onClick={()=>setShowDashboard(true)} title="La tua dashboard" style={{position:"relative",width:32,height:32,borderRadius:"50%",background:C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"0 2px 8px #BA751744"}}>
+                  <span style={{color:"#fff",fontSize:13,fontWeight:700}}>{userProfile.nome?userProfile.nome[0].toUpperCase():"G"}</span>
+                  {nonLettiTot>0&&<div style={{position:"absolute",top:-4,right:-4,background:"#C0392B",color:"#fff",borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700}}>{nonLettiTot}</div>}
+                </div>
               </div>
             ):(
               <>
@@ -1560,7 +1907,7 @@ export default function App(){
               {Object.entries(sottoaree).map(([sa,skills])=>(
                 <div key={sa} style={{marginBottom:14}}>
                   <div style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6,paddingLeft:2,borderBottom:"1px solid #eae6de",paddingBottom:4}}>{sa} · {skills.length}</div>
-                  {skills.map(s=><SkillCard key={s.id} skill={s} isLogged={isLogged} onClick={()=>{if(!isLogged){setShowLogin(true);}else{setActiveSkill(s);}}}/>)}
+                  {skills.map(s=><SkillCard key={s.id} skill={s} isLogged={isLogged} favorites={favorites} setFavorites={isLogged?setFavorites:null} onClick={()=>{if(!isLogged){setShowLogin(true);}else{setActiveSkill(s);}}}/>)}
                 </div>
               ))}
             </div>
@@ -1588,7 +1935,20 @@ export default function App(){
       {showManifesto&&<ManifestoModal onClose={()=>setShowManifesto(false)}/>}
       {showClassifica&&<ClassificaModal onClose={()=>setShowClassifica(false)}/>}
       {showProfile&&<ProfileModal onClose={()=>setShowProfile(false)} userProfile={userProfile} setUserProfile={setUserProfile}/>}
-      {showCreateSkill&&<CreateSkillWizard onClose={()=>setShowCreateSkill(false)} userProfile={userProfile}/>}
+      {showDashboard&&<DashboardModal
+        onClose={()=>setShowDashboard(false)}
+        favorites={favorites} setFavorites={setFavorites}
+        draftSkills={draftSkills} setDraftSkills={setDraftSkills}
+        threads={threads} setThreads={setThreads}
+        userProfile={userProfile}
+        onTestSkill={s=>{setShowDashboard(false);setActiveSkill(s);}}
+        onOpenProfile={()=>{setShowDashboard(false);setShowProfile(true);}}
+      />}
+      {showCreateSkill&&<CreateSkillWizard
+        onClose={()=>setShowCreateSkill(false)}
+        userProfile={userProfile}
+        onSaveDraft={draft=>setDraftSkills(prev=>[...prev,draft])}
+      />}
       {activeSkill&&<SkillModal skill={activeSkill} isLogged={isLogged} onClose={()=>setActiveSkill(null)} onLoginRequest={()=>{setActiveSkill(null);setShowLogin(true);}}/>}
     </div>
   );
