@@ -232,6 +232,60 @@ Il documento è una bozza professionale da revisionare prima dell'uso. I campi [
 
 const normalize=s=>(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
 const truncate=(s,n)=>s&&s.length>n?s.slice(0,n)+"…":s;
+
+// ─── Markdown renderer inline ───────────────────────
+function parseLine(text){
+  const parts=[];const re=/(\*\*[^*\n]+\*\*|\*[^*\n]+\*|`[^`\n]+`)/g;
+  let last=0,m;
+  while((m=re.exec(text))!==null){
+    if(m.index>last)parts.push(text.slice(last,m.index));
+    const t=m[0];
+    if(t.startsWith("**"))parts.push(<strong key={m.index}>{t.slice(2,-2)}</strong>);
+    else if(t.startsWith("*"))parts.push(<em key={m.index}>{t.slice(1,-1)}</em>);
+    else parts.push(<code key={m.index} style={{background:"#f0ede8",padding:"1px 5px",borderRadius:3,fontSize:"0.92em",fontFamily:"monospace"}}>{t.slice(1,-1)}</code>);
+    last=m.index+t.length;
+  }
+  if(last<text.length)parts.push(text.slice(last));
+  return parts;
+}
+function RenderMd({text}){
+  if(!text)return null;
+  return text.split("\n").map((line,i)=>{
+    if(/^#{3}\s/.test(line))return<h3 key={i} style={{fontFamily:"Georgia,serif",fontSize:15,margin:"14px 0 4px",color:"#1a1a1a"}}>{line.slice(4)}</h3>;
+    if(/^#{2}\s/.test(line))return<h2 key={i} style={{fontFamily:"Georgia,serif",fontSize:17,margin:"16px 0 6px",color:"#1a1a1a"}}>{line.slice(3)}</h2>;
+    if(/^#{1}\s/.test(line))return<h1 key={i} style={{fontFamily:"Georgia,serif",fontSize:20,margin:"18px 0 8px",color:"#1a1a1a"}}>{line.slice(2)}</h1>;
+    if(line.trim()==="---")return<hr key={i} style={{border:"none",borderTop:"1px solid #e0dbd2",margin:"12px 0"}}/>;
+    if(/^>\s/.test(line))return<blockquote key={i} style={{borderLeft:"3px solid #ccc",margin:"8px 0",padding:"4px 12px",color:"#666",fontStyle:"italic",background:"#f9f8f5",borderRadius:"0 6px 6px 0"}}>{parseLine(line.slice(2))}</blockquote>;
+    if(!line.trim())return<div key={i} style={{height:8}}/>;
+    return<div key={i} style={{marginBottom:2,lineHeight:1.8}}>{parseLine(line)}</div>;
+  });
+}
+
+// ─── Download helpers ────────────────────────────────
+function mdToHtml(text){
+  return(text||"").split("\n").map(line=>{
+    if(/^### /.test(line))return`<h3>${line.slice(4)}</h3>`;
+    if(/^## /.test(line))return`<h2>${line.slice(3)}</h2>`;
+    if(/^# /.test(line))return`<h1>${line.slice(2)}</h1>`;
+    if(line.trim()==="---")return"<hr/>";
+    if(/^> /.test(line))return`<blockquote>${line.slice(2)}</blockquote>`;
+    if(!line.trim())return"<br/>";
+    return`<p>${line.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*]+)\*/g,"<em>$1</em>").replace(/`([^`]+)`/g,"<code>$1</code>")}</p>`;
+  }).join("");
+}
+function downloadAsWord(text,filename){
+  const html=`<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>body{font-family:Arial,sans-serif;font-size:11pt;margin:2cm;line-height:1.6}h1,h2,h3{font-family:Georgia,serif;color:#1a1a1a}hr{border:1px solid #ccc}blockquote{border-left:3px solid #ccc;padding-left:12px;color:#666;font-style:italic}code{background:#f0ede8;padding:1px 4px;font-family:monospace}p{margin:4px 0}</style></head><body>${mdToHtml(text)}</body></html>`;
+  const blob=new Blob(["\ufeff",html],{type:"application/msword"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download=filename+".doc";a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function downloadAsPDF(text,filename){
+  const win=window.open("","_blank","width=800,height=700");
+  if(!win)return;
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${filename}</title><style>body{font-family:Arial,sans-serif;font-size:11pt;margin:2cm;line-height:1.6;color:#222}h1,h2,h3{font-family:Georgia,serif}hr{border:1px solid #ccc}blockquote{border-left:3px solid #ccc;padding-left:12px;color:#666;font-style:italic}code{background:#f0ede8;padding:1px 4px;font-family:monospace}@media print{body{margin:1.5cm}}p{margin:4px 0}</style></head><body>${mdToHtml(text)}<script>window.onload=function(){window.print();}<\/script></body></html>`);
+  win.document.close();
+}
 function matchSearch(sk,q){if(!q)return true;const n=normalize(q);return[sk.nome,sk.descrizione,sk.area,sk.sotto_area,...(sk.tags||[])].some(f=>normalize(String(f||"")).includes(n));}
 
 function useStream(trigger,text,speed=18){
@@ -795,14 +849,17 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
                   <div style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em",marginBottom:8}}>
                     OUTPUT {running&&<span style={{color:C.aurum}}>· generazione…</span>}{done&&<span style={{color:C.viridis}}>· completato</span>}
                   </div>
-                  <div style={{background:"#f9f8f5",borderRadius:10,padding:"16px",border:"1px solid #e8e4dc",minHeight:80,fontFamily:"Arial,sans-serif",fontSize:13.5,lineHeight:1.8,color:"#222",whiteSpace:"pre-wrap"}}>
-                    {running?<span style={{color:C.gray}}>▌</span>:disp||<span style={{color:C.gray}}>▌</span>}
+                  <div style={{background:"#f9f8f5",borderRadius:10,padding:"18px 20px",border:"1px solid #e8e4dc",minHeight:80,fontFamily:"Arial,sans-serif",fontSize:13.5,color:"#222"}}>
+                    {running?<span style={{color:C.gray}}>▌</span>:<RenderMd text={disp}/>}
                   </div>
                   {done&&(
-                    <div style={{display:"flex",gap:8,marginTop:10,justifyContent:"flex-end"}}>
-                      <button onClick={()=>navigator.clipboard.writeText(DEMO_OUTPUT)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #ddd",background:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>📋 Copia</button>
-                      <button style={{padding:"6px 14px",borderRadius:6,border:"none",background:C.caelum,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>⬇ Word</button>
-                      <button style={{padding:"6px 14px",borderRadius:6,border:"none",background:C.viridis,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>⬇ PDF</button>
+                    <div style={{display:"flex",gap:8,marginTop:10,justifyContent:"space-between",alignItems:"center"}}>
+                      <span style={{fontSize:11,color:"#bbb",fontFamily:"Arial,sans-serif"}}>⚠️ Bozza AI — validare prima dell'uso professionale</span>
+                      <div style={{display:"flex",gap:8}}>
+                        <button onClick={()=>{navigator.clipboard.writeText(disp);}} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #ddd",background:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:5}}>🗐 Copia</button>
+                        <button onClick={()=>downloadAsWord(disp,skill.nome)} style={{padding:"6px 14px",borderRadius:6,border:"none",background:C.caelum,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700,display:"flex",alignItems:"center",gap:5}}>⬇ Word</button>
+                        <button onClick={()=>downloadAsPDF(disp,skill.nome)} style={{padding:"6px 14px",borderRadius:6,border:"none",background:C.viridis,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700,display:"flex",alignItems:"center",gap:5}}>⬇ PDF</button>
+                      </div>
                     </div>
                   )}
                 </div>
