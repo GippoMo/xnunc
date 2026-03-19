@@ -1006,75 +1006,195 @@ function ClassificaModal({onClose}){
 }
 
 // ─────────────────────────────────────────────────────
-// ProfileModal — profilo utente + BYOK API key
+// ProfileModal — profilo utente completo + BYOK API key
 // ─────────────────────────────────────────────────────
+const RUOLI_PROF=["Dottore Commercialista","Revisore Legale","Consulente del Lavoro","Avvocato tributarista","CFO / Responsabile Finance","Altro"];
+const TAB_PROF=["Dati personali","Studio & albo","Sicurezza & BYOK"];
+
+function ProfileField({label,required,children}){
+  return(
+    <div>
+      <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"flex",alignItems:"center",gap:4,marginBottom:5}}>
+        {label}{required&&<span style={{color:"#C0392B",fontSize:11}}>*</span>}
+      </label>
+      {children}
+    </div>
+  );
+}
+
 function ProfileModal({onClose,userProfile,setUserProfile}){
-  const[nome,setNome]=useState(userProfile.nome||"Giampiero Morales");
-  const[studio,setStudio]=useState(userProfile.studio||"BC&");
+  const[tab,setTab]=useState(0);
+  const[nome,setNome]=useState(userProfile.nome||"");
+  const[cognome,setCognome]=useState(userProfile.cognome||"");
+  const[email,setEmail]=useState(userProfile.email||"");
+  const[cell,setCell]=useState(userProfile.cell||"");
+  const[citta,setCitta]=useState(userProfile.citta||"");
+  const[studio,setStudio]=useState(userProfile.studio||"");
+  const[ruolo,setRuolo]=useState(userProfile.ruolo||"");
+  const[albo,setAlbo]=useState(userProfile.albo||"");
+  const[web,setWeb]=useState(userProfile.web||"");
   const[byok,setByok]=useState(userProfile.byokKey||"");
   const[showKey,setShowKey]=useState(false);
   const[saved,setSaved]=useState(false);
+  const[errors,setErrors]=useState({});
 
-  function salva(){
-    setUserProfile({nome,studio,byokKey:byok});
-    setSaved(true);
-    setTimeout(()=>setSaved(false),2000);
+  const inputStyle=(err)=>({width:"100%",padding:"9px 12px",borderRadius:8,border:`1.5px solid ${err?"#C0392B":"#ddd"}`,fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box"});
+  const nomeCompl=`${nome} ${cognome}`.trim();
+
+  function valida(){
+    const e={};
+    if(!email.trim())e.email="Campo obbligatorio";
+    else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))e.email="Email non valida";
+    setErrors(e);
+    return Object.keys(e).length===0;
   }
 
+  function salva(){
+    if(!valida())return;
+    setUserProfile({nome,cognome,email,cell,citta,studio,ruolo,albo,web,byokKey:byok});
+    setSaved(true);
+    setTimeout(()=>setSaved(false),2200);
+  }
+
+  const tabLabel=["👤 Personali","🏛 Studio","🔐 Sicurezza"];
+
   return(
-    <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:480,boxShadow:"0 8px 48px #0004",border:`2px solid ${C.aurum}`,overflow:"hidden"}}>
-        <div style={{background:C.nox,padding:"20px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div>
-            <div style={{fontSize:10,color:C.aurum,fontWeight:700,letterSpacing:"0.15em",fontFamily:"Arial,sans-serif",marginBottom:4}}>PROFILO</div>
-            <div style={{fontFamily:"Georgia,serif",fontSize:18,color:"#fff",fontWeight:700}}>Il tuo account</div>
+    <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px",overflowY:"auto"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:520,boxShadow:"0 8px 48px #0004",border:`2px solid ${C.aurum}`,marginTop:16,marginBottom:16,overflow:"hidden"}}>
+
+        {/* Header NOX */}
+        <div style={{background:C.nox,padding:"20px 24px 0",borderRadius:"14px 14px 0 0"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+            <div style={{display:"flex",alignItems:"center",gap:14}}>
+              <div style={{width:46,height:46,borderRadius:"50%",background:C.aurum,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 2px 12px ${C.aurum}55`,flexShrink:0}}>
+                <span style={{color:"#fff",fontSize:17,fontWeight:700}}>{nomeCompl?nomeCompl[0].toUpperCase():"?"}</span>
+              </div>
+              <div>
+                <div style={{fontFamily:"Georgia,serif",fontSize:16,color:"#fff",fontWeight:700,lineHeight:1.2}}>{nomeCompl||"Il tuo profilo"}</div>
+                <div style={{fontSize:11,color:"#888",fontFamily:"Arial,sans-serif",marginTop:2}}>{studio||email||"—"}</div>
+                <div style={{fontSize:9,color:C.viridis,fontFamily:"Arial,sans-serif",marginTop:3,fontWeight:700,letterSpacing:"0.08em"}}>● CONTRIBUTOR · 10 pt</div>
+              </div>
+            </div>
+            <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer",padding:"0 4px"}}>×</button>
           </div>
-          <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer"}}>×</button>
+          {/* Tab strip */}
+          <div style={{display:"flex",gap:0}}>
+            {tabLabel.map((t,i)=>(
+              <button key={i} onClick={()=>setTab(i)} style={{padding:"8px 14px",border:"none",cursor:"pointer",background:"transparent",color:tab===i?"#fff":"#666",fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:tab===i?700:400,borderBottom:tab===i?`2px solid ${C.aurum}`:"2px solid transparent"}}>
+                {t}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div style={{padding:"24px"}}>
-          {/* Avatar */}
-          <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:24,paddingBottom:20,borderBottom:"1px solid #f0ede8"}}>
-            <div style={{width:52,height:52,borderRadius:"50%",background:C.aurum,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 2px 12px ${C.aurum}44`}}>
-              <span style={{color:"#fff",fontSize:18,fontWeight:700}}>{nome?nome[0].toUpperCase():"G"}</span>
-            </div>
-            <div>
-              <div style={{fontFamily:"Arial,sans-serif",fontSize:14,fontWeight:700,color:C.nox}}>{nome||"—"}</div>
-              <div style={{fontSize:12,color:"#aaa",fontFamily:"Arial,sans-serif"}}>{studio||"—"}</div>
-              <div style={{fontSize:10,color:C.viridis,fontFamily:"Arial,sans-serif",marginTop:2,fontWeight:700}}>● CONTRIBUTOR · 10 pt</div>
-            </div>
-          </div>
+        <div style={{padding:"22px 24px"}}>
 
-          <div style={{display:"flex",flexDirection:"column",gap:14}}>
-            <div>
-              <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"block",marginBottom:5}}>NOME COMPLETO</label>
-              <input value={nome} onChange={e=>setNome(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box"}}/>
-            </div>
-            <div>
-              <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"block",marginBottom:5}}>STUDIO / ENTE</label>
-              <input value={studio} onChange={e=>setStudio(e.target.value)} style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box"}}/>
-            </div>
-
-            {/* BYOK */}
-            <div style={{background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1.5px solid #e8e4dc"}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-                <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em"}}>API KEY ANTHROPIC (BYOK)</label>
-                <span style={{fontSize:9,background:"#E3F7F0",color:C.viridis,padding:"2px 7px",borderRadius:4,fontWeight:700,fontFamily:"Arial,sans-serif"}}>OPZIONALE</span>
+          {/* TAB 0 — Dati personali */}
+          {tab===0&&(
+            <div style={{display:"flex",flexDirection:"column",gap:13}}>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                <ProfileField label="NOME">
+                  <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Giampiero" style={inputStyle()}/>
+                </ProfileField>
+                <ProfileField label="COGNOME">
+                  <input value={cognome} onChange={e=>setCognome(e.target.value)} placeholder="Morales" style={inputStyle()}/>
+                </ProfileField>
               </div>
-              <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif",marginBottom:8,lineHeight:1.5}}>Usa la tua chiave personale. I tuoi dati transitano sotto il tuo account Anthropic — mai sotto quello di xNunc. Salvata cifrata AES-256, mai visibile agli amministratori.</div>
-              <div style={{position:"relative"}}>
-                <input type={showKey?"text":"password"} value={byok} onChange={e=>setByok(e.target.value)}
-                  placeholder="sk-ant-api03-…"
-                  style={{width:"100%",padding:"9px 40px 9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"monospace",outline:"none",boxSizing:"border-box",letterSpacing:byok&&!showKey?"0.08em":"normal"}}/>
-                <button onClick={()=>setShowKey(v=>!v)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#aaa"}}>{showKey?"🙈":"👁"}</button>
+              <ProfileField label="EMAIL" required>
+                <input value={email} onChange={e=>{setEmail(e.target.value);setErrors(p=>({...p,email:undefined}));}} placeholder="nome@studio.it" type="email" style={inputStyle(errors.email)}/>
+                {errors.email&&<div style={{fontSize:10,color:"#C0392B",fontFamily:"Arial,sans-serif",marginTop:3}}>{errors.email}</div>}
+              </ProfileField>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                <ProfileField label="CELLULARE">
+                  <input value={cell} onChange={e=>setCell(e.target.value)} placeholder="+39 333 …" type="tel" style={inputStyle()}/>
+                </ProfileField>
+                <ProfileField label="CITTÀ">
+                  <input value={citta} onChange={e=>setCitta(e.target.value)} placeholder="Milano" style={inputStyle()}/>
+                </ProfileField>
               </div>
-              {byok&&<div style={{fontSize:10,color:C.viridis,fontFamily:"Arial,sans-serif",marginTop:5,fontWeight:700}}>✓ Modalità BYOK attiva</div>}
             </div>
-          </div>
+          )}
 
-          <div style={{display:"flex",gap:10,marginTop:20}}>
-            <button onClick={onClose} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>Annulla</button>
-            <button onClick={salva} style={{flex:2,padding:"9px",borderRadius:8,border:"none",background:saved?C.viridis:C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"background .2s"}}>{saved?"✓ Salvato":"Salva profilo"}</button>
+          {/* TAB 1 — Studio & albo */}
+          {tab===1&&(
+            <div style={{display:"flex",flexDirection:"column",gap:13}}>
+              <ProfileField label="STUDIO / ENTE DI APPARTENENZA">
+                <input value={studio} onChange={e=>setStudio(e.target.value)} placeholder="Studio Morales — BC&" style={inputStyle()}/>
+              </ProfileField>
+              <ProfileField label="QUALIFICA PROFESSIONALE">
+                <select value={ruolo} onChange={e=>setRuolo(e.target.value)} style={{...inputStyle(),background:"#fff",color:ruolo?"#111":"#aaa"}}>
+                  <option value="">Seleziona…</option>
+                  {RUOLI_PROF.map(r=><option key={r} value={r}>{r}</option>)}
+                </select>
+              </ProfileField>
+              <ProfileField label="N° ISCRIZIONE ALBO / ORDINE">
+                <input value={albo} onChange={e=>setAlbo(e.target.value)} placeholder="Es.: ODCEC Milano — 12345/A" style={inputStyle()}/>
+              </ProfileField>
+              <ProfileField label="SITO WEB / LINKEDIN">
+                <input value={web} onChange={e=>setWeb(e.target.value)} placeholder="https://…" type="url" style={inputStyle()}/>
+              </ProfileField>
+              <div style={{background:"#f9f8f5",borderRadius:8,padding:"10px 14px",display:"flex",gap:8,alignItems:"flex-start"}}>
+                <span style={{fontSize:13}}>ℹ️</span>
+                <span style={{fontSize:11,color:"#888",fontFamily:"Arial,sans-serif",lineHeight:1.5}}>Nome, studio e qualifica verranno mostrati pubblicamente nella classifica dei contributor. Email e cellulare rimangono privati.</span>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2 — Sicurezza & BYOK */}
+          {tab===2&&(
+            <div style={{display:"flex",flexDirection:"column",gap:14}}>
+              {/* Cambio password */}
+              <div style={{background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1px solid #eee"}}>
+                <div style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:8}}>CAMBIO PASSWORD</div>
+                <input placeholder="Password attuale" type="password" style={{...inputStyle(),marginBottom:8}}/>
+                <input placeholder="Nuova password" type="password" style={{...inputStyle(),marginBottom:8}}/>
+                <input placeholder="Conferma nuova password" type="password" style={inputStyle()}/>
+                <button style={{marginTop:10,padding:"7px 16px",borderRadius:8,border:"none",background:C.nox,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Aggiorna password</button>
+              </div>
+
+              {/* BYOK */}
+              <div style={{background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1.5px solid #e8e4dc"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                  <div style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em"}}>API KEY ANTHROPIC (BYOK)</div>
+                  <span style={{fontSize:9,background:"#E3F7F0",color:C.viridis,padding:"2px 7px",borderRadius:4,fontWeight:700,fontFamily:"Arial,sans-serif"}}>OPZIONALE</span>
+                </div>
+                <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif",marginBottom:10,lineHeight:1.6}}>Usa la tua chiave Anthropic personale. I dati transitano sotto il tuo account — mai sotto quello di xNunc. Salvata cifrata AES-256, <strong style={{color:"#666"}}>mai visibile agli amministratori</strong>.</div>
+                <div style={{position:"relative"}}>
+                  <input type={showKey?"text":"password"} value={byok} onChange={e=>setByok(e.target.value)}
+                    placeholder="sk-ant-api03-…"
+                    style={{width:"100%",padding:"9px 40px 9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"monospace",outline:"none",boxSizing:"border-box",letterSpacing:byok&&!showKey?"0.1em":"normal"}}/>
+                  <button onClick={()=>setShowKey(v=>!v)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#aaa"}}>{showKey?"🙈":"👁"}</button>
+                </div>
+                {byok?(
+                  <div style={{display:"flex",alignItems:"center",gap:6,marginTop:6}}>
+                    <div style={{width:6,height:6,borderRadius:"50%",background:C.viridis}}/>
+                    <span style={{fontSize:10,color:C.viridis,fontFamily:"Arial,sans-serif",fontWeight:700}}>Modalità BYOK attiva — esecuzioni a carico del tuo account Anthropic</span>
+                  </div>
+                ):(
+                  <div style={{fontSize:10,color:"#bbb",fontFamily:"Arial,sans-serif",marginTop:6}}>Senza chiave: esecuzioni a carico di xNunc (piano Free: 20/mese)</div>
+                )}
+                {byok&&(
+                  <button onClick={()=>setByok("")} style={{marginTop:8,padding:"5px 12px",borderRadius:6,border:"1px solid #fcc",background:"#fff5f5",color:"#C0392B",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>× Rimuovi chiave</button>
+                )}
+              </div>
+
+              {/* Gestione account */}
+              <div style={{borderTop:"1px solid #f0ede8",paddingTop:14}}>
+                <div style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:8}}>GESTIONE ACCOUNT</div>
+                <div style={{display:"flex",gap:10}}>
+                  <button style={{padding:"6px 14px",borderRadius:6,border:"1px solid #ddd",background:"#fff",color:"#555",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>📥 Esporta dati</button>
+                  <button style={{padding:"6px 14px",borderRadius:6,border:"1px solid #fcc",background:"#fff",color:"#C0392B",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Elimina account</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Footer pulsanti */}
+          <div style={{display:"flex",gap:10,marginTop:20,paddingTop:16,borderTop:"1px solid #f0ede8"}}>
+            <button onClick={onClose} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>Chiudi</button>
+            <button onClick={salva} style={{flex:2,padding:"9px",borderRadius:8,border:"none",background:saved?C.viridis:C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"background .3s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              {saved?<>✓ Salvato</>:<>Salva profilo</>}
+            </button>
           </div>
         </div>
       </div>
@@ -1330,7 +1450,7 @@ export default function App(){
   const[filterFreq,setFilterFreq]=useState("Tutte");
   const[activeSkill,setActiveSkill]=useState(null);
   const[userSkills,setUserSkills]=useState([]);
-  const[userProfile,setUserProfile]=useState({nome:"",studio:"",byokKey:""});
+  const[userProfile,setUserProfile]=useState({nome:"",cognome:"",studio:"",ruolo:"",email:"",cell:"",citta:"",albo:"",web:"",byokKey:""});
 
   const areas=useMemo(()=>["Tutte",...Array.from(new Set(SKILLS.map(s=>s.area)))],[]);
   const filtered=useMemo(()=>SKILLS.filter(s=>(filterArea==="Tutte"||s.area===filterArea)&&(filterComp==="Tutte"||s.complessita===filterComp)&&(filterFreq==="Tutte"||s.frequenza===filterFreq)&&matchSearch(s,search)),[search,filterArea,filterComp,filterFreq]);
