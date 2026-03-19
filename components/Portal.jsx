@@ -454,6 +454,8 @@ function DownloadPanel({skill,allSkills}){
 // ─────────────────────────────────────────────────────
 function LoginModal({onClose,onLogin}){
   const[tab,setTab]=useState("login");
+  const[email,setEmail]=useState("");
+  const[pw,setPw]=useState("");
   return(
     <div style={{position:"fixed",inset:0,background:"#00000077",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"100%",maxWidth:400,boxShadow:"0 8px 48px #0004",overflow:"hidden"}}>
@@ -467,16 +469,16 @@ function LoginModal({onClose,onLogin}){
           ))}
         </div>
         <div style={{padding:"24px"}}>
-          <button onClick={onLogin} style={{width:"100%",padding:"11px",borderRadius:8,border:"1.5px solid #ddd",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:600,marginBottom:10}}>
+          <button onClick={()=>onLogin("google@social.com")} style={{width:"100%",padding:"11px",borderRadius:8,border:"1.5px solid #ddd",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:600,marginBottom:10}}>
             <span style={{fontSize:18}}>G</span>Continua con Google
           </button>
-          <button onClick={onLogin} style={{width:"100%",padding:"11px",borderRadius:8,border:"none",background:"#0A66C2",display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:600,color:"#fff",marginBottom:16}}>
+          <button onClick={()=>onLogin("linkedin@social.com")} style={{width:"100%",padding:"11px",borderRadius:8,border:"none",background:"#0A66C2",display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:600,color:"#fff",marginBottom:16}}>
             <span style={{fontWeight:900}}>in</span>Continua con LinkedIn
           </button>
           <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}><div style={{flex:1,height:1,background:"#eee"}}/><span style={{fontSize:11,color:C.gray}}>oppure</span><div style={{flex:1,height:1,background:"#eee"}}/></div>
-          <input placeholder="Email" style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #ddd",marginBottom:8,fontSize:13,boxSizing:"border-box"}}/>
-          <input placeholder="Password" type="password" style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #ddd",marginBottom:12,fontSize:13,boxSizing:"border-box"}}/>
-          <button onClick={onLogin} style={{width:"100%",padding:"11px",borderRadius:8,border:"none",background:C.aurum,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>{tab==="login"?"Accedi":"Crea account"}</button>
+          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" type="email" style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #ddd",marginBottom:8,fontSize:13,boxSizing:"border-box",fontFamily:"Arial,sans-serif"}}/>
+          <input value={pw} onChange={e=>setPw(e.target.value)} placeholder="Password" type="password" style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #ddd",marginBottom:12,fontSize:13,boxSizing:"border-box",fontFamily:"Arial,sans-serif"}}/>
+          <button onClick={()=>onLogin(email)} style={{width:"100%",padding:"11px",borderRadius:8,border:"none",background:C.aurum,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>{tab==="login"?"Accedi":"Crea account"}</button>
           <p style={{textAlign:"center",fontSize:11,color:C.gray,marginTop:12}}>Accedendo accetti la Privacy Policy e i Termini di servizio.</p>
         </div>
       </div>
@@ -920,7 +922,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
 // ─────────────────────────────────────────────────────
 // Skill Card
 // ─────────────────────────────────────────────────────
-function SkillCard({skill,onClick,isLogged,favorites,setFavorites,compact}){
+function SkillCard({skill,onClick,isLogged,favorites,setFavorites,compact,isAdmin,onHide,onDelete}){
   const ac=AREA_COLOR[skill.area]||C.gray;
   const abg=AREA_BG[skill.area]||"#f5f3ee";
   const isFav=favorites&&favorites.includes(skill.id);
@@ -931,7 +933,20 @@ function SkillCard({skill,onClick,isLogged,favorites,setFavorites,compact}){
   }
   return(
     <div onClick={onClick} className="xnunc-card" style={{cursor:"pointer",border:"1.5px solid #e8e4dc",borderRadius:10,background:"#fff",padding:"14px 16px 12px",marginBottom:8,boxShadow:"0 1px 4px #0001",position:"relative"}}>
-      {isLogged&&setFavorites&&(
+      {/* Controlli admin — visibili solo alla Redazione */}
+      {isAdmin&&(
+        <div style={{position:"absolute",top:8,right:8,display:"flex",gap:4}} onClick={e=>e.stopPropagation()}>
+          <button onClick={onHide} title="Oscura skill (nascondila dal catalogo)"
+            style={{padding:"2px 8px",borderRadius:5,border:"1px solid #e8a800",background:"#fffbee",color:"#e8a800",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+            ⊘ Oscura
+          </button>
+          <button onClick={onDelete} title="Elimina definitivamente"
+            style={{padding:"2px 8px",borderRadius:5,border:"1px solid #fcc",background:"#fff5f5",color:"#C0392B",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+            🗑 Elimina
+          </button>
+        </div>
+      )}
+      {!isAdmin&&isLogged&&setFavorites&&(
         <button onClick={toggleFav} title={isFav?"Rimuovi dai preferiti":"Aggiungi ai preferiti"}
           style={{position:"absolute",top:9,right:10,background:"none",border:"none",cursor:"pointer",fontSize:15,color:isFav?C.aurum:"#ddd",lineHeight:1,padding:2,transition:"color .15s"}}>
           {isFav?"★":"☆"}
@@ -1894,6 +1909,151 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
   );
 }
 
+// ─────────────────────────────────────────────────────
+// AdminPanelModal — pannello di controllo Redazione
+// ─────────────────────────────────────────────────────
+function AdminPanelModal({onClose,hiddenSkills,setHiddenSkills,deletedSkills,setDraftSkills,draftSkills}){
+  const[tab,setTab]=useState("catalogo"); // "catalogo" | "revisione"
+  const[confirmDelete,setConfirmDelete]=useState(null); // skill id da eliminare definitivamente
+  const hiddenList=SKILLS.filter(s=>hiddenSkills.includes(s.id));
+  const inRevisione=(draftSkills||[]).filter(s=>s.stato==="in_revisione");
+
+  function approvaSkill(id){
+    setDraftSkills(prev=>prev.map(s=>s.id===id?{...s,stato:"approvata"}:s));
+  }
+  function rifiutaSkill(id,note){
+    setDraftSkills(prev=>prev.map(s=>s.id===id?{...s,stato:"bozza",noteRedazione:note||"Skill rifiutata. Rivedi e reinvia."}:s));
+  }
+  function ripristinaSkill(id){
+    setHiddenSkills(prev=>prev.filter(x=>x!==id));
+  }
+
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999,fontFamily:"Arial,sans-serif"}} onClick={onClose}>
+      <div style={{background:"#16180F",color:C.lux,borderRadius:16,width:"min(720px,96vw)",maxHeight:"88vh",overflowY:"auto",padding:0,boxShadow:"0 20px 60px rgba(0,0,0,0.7)",border:`1px solid ${C.aurum}44`}} onClick={e=>e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{padding:"20px 28px 16px",borderBottom:`1px solid ${C.aurum}33`,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:700,color:C.aurum}}>✦ Pannello Redazione</div>
+            <div style={{fontSize:12,color:"#888",marginTop:3}}>Gestione skill · solo per amministratori</div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer",lineHeight:1}}>✕</button>
+        </div>
+
+        {/* Stats strip */}
+        <div style={{display:"flex",gap:0,borderBottom:`1px solid ${C.aurum}22`}}>
+          {[
+            {n:SKILLS.length,label:"Skill totali",color:C.aurum},
+            {n:SKILLS.length-hiddenSkills.length-deletedSkills.length,label:"Visibili",color:C.viridis},
+            {n:hiddenSkills.length,label:"Oscurate",color:"#e8a800"},
+            {n:deletedSkills.length,label:"Eliminate",color:"#C0392B"},
+            {n:inRevisione.length,label:"In revisione",color:C.caelum},
+          ].map(({n,label,color})=>(
+            <div key={label} style={{flex:1,padding:"14px 10px",textAlign:"center",borderRight:`1px solid ${C.aurum}22`}}>
+              <div style={{fontSize:22,fontWeight:700,color,fontFamily:"Georgia,serif"}}>{n}</div>
+              <div style={{fontSize:10,color:"#888",marginTop:2}}>{label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Tabs */}
+        <div style={{display:"flex",borderBottom:`1px solid ${C.aurum}22`,padding:"0 20px"}}>
+          {[["catalogo","📋 Catalogo"],["revisione","🔍 Revisione skill"]].map(([id,label])=>(
+            <button key={id} onClick={()=>setTab(id)} style={{padding:"12px 16px",background:"none",border:"none",borderBottom:tab===id?`2px solid ${C.aurum}`:"2px solid transparent",color:tab===id?C.aurum:"#888",fontSize:13,fontWeight:tab===id?700:400,cursor:"pointer",fontFamily:"Arial,sans-serif",marginBottom:-1}}>
+              {label}{id==="revisione"&&inRevisione.length>0&&<span style={{marginLeft:6,background:C.caelum,color:"#fff",borderRadius:8,fontSize:9,padding:"1px 5px"}}>{inRevisione.length}</span>}
+            </button>
+          ))}
+        </div>
+
+        <div style={{padding:"20px 28px"}}>
+
+          {/* Tab: Catalogo - skill oscurate */}
+          {tab==="catalogo"&&(
+            <div>
+              <div style={{fontSize:14,fontWeight:700,color:C.lux,marginBottom:16}}>Skill oscurate — nascoste dal catalogo pubblico</div>
+              {hiddenList.length===0?(
+                <div style={{textAlign:"center",padding:"40px 0",color:"#666",fontSize:13}}>
+                  <div style={{fontSize:32,marginBottom:8}}>✓</div>
+                  Nessuna skill oscurata al momento.
+                </div>
+              ):(
+                <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                  {hiddenList.map(s=>(
+                    <div key={s.id} style={{background:"#1e2015",borderRadius:10,padding:"14px 16px",display:"flex",alignItems:"center",gap:12,border:"1px solid #333"}}>
+                      <div style={{flex:1}}>
+                        <div style={{fontWeight:700,fontSize:14,color:C.lux}}>{s.nome}</div>
+                        <div style={{fontSize:11,color:"#888",marginTop:2}}>{s.area} · {s.sotto_area}</div>
+                      </div>
+                      <button onClick={()=>ripristinaSkill(s.id)} style={{padding:"6px 14px",borderRadius:6,border:`1px solid ${C.viridis}`,background:"transparent",color:C.viridis,fontSize:12,fontWeight:700,cursor:"pointer"}}>↩ Ripristina</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {deletedSkills.length>0&&(
+                <div style={{marginTop:28}}>
+                  <div style={{fontSize:13,fontWeight:700,color:"#C0392B",marginBottom:12}}>Skill eliminate definitivamente ({deletedSkills.length})</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                    {SKILLS.filter(s=>deletedSkills.includes(s.id)).map(s=>(
+                      <div key={s.id} style={{background:"#1e1212",borderRadius:8,padding:"10px 14px",display:"flex",alignItems:"center",gap:10,border:"1px solid #3d1515"}}>
+                        <span style={{fontSize:18}}>🗑</span>
+                        <div style={{flex:1}}>
+                          <div style={{fontSize:13,color:"#c88",textDecoration:"line-through"}}>{s.nome}</div>
+                          <div style={{fontSize:10,color:"#666"}}>{s.area} · eliminata definitivamente</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tab: Revisione skill utenti */}
+          {tab==="revisione"&&(
+            <div>
+              <div style={{fontSize:14,fontWeight:700,color:C.lux,marginBottom:16}}>Skill inviate dagli utenti per la pubblicazione</div>
+              {inRevisione.length===0?(
+                <div style={{textAlign:"center",padding:"40px 0",color:"#666",fontSize:13}}>
+                  <div style={{fontSize:32,marginBottom:8}}>📭</div>
+                  Nessuna skill in attesa di revisione.
+                </div>
+              ):(
+                <div style={{display:"flex",flexDirection:"column",gap:14}}>
+                  {inRevisione.map(s=>(
+                    <div key={s.id} style={{background:"#1a1c14",borderRadius:12,border:"1px solid #2a3a2a",padding:"16px 18px"}}>
+                      <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:8}}>
+                        <div>
+                          <div style={{fontWeight:700,fontSize:15,color:C.lux}}>{s.nome||s.titolo||"Skill senza nome"}</div>
+                          <div style={{fontSize:11,color:"#888",marginTop:2}}>
+                            Inviata da: <span style={{color:C.aurum}}>{s.autore||"Utente anonimo"}</span> · {s.data||"Data sconosciuta"}
+                          </div>
+                        </div>
+                        <span style={{background:"#1a3040",color:C.caelum,borderRadius:6,fontSize:10,padding:"3px 8px",fontWeight:700}}>IN REVISIONE</span>
+                      </div>
+                      {s.descrizione&&<div style={{fontSize:12,color:"#aaa",marginBottom:12,lineHeight:1.5}}>{s.descrizione}</div>}
+                      {s.agenti&&s.agenti.length>0&&(
+                        <div style={{fontSize:11,color:"#888",marginBottom:10}}>
+                          Agenti: {s.agenti.map(a=><span key={a} style={{background:"#222",borderRadius:4,padding:"1px 6px",marginRight:4,color:"#aaa"}}>{a}</span>)}
+                        </div>
+                      )}
+                      <div style={{display:"flex",gap:8,marginTop:12}}>
+                        <button onClick={()=>approvaSkill(s.id)} style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:C.viridis,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>✓ Approva e pubblica</button>
+                        <button onClick={()=>rifiutaSkill(s.id,"Richiesta revisione: aggiungi maggiore dettaglio alle istruzioni.")} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid #C0392B`,background:"transparent",color:"#C0392B",fontSize:13,fontWeight:700,cursor:"pointer"}}>✕ Rimanda in bozza</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App(){
   const[isLogged,setIsLogged]=useState(false);
   // CSS globale per hover effects (inline style non supporta :hover)
@@ -1927,9 +2087,16 @@ export default function App(){
   ]);
   const[userProfile,setUserProfile]=useState({nome:"",cognome:"",studio:"",ruolo:"",email:"",cell:"",citta:"",albo:"",web:"",byokKey:""});
   const nonLettiTot=threads.reduce((n,t)=>n+(t.nonLetti||0),0);
+  const[isAdmin,setIsAdmin]=useState(false);
+  const[hiddenSkills,setHiddenSkills]=useState([]); // IDs oscurati (nascosti ma recuperabili)
+  const[deletedSkills,setDeletedSkills]=useState([]); // IDs eliminati definitivamente
+  const[showAdminPanel,setShowAdminPanel]=useState(false);
+
+  const ADMIN_EMAIL_CHECK="morales@bcand.it";
 
   const areas=useMemo(()=>["Tutte",...Array.from(new Set(SKILLS.map(s=>s.area)))],[]);
-  const filtered=useMemo(()=>SKILLS.filter(s=>(filterArea==="Tutte"||s.area===filterArea)&&(filterComp==="Tutte"||s.complessita===filterComp)&&(filterFreq==="Tutte"||s.frequenza===filterFreq)&&matchSearch(s,search)),[search,filterArea,filterComp,filterFreq]);
+  const visibleSkills=useMemo(()=>SKILLS.filter(s=>!hiddenSkills.includes(s.id)&&!deletedSkills.includes(s.id)),[hiddenSkills,deletedSkills]);
+  const filtered=useMemo(()=>visibleSkills.filter(s=>(filterArea==="Tutte"||s.area===filterArea)&&(filterComp==="Tutte"||s.complessita===filterComp)&&(filterFreq==="Tutte"||s.frequenza===filterFreq)&&matchSearch(s,search)),[visibleSkills,search,filterArea,filterComp,filterFreq]);
 
   return(
     <div style={{minHeight:"100vh",background:C.lux}}>
@@ -1947,8 +2114,15 @@ export default function App(){
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
             {isLogged?(
               <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <button onClick={()=>setShowCreateSkill(true)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${C.aurum}`,background:"transparent",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>
-                <div onClick={()=>setShowDashboard(true)} title="La tua dashboard" style={{position:"relative",width:32,height:32,borderRadius:"50%",background:C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"0 2px 8px #BA751744"}}>
+                {isAdmin&&(
+                  <button onClick={()=>setShowAdminPanel(true)}
+                    title="Pannello Redazione — gestisci skill"
+                    style={{padding:"5px 12px",borderRadius:6,border:"1px solid #e8a800",background:"#fffbee",color:"#b8860b",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:4}}>
+                    ✦ Redazione {hiddenSkills.length>0&&<span style={{background:"#e8a800",color:"#fff",borderRadius:8,fontSize:9,padding:"0 5px"}}>{hiddenSkills.length} oscurate</span>}
+                  </button>
+                )}
+                {!isAdmin&&<button onClick={()=>setShowCreateSkill(true)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${C.aurum}`,background:"transparent",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>}
+                <div onClick={()=>setShowDashboard(true)} title="La tua dashboard" style={{position:"relative",width:32,height:32,borderRadius:"50%",background:isAdmin?"#b8860b":C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"0 2px 8px #BA751744"}}>
                   <span style={{color:"#fff",fontSize:13,fontWeight:700}}>{userProfile.nome?userProfile.nome[0].toUpperCase():"G"}</span>
                   {nonLettiTot>0&&<div style={{position:"absolute",top:-4,right:-4,background:"#C0392B",color:"#fff",borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700}}>{nonLettiTot}</div>}
                 </div>
@@ -2039,7 +2213,7 @@ export default function App(){
               {Object.entries(sottoaree).map(([sa,skills])=>(
                 <div key={sa} style={{marginBottom:14}}>
                   <div style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6,paddingLeft:2,borderBottom:"1px solid #eae6de",paddingBottom:4}}>{sa} · {skills.length}</div>
-                  {skills.map(s=><SkillCard key={s.id} skill={s} isLogged={isLogged} favorites={favorites} setFavorites={isLogged?setFavorites:null} onClick={()=>{if(!isLogged){setShowLogin(true);}else{setActiveSkill(s);}}}/>)}
+                  {skills.map(s=><SkillCard key={s.id} skill={s} isLogged={isLogged} favorites={favorites} setFavorites={isLogged?setFavorites:null} isAdmin={isAdmin} onHide={()=>setHiddenSkills(prev=>[...prev,s.id])} onDelete={()=>setDeletedSkills(prev=>[...prev,s.id])} onClick={()=>{if(!isLogged){setShowLogin(true);}else{setActiveSkill(s);}}}/>)}
                 </div>
               ))}
             </div>
@@ -2062,7 +2236,7 @@ export default function App(){
         </div>
       </div>
 
-      {showLogin&&<LoginModal onClose={()=>setShowLogin(false)} onLogin={()=>{setIsLogged(true);setShowLogin(false);}}/>}
+      {showLogin&&<LoginModal onClose={()=>setShowLogin(false)} onLogin={(email)=>{setIsLogged(true);setIsAdmin(email===ADMIN_EMAIL_CHECK);setShowLogin(false);}}/>}
       {showFAQ&&<FAQModal onClose={()=>setShowFAQ(false)}/>}
       {showManifesto&&<ManifestoModal onClose={()=>setShowManifesto(false)}/>}
       {showClassifica&&<ClassificaModal onClose={()=>setShowClassifica(false)}/>}
@@ -2083,6 +2257,12 @@ export default function App(){
         onSaveDraft={draft=>setDraftSkills(prev=>[...prev,draft])}
       />}
       {activeSkill&&<SkillModal skill={activeSkill} isLogged={isLogged} onClose={()=>setActiveSkill(null)} onLoginRequest={()=>{setActiveSkill(null);setShowLogin(true);}}/>}
+      {showAdminPanel&&<AdminPanelModal
+        onClose={()=>setShowAdminPanel(false)}
+        hiddenSkills={hiddenSkills} setHiddenSkills={setHiddenSkills}
+        deletedSkills={deletedSkills}
+        draftSkills={draftSkills} setDraftSkills={setDraftSkills}
+      />}
     </div>
   );
 }
