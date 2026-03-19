@@ -651,18 +651,50 @@ function WACCTool(){
 // ─────────────────────────────────────────────────────
 // Skill Modal
 // ─────────────────────────────────────────────────────
+// Icone tipo file per gli allegati
+const FILE_ICON={"pdf":"📄","doc":"📝","docx":"📝","xls":"📊","xlsx":"📊","csv":"📊","txt":"📃","png":"🖼","jpg":"🖼","jpeg":"🖼","default":"📎"};
+const FILE_ACCEPT=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg";
+function fileExt(name){return(name.split(".").pop()||"").toLowerCase();}
+function fileSize(bytes){return bytes<1024*1024?`${(bytes/1024).toFixed(0)} KB`:`${(bytes/1024/1024).toFixed(1)} MB`;}
+
 function SkillModal({skill,isLogged,onClose,onLoginRequest}){
   const[tab,setTab]=useState("usa");
   const[input,setInput]=useState("");
+  const[attachments,setAttachments]=useState([]); // [{name,size,type,content,ext}]
   const[running,setRunning]=useState(false);
   const[trigger,setTrigger]=useState(null);
   const[copied,setCopied]=useState(false);
   const outputRef=useRef(null);
+  const fileInputRef=useRef(null);
   const{disp,done}=useStream(trigger,DEMO_OUTPUT,20);
   const ac=AREA_COLOR[skill.area]||C.gray;
   const abg=AREA_BG[skill.area]||"#f5f3ee";
+  const canExec=input.trim().length>0||attachments.length>0;
 
-  function execSkill(){if(!isLogged){onLoginRequest();return;}if(!input.trim())return;setRunning(true);setTrigger(null);setTimeout(()=>{setRunning(false);setTrigger(Date.now());setTimeout(()=>outputRef.current?.scrollIntoView({behavior:"smooth"}),100);},1400);}
+  function handleFiles(e){
+    const files=Array.from(e.target.files||[]);
+    files.forEach(file=>{
+      const ext=fileExt(file.name);
+      const isText=["txt","md","csv"].includes(ext);
+      if(isText){
+        const reader=new FileReader();
+        reader.onload=ev=>setAttachments(prev=>[...prev,{name:file.name,size:file.size,ext,content:ev.target.result}]);
+        reader.readAsText(file);
+      } else {
+        setAttachments(prev=>[...prev,{name:file.name,size:file.size,ext,content:null}]);
+      }
+    });
+    e.target.value="";
+  }
+
+  function removeAttachment(idx){setAttachments(prev=>prev.filter((_,i)=>i!==idx));}
+
+  function execSkill(){
+    if(!isLogged){onLoginRequest();return;}
+    if(!canExec)return;
+    setRunning(true);setTrigger(null);
+    setTimeout(()=>{setRunning(false);setTrigger(Date.now());setTimeout(()=>outputRef.current?.scrollIntoView({behavior:"smooth"}),100);},1400);
+  }
   function copyPrompt(){navigator.clipboard.writeText(PROMPTS[skill.id]||"").then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}
 
   const tabs=["usa","dettagli","storia","miglioramenti"];
@@ -707,11 +739,38 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
               <label style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em",display:"block",marginBottom:5}}>INPUT RICHIESTO</label>
               <div style={{background:abg,borderRadius:8,padding:"9px 13px",borderLeft:`3px solid ${ac}`,marginBottom:10,fontSize:13,color:"#555",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{skill.input_atteso}</div>
               <textarea value={input} onChange={e=>setInput(e.target.value)} placeholder={`Es.: ${skill.input_atteso.substring(0,60)}${skill.input_atteso.length>60?"...":""}`} rows={5}
-                style={{width:"100%",padding:"11px",borderRadius:8,border:`1.5px solid ${input.trim()?"#ccc":"#eee"}`,fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box",background:input.trim()?"#fff":"#fafaf8"}}/>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8,marginBottom:20}}>
-                <span style={{fontSize:11,color:C.gray,fontFamily:"Arial,sans-serif"}}>{input.length} caratteri</span>
-                <button onClick={execSkill} disabled={running||(isLogged&&!input.trim())}
-                  style={{padding:"9px 22px",borderRadius:8,border:"none",background:running?"#ccc":(isLogged&&!input.trim()?"#eee":ac),color:(isLogged&&!input.trim())?"#aaa":"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:8}}>
+                style={{width:"100%",padding:"11px",borderRadius:8,border:`1.5px solid ${input.trim()||attachments.length>0?"#ccc":"#eee"}`,fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box",background:"#fff"}}/>
+
+              {/* Allegati chips */}
+              {attachments.length>0&&(
+                <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}>
+                  {attachments.map((f,i)=>(
+                    <div key={i} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px 4px 8px",borderRadius:20,background:abg,border:`1px solid ${ac}44`,fontSize:12,fontFamily:"Arial,sans-serif",color:"#444"}}>
+                      <span style={{fontSize:14}}>{FILE_ICON[f.ext]||FILE_ICON.default}</span>
+                      <span style={{maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
+                      <span style={{color:"#aaa",fontSize:10}}>· {fileSize(f.size)}</span>
+                      <button onClick={()=>removeAttachment(i)} style={{background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:14,lineHeight:1,padding:"0 0 0 2px"}} title="Rimuovi">×</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Barra inferiore: allega + caratteri + esegui */}
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10,marginBottom:20,gap:8}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <input ref={fileInputRef} type="file" multiple accept={FILE_ACCEPT} onChange={handleFiles} style={{display:"none"}}/>
+                  <button onClick={()=>fileInputRef.current?.click()}
+                    title="Allega un documento (PDF, Word, Excel, CSV, immagine)"
+                    style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:7,border:"1.5px dashed #ccc",background:"#fafaf8",color:"#888",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"all .15s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor=ac;e.currentTarget.style.color=ac;}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor="#ccc";e.currentTarget.style.color="#888";}}>
+                    <span style={{fontSize:15}}>📎</span> Allega documento
+                    {attachments.length>0&&<span style={{background:ac,color:"#fff",borderRadius:10,fontSize:10,padding:"0 5px",fontWeight:700}}>{attachments.length}</span>}
+                  </button>
+                  <span style={{fontSize:11,color:"#ccc",fontFamily:"Arial,sans-serif"}}>{input.length>0?`${input.length} car.`:""}</span>
+                </div>
+                <button onClick={execSkill} disabled={running||(isLogged&&!canExec)}
+                  style={{padding:"9px 22px",borderRadius:8,border:"none",background:running?"#ccc":(isLogged&&!canExec?"#eee":ac),color:(isLogged&&!canExec)?"#aaa":"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:8,whiteSpace:"nowrap"}}>
                   {running?<><span style={{display:"inline-block",animation:"spin 1s linear infinite"}}>⟳</span>Elaborazione…</>:!isLogged?"🔒 Accedi per eseguire":"▶ Esegui skill"}
                 </button>
               </div>
