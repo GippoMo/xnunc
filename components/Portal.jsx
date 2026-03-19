@@ -671,9 +671,10 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
   const abg=AREA_BG[skill.area]||"#f5f3ee";
   const canExec=input.trim().length>0||attachments.length>0;
 
-  function handleFiles(e){
-    const files=Array.from(e.target.files||[]);
-    files.forEach(file=>{
+  const[dragging,setDragging]=useState(false);
+
+  function processFiles(files){
+    Array.from(files).forEach(file=>{
       const ext=fileExt(file.name);
       const isText=["txt","md","csv"].includes(ext);
       if(isText){
@@ -684,9 +685,11 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
         setAttachments(prev=>[...prev,{name:file.name,size:file.size,ext,content:null}]);
       }
     });
-    e.target.value="";
   }
-
+  function handleFiles(e){processFiles(e.target.files);e.target.value="";}
+  function handleDrop(e){e.preventDefault();setDragging(false);processFiles(e.dataTransfer.files);}
+  function handleDragOver(e){e.preventDefault();setDragging(true);}
+  function handleDragLeave(e){if(!e.currentTarget.contains(e.relatedTarget))setDragging(false);}
   function removeAttachment(idx){setAttachments(prev=>prev.filter((_,i)=>i!==idx));}
 
   function execSkill(){
@@ -738,29 +741,42 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
               </div>
               <label style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em",display:"block",marginBottom:5}}>INPUT RICHIESTO</label>
               <div style={{background:abg,borderRadius:8,padding:"9px 13px",borderLeft:`3px solid ${ac}`,marginBottom:10,fontSize:13,color:"#555",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{skill.input_atteso}</div>
-              <textarea value={input} onChange={e=>setInput(e.target.value)} placeholder={`Es.: ${skill.input_atteso.substring(0,60)}${skill.input_atteso.length>60?"...":""}`} rows={5}
-                style={{width:"100%",padding:"11px",borderRadius:8,border:`1.5px solid ${input.trim()||attachments.length>0?"#ccc":"#eee"}`,fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box",background:"#fff"}}/>
-
-              {/* Allegati chips */}
-              {attachments.length>0&&(
-                <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8}}>
-                  {attachments.map((f,i)=>(
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px 4px 8px",borderRadius:20,background:abg,border:`1px solid ${ac}44`,fontSize:12,fontFamily:"Arial,sans-serif",color:"#444"}}>
-                      <span style={{fontSize:14}}>{FILE_ICON[f.ext]||FILE_ICON.default}</span>
-                      <span style={{maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
-                      <span style={{color:"#aaa",fontSize:10}}>· {fileSize(f.size)}</span>
-                      <button onClick={()=>removeAttachment(i)} style={{background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:14,lineHeight:1,padding:"0 0 0 2px"}} title="Rimuovi">×</button>
+              {/* Drop zone */}
+              <div
+                onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}
+                style={{position:"relative",borderRadius:10,border:`2px ${dragging?"solid":"dashed"} ${dragging?ac:"transparent"}`,background:dragging?`${ac}08`:"transparent",transition:"all .15s",padding:dragging?"2px":0}}>
+                {dragging&&(
+                  <div style={{position:"absolute",inset:0,borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",background:`${ac}11`,zIndex:2,pointerEvents:"none"}}>
+                    <div style={{textAlign:"center"}}>
+                      <div style={{fontSize:32,marginBottom:4}}>📂</div>
+                      <div style={{fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:700,color:ac}}>Rilascia per allegare</div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                )}
+                <textarea value={input} onChange={e=>setInput(e.target.value)} placeholder={`Es.: ${skill.input_atteso.substring(0,60)}${skill.input_atteso.length>60?"...":""}`} rows={5}
+                  style={{width:"100%",padding:"11px",borderRadius:8,border:`1.5px solid ${input.trim()||attachments.length>0?"#ccc":"#eee"}`,fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box",background:"#fff"}}/>
+
+                {/* Allegati chips */}
+                {attachments.length>0&&(
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8,padding:"0 2px"}}>
+                    {attachments.map((f,i)=>(
+                      <div key={i} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px 4px 8px",borderRadius:20,background:abg,border:`1px solid ${ac}44`,fontSize:12,fontFamily:"Arial,sans-serif",color:"#444"}}>
+                        <span style={{fontSize:14}}>{FILE_ICON[f.ext]||FILE_ICON.default}</span>
+                        <span style={{maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
+                        <span style={{color:"#aaa",fontSize:10}}>· {fileSize(f.size)}</span>
+                        <button onClick={()=>removeAttachment(i)} style={{background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:14,lineHeight:1,padding:"0 0 0 2px"}} title="Rimuovi">×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Barra inferiore: allega + caratteri + esegui */}
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:10,marginBottom:20,gap:8}}>
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
                   <input ref={fileInputRef} type="file" multiple accept={FILE_ACCEPT} onChange={handleFiles} style={{display:"none"}}/>
                   <button onClick={()=>fileInputRef.current?.click()}
-                    title="Allega un documento (PDF, Word, Excel, CSV, immagine)"
+                    title="Allega un documento oppure trascina il file direttamente qui (PDF, Word, Excel, CSV, immagine)"
                     style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:7,border:"1.5px dashed #ccc",background:"#fafaf8",color:"#888",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"all .15s"}}
                     onMouseEnter={e=>{e.currentTarget.style.borderColor=ac;e.currentTarget.style.color=ac;}}
                     onMouseLeave={e=>{e.currentTarget.style.borderColor="#ccc";e.currentTarget.style.color="#888";}}>
