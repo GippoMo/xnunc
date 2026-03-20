@@ -709,7 +709,80 @@ function WACCTool(){
 // ─────────────────────────────────────────────────────
 // Icone tipo file per gli allegati
 const FILE_ICON={"pdf":"📄","doc":"📝","docx":"📝","xls":"📊","xlsx":"📊","csv":"📊","txt":"📃","png":"🖼","jpg":"🖼","jpeg":"🖼","default":"📎"};
-const FILE_ACCEPT=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg";
+const FILE_ACCEPT=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md";
+
+// ─────────────────────────────────────────────────────
+// Client-side text extraction — i file non lasciano mai il browser
+// ─────────────────────────────────────────────────────
+function loadScript(src){
+  return new Promise((resolve,reject)=>{
+    if(typeof document==="undefined"||document.querySelector(`script[src="${src}"]`)){resolve();return;}
+    const s=document.createElement("script");
+    s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error("Script load failed: "+src));
+    document.head.appendChild(s);
+  });
+}
+
+async function extractTextFromFile(file){
+  const ext=fileExt(file.name);
+
+  // ── Testo semplice ──────────────────────────────────
+  if(["txt","md","csv"].includes(ext)){
+    return new Promise((resolve,reject)=>{
+      const r=new FileReader();
+      r.onload=e=>resolve(e.target.result);
+      r.onerror=reject;
+      r.readAsText(file);
+    });
+  }
+
+  // ── PDF → PDF.js ────────────────────────────────────
+  if(ext==="pdf"){
+    if(!window.pdfjsLib){
+      await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc=
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+    const buf=await file.arrayBuffer();
+    const pdf=await window.pdfjsLib.getDocument({data:buf}).promise;
+    let text="";
+    for(let i=1;i<=pdf.numPages;i++){
+      const page=await pdf.getPage(i);
+      const content=await page.getTextContent();
+      text+=content.items.map(it=>it.str).join(" ")+"\n";
+    }
+    return text.trim()||null;
+  }
+
+  // ── DOCX → Mammoth ──────────────────────────────────
+  if(["doc","docx"].includes(ext)){
+    if(!window.mammoth){
+      await loadScript("https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js");
+    }
+    const buf=await file.arrayBuffer();
+    const result=await window.mammoth.extractRawText({arrayBuffer:buf});
+    return result.value.trim()||null;
+  }
+
+  // ── XLSX / XLS → SheetJS ────────────────────────────
+  if(["xls","xlsx"].includes(ext)){
+    if(!window.XLSX){
+      await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+    }
+    const buf=await file.arrayBuffer();
+    const wb=window.XLSX.read(buf,{type:"array"});
+    let text="";
+    wb.SheetNames.forEach(name=>{
+      text+=`[Foglio: ${name}]\n`;
+      text+=window.XLSX.utils.sheet_to_csv(wb.Sheets[name]);
+      text+="\n\n";
+    });
+    return text.trim()||null;
+  }
+
+  // Formato non supportato per estrazione testo
+  return null;
+}
 
 // ─────────────────────────────────────────────────────
 // Agenti interni xNunc — motore sotto il cofano
@@ -780,28 +853,30 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile}){
   const fileInputRef=useRef(null);
   const ac=AREA_COLOR[skill.area]||C.gray;
   const abg=AREA_BG[skill.area]||"#f5f3ee";
-  const canExec=input.trim().length>0||attachments.length>0;
+  const anyLoading=attachments.some(a=>a.loading);
+  const canExec=(input.trim().length>0||attachments.length>0)&&!anyLoading;
 
   const[dragging,setDragging]=useState(false);
 
-  function processFiles(files){
-    Array.from(files).forEach(file=>{
+  async function processFiles(files){
+    for(const file of Array.from(files)){
       const ext=fileExt(file.name);
-      const isText=["txt","md","csv"].includes(ext);
-      if(isText){
-        const reader=new FileReader();
-        reader.onload=ev=>setAttachments(prev=>[...prev,{name:file.name,size:file.size,ext,content:ev.target.result}]);
-        reader.readAsText(file);
-      } else {
-        setAttachments(prev=>[...prev,{name:file.name,size:file.size,ext,content:null}]);
+      const uid=Date.now()+Math.random();
+      // Aggiungi subito il placeholder con stato "caricamento"
+      setAttachments(prev=>[...prev,{uid,name:file.name,size:file.size,ext,content:null,loading:true,error:false}]);
+      try{
+        const content=await extractTextFromFile(file);
+        setAttachments(prev=>prev.map(a=>a.uid===uid?{...a,content,loading:false}:a));
+      }catch(err){
+        setAttachments(prev=>prev.map(a=>a.uid===uid?{...a,loading:false,error:true}:a));
       }
-    });
+    }
   }
   function handleFiles(e){processFiles(e.target.files);e.target.value="";}
   function handleDrop(e){e.preventDefault();setDragging(false);processFiles(e.dataTransfer.files);}
   function handleDragOver(e){e.preventDefault();setDragging(true);}
   function handleDragLeave(e){if(!e.currentTarget.contains(e.relatedTarget))setDragging(false);}
-  function removeAttachment(idx){setAttachments(prev=>prev.filter((_,i)=>i!==idx));}
+  function removeAttachment(uid){setAttachments(prev=>prev.filter(a=>a.uid!==uid));}
 
   async function execSkill(){
     if(!isLogged){onLoginRequest();return;}
@@ -880,12 +955,14 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile}){
                 {/* Allegati chips */}
                 {attachments.length>0&&(
                   <div style={{display:"flex",flexWrap:"wrap",gap:6,marginTop:8,padding:"0 2px"}}>
-                    {attachments.map((f,i)=>(
-                      <div key={i} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px 4px 8px",borderRadius:20,background:abg,border:`1px solid ${ac}44`,fontSize:12,fontFamily:"Arial,sans-serif",color:"#444"}}>
-                        <span style={{fontSize:14}}>{FILE_ICON[f.ext]||FILE_ICON.default}</span>
+                    {attachments.map((f)=>(
+                      <div key={f.uid} style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px 4px 8px",borderRadius:20,background:f.error?"#fff0f0":f.loading?"#f5f5f5":f.content?abg:"#fffbf0",border:`1px solid ${f.error?"#ffaaaa":f.loading?"#ddd":f.content?ac+"44":"#e8a80066"}`,fontSize:12,fontFamily:"Arial,sans-serif",color:"#444"}}>
+                        <span style={{fontSize:14}}>{f.loading?"⏳":f.error?"⚠️":(FILE_ICON[f.ext]||FILE_ICON.default)}</span>
                         <span style={{maxWidth:160,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.name}</span>
-                        <span style={{color:"#aaa",fontSize:10}}>· {fileSize(f.size)}</span>
-                        <button onClick={()=>removeAttachment(i)} style={{background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:14,lineHeight:1,padding:"0 0 0 2px"}} title="Rimuovi">×</button>
+                        <span style={{color:"#aaa",fontSize:10}}>
+                          {f.loading?"· lettura…":f.error?"· errore lettura":f.content?`· ${fileSize(f.size)} ✓`:`· ${fileSize(f.size)} (testo non estraibile)`}
+                        </span>
+                        <button onClick={()=>removeAttachment(f.uid)} style={{background:"none",border:"none",cursor:"pointer",color:"#aaa",fontSize:14,lineHeight:1,padding:"0 0 0 2px"}} title="Rimuovi">×</button>
                       </div>
                     ))}
                   </div>
@@ -897,7 +974,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile}){
                 <div style={{display:"flex",alignItems:"center",gap:10}}>
                   <input ref={fileInputRef} type="file" multiple accept={FILE_ACCEPT} onChange={handleFiles} style={{display:"none"}}/>
                   <button onClick={()=>fileInputRef.current?.click()}
-                    title="Allega un documento oppure trascina il file direttamente qui (PDF, Word, Excel, CSV, immagine)"
+                    title="Allega un documento — il testo viene estratto nel browser, il file non lascia mai il tuo dispositivo (PDF, Word, Excel, CSV, TXT)"
                     style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:7,border:"1.5px dashed #ccc",background:"#fafaf8",color:"#888",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"all .15s"}}
                     onMouseEnter={e=>{e.currentTarget.style.borderColor=ac;e.currentTarget.style.color=ac;}}
                     onMouseLeave={e=>{e.currentTarget.style.borderColor="#ccc";e.currentTarget.style.color="#888";}}>
@@ -1015,7 +1092,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile}){
 // ─────────────────────────────────────────────────────
 // Skill Card
 // ─────────────────────────────────────────────────────
-function SkillCard({skill,onClick,isLogged,favorites,setFavorites,compact,isAdmin,onHide,onDelete}){
+function SkillCard({skill,onClick,isLogged,favorites,setFavorites,compact,isAdmin,isHidden,onHide,onUnhide,onDelete}){
   const ac=AREA_COLOR[skill.area]||C.gray;
   const abg=AREA_BG[skill.area]||"#f5f3ee";
   const isFav=favorites&&favorites.includes(skill.id);
@@ -1025,14 +1102,24 @@ function SkillCard({skill,onClick,isLogged,favorites,setFavorites,compact,isAdmi
     setFavorites(prev=>isFav?prev.filter(id=>id!==skill.id):[...prev,skill.id]);
   }
   return(
-    <div onClick={onClick} className="xnunc-card" style={{cursor:"pointer",border:"1.5px solid #e8e4dc",borderRadius:10,background:"#fff",padding:"14px 16px 12px",marginBottom:8,boxShadow:"0 1px 4px #0001",position:"relative"}}>
+    <div onClick={onClick} className="xnunc-card" style={{cursor:"pointer",border:`1.5px solid ${isHidden?"#e8a80066":"#e8e4dc"}`,borderRadius:10,background:isHidden?"#fffbf0":"#fff",padding:"14px 16px 12px",marginBottom:8,boxShadow:"0 1px 4px #0001",position:"relative",opacity:isHidden?0.72:1}}>
       {/* Controlli admin — visibili solo alla Redazione */}
       {isAdmin&&(
         <div style={{position:"absolute",top:8,right:8,display:"flex",gap:4}} onClick={e=>e.stopPropagation()}>
-          <button onClick={onHide} title="Oscura skill (nascondila dal catalogo)"
-            style={{padding:"2px 8px",borderRadius:5,border:"1px solid #e8a800",background:"#fffbee",color:"#e8a800",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
-            ⊘ Oscura
-          </button>
+          {isHidden?(
+            <>
+              <span style={{fontSize:9,color:"#e8a800",fontFamily:"Arial,sans-serif",fontWeight:700,alignSelf:"center",marginRight:2}}>⊘ OSCURATA</span>
+              <button onClick={onUnhide} title="Ripristina nel catalogo"
+                style={{padding:"2px 8px",borderRadius:5,border:"1px solid #1D9E75",background:"#e3f7f0",color:"#1D9E75",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+                ↩ Ripristina
+              </button>
+            </>
+          ):(
+            <button onClick={onHide} title="Oscura skill (nascondila dal catalogo)"
+              style={{padding:"2px 8px",borderRadius:5,border:"1px solid #e8a800",background:"#fffbee",color:"#e8a800",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+              ⊘ Oscura
+            </button>
+          )}
           <button onClick={onDelete} title="Elimina definitivamente"
             style={{padding:"2px 8px",borderRadius:5,border:"1px solid #fcc",background:"#fff5f5",color:"#C0392B",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
             🗑 Elimina
@@ -1547,7 +1634,7 @@ async function notificaEmail({destinatario,oggetto,corpo}){
 const STATO_LABEL={bozza:"🔧 Bozza",in_revisione:"⏳ In revisione",approvata:"✓ Approvata"};
 const STATO_COLOR={bozza:C.caelum,in_revisione:C.aurum,approvata:C.viridis};
 
-function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,onTestSkill,onOpenProfile,onCreateSkill}){
+function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,onTestSkill,onOpenProfile,onCreateSkill,isAdmin}){
   const[tab,setTab]=useState(0);
   const[activeThread,setActiveThread]=useState(null);
   const[msgTesto,setMsgTesto]=useState("");
@@ -1781,10 +1868,15 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
                           ▶ Fai un test
                         </button>
                         {d.stato==="bozza"&&d.testato&&(
-                          <button onClick={()=>inviaAllRedazione(d)}
-                            style={{padding:"6px 14px",borderRadius:7,border:"none",background:C.aurum,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
-                            📬 Manda in Redazione
-                          </button>
+                          isAdmin
+                            ?<button onClick={()=>setDraftSkills(prev=>prev.map(x=>x.id===d.id?{...x,stato:"approvata"}:x))}
+                              style={{padding:"6px 14px",borderRadius:7,border:"none",background:C.viridis,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+                              ✓ Pubblica
+                            </button>
+                            :<button onClick={()=>inviaAllRedazione(d)}
+                              style={{padding:"6px 14px",borderRadius:7,border:"none",background:C.aurum,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+                              📬 Manda in Redazione
+                            </button>
                         )}
                         {d.stato==="bozza"&&!d.testato&&(
                           <span style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif",alignSelf:"center",fontStyle:"italic"}}>← Testa prima di inviare</span>
@@ -2335,7 +2427,11 @@ export default function App(){
   const ADMIN_EMAIL_CHECK="morales@bcand.it";
 
   const areas=useMemo(()=>["Tutte",...Array.from(new Set(SKILLS.map(s=>s.area)))],[]);
-  const visibleSkills=useMemo(()=>SKILLS.filter(s=>!hiddenSkills.includes(s.id)&&!deletedSkills.includes(s.id)),[hiddenSkills,deletedSkills]);
+  // Admin vede tutto tranne le eliminate; utenti vedono solo le non-oscurate e non-eliminate
+  const visibleSkills=useMemo(()=>SKILLS.filter(s=>isAdmin
+    ?!deletedSkills.includes(s.id)
+    :!hiddenSkills.includes(s.id)&&!deletedSkills.includes(s.id)
+  ),[hiddenSkills,deletedSkills,isAdmin]);
   const filtered=useMemo(()=>visibleSkills.filter(s=>(filterArea==="Tutte"||s.area===filterArea)&&(filterComp==="Tutte"||s.complessita===filterComp)&&(filterFreq==="Tutte"||s.frequenza===filterFreq)&&matchSearch(s,search)),[visibleSkills,search,filterArea,filterComp,filterFreq]);
 
   return(
@@ -2453,7 +2549,7 @@ export default function App(){
               {Object.entries(sottoaree).map(([sa,skills])=>(
                 <div key={sa} style={{marginBottom:14}}>
                   <div style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6,paddingLeft:2,borderBottom:"1px solid #eae6de",paddingBottom:4}}>{sa} · {skills.length}</div>
-                  {skills.map(s=><SkillCard key={s.id} skill={s} isLogged={isLogged} favorites={favorites} setFavorites={isLogged?setFavorites:null} isAdmin={isAdmin} onHide={()=>setHiddenSkills(prev=>[...prev,s.id])} onDelete={()=>setDeletedSkills(prev=>[...prev,s.id])} onClick={()=>{if(!isLogged){setShowLogin(true);}else{setActiveSkill(s);}}}/>)}
+                  {skills.map(s=><SkillCard key={s.id} skill={s} isLogged={isLogged} favorites={favorites} setFavorites={isLogged?setFavorites:null} isAdmin={isAdmin} isHidden={hiddenSkills.includes(s.id)} onHide={()=>setHiddenSkills(prev=>[...prev,s.id])} onUnhide={()=>setHiddenSkills(prev=>prev.filter(x=>x!==s.id))} onDelete={()=>setDeletedSkills(prev=>[...prev,s.id])} onClick={()=>{if(!isLogged){setShowLogin(true);}else{setActiveSkill(s);}}}/>)}
                 </div>
               ))}
             </div>
@@ -2487,6 +2583,7 @@ export default function App(){
         draftSkills={draftSkills} setDraftSkills={setDraftSkills}
         threads={threads} setThreads={setThreads}
         userProfile={userProfile}
+        isAdmin={isAdmin}
         onTestSkill={s=>{setShowDashboard(false);setActiveSkill(s);}}
         onOpenProfile={()=>{setShowDashboard(false);setShowProfile(true);}}
         onCreateSkill={()=>{setShowDashboard(false);setShowCreateSkill(true);}}
