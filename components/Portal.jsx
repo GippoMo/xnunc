@@ -710,19 +710,74 @@ function WACCTool(){
 // Icone tipo file per gli allegati
 const FILE_ICON={"pdf":"📄","doc":"📝","docx":"📝","xls":"📊","xlsx":"📊","csv":"📊","txt":"📃","png":"🖼","jpg":"🖼","jpeg":"🖼","default":"📎"};
 const FILE_ACCEPT=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg";
+
+// ─────────────────────────────────────────────────────
+// Agenti interni xNunc — motore sotto il cofano
+// ─────────────────────────────────────────────────────
+const XNUNC_AGENTS=[
+  {id:"luca",  nome:"Luca",  ruolo:"Tax Advisor",      emoji:"⚖️", aree:["Fiscale","Beni strumentali","Finanza agevolata"],  desc:"Esperto di fiscalità italiana, IVA, imposte dirette e normativa tributaria."},
+  {id:"marco", nome:"Marco", ruolo:"Bilancio & Audit",  emoji:"📊", aree:["Chiusura bilancio","Verifiche sindacali"],          desc:"Specialista in chiusure di bilancio, revisione contabile e controllo interno."},
+  {id:"elena", nome:"Elena", ruolo:"Big Four Advisor",  emoji:"🏢", aree:["Verifiche sindacali","Societario"],                 desc:"Standard EY/PWC/KPMG: compliance, due diligence, reportistica strutturata."},
+  {id:"paolo", nome:"Paolo", ruolo:"Strategy Partner",  emoji:"🎯", aree:["Valutazione Aziendale","Societario"],               desc:"Consulenza strategica McKinsey/Bain: analisi, piano industriale, posizionamento."},
+  {id:"gianni",nome:"Gianni",ruolo:"CFO Advisor",       emoji:"💼", aree:["Valutazione Aziendale","Finanza agevolata"],        desc:"Finanza d'impresa, business plan, valutazioni aziendali, M&A."},
+  {id:"sofia", nome:"Sofia", ruolo:"Tech Architect",    emoji:"⚙️", aree:[],                                                  desc:"Prompt engineering, automazione AI, architettura sistemi intelligenti."},
+  {id:"sara",  nome:"Sara",  ruolo:"UX Writer",         emoji:"🎨", aree:[],                                                  desc:"Chiarezza comunicativa, output strutturati, leggibilità professionale."},
+  {id:"aldo",  nome:"Aldo",  ruolo:"Legal Counsel",     emoji:"📜", aree:["Societario"],                                      desc:"Diritto societario, contrattualistica, compliance normativa italiana."},
+  {id:"marta", nome:"Marta", ruolo:"Research Analyst",  emoji:"🔍", aree:[],                                                  desc:"Ricerca normativa, aggiornamenti legislativi, analisi documentale."},
+];
+
+function getAgentsForSkill(skill){
+  const domain=XNUNC_AGENTS.filter(a=>a.aree.includes(skill.area));
+  const support=XNUNC_AGENTS.filter(a=>["sofia","sara"].includes(a.id));
+  const all=[...new Map([...domain,...support].map(a=>[a.id,a])).values()];
+  return all.slice(0,3);
+}
+
+async function callAI({skill,userInput,attachments,profile}){
+  const agents=getAgentsForSkill(skill);
+  const agentCtx=agents.map(a=>`${a.nome} — ${a.ruolo}: ${a.desc}`).join("\n");
+  const basePrompt=`Sei un team di esperti per studi di Dottori Commercialisti italiani.\nTeam attivo:\n${agentCtx}\n\nSKILL: ${skill.nome}\nArea: ${skill.area} / ${skill.sotto_area}\nObiettivo: ${skill.output_atteso||skill.descrizione}\n\nRegole:\n- Output professionale, strutturato, pronto all'uso\n- Italiano corretto, tono da esperto\n- Includi disclaimer se il tema lo richiede\n- Non citare il provider AI né i nomi degli agenti nell'output`;
+  const attachText=(attachments||[]).filter(a=>a.content).map(a=>`[${a.name}]\n${a.content}`).join("\n\n");
+  const userMsg=[userInput,attachText?`\n---\nDocumenti allegati:\n${attachText}`:""].filter(Boolean).join("");
+  const keyMode=profile?.keyMode||"xnunc";
+  const provider=profile?.aiProvider||"anthropic";
+  const byok=profile?.byokKey||"";
+  if(keyMode==="byok"&&byok){
+    if(provider==="anthropic"){
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":byok,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model:"claude-opus-4-5",max_tokens:4096,system:basePrompt,messages:[{role:"user",content:userMsg}]})});
+      if(!r.ok){const e=await r.json();throw new Error(e.error?.message||"Errore API Anthropic");}
+      const d=await r.json();return d.content[0].text;
+    }
+    if(provider==="openai"){
+      const r=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${byok}`,"Content-Type":"application/json"},body:JSON.stringify({model:"gpt-4o",max_tokens:4096,messages:[{role:"system",content:basePrompt},{role:"user",content:userMsg}]})});
+      if(!r.ok){const e=await r.json();throw new Error(e.error?.message||"Errore API OpenAI");}
+      const d=await r.json();return d.choices[0].message.content;
+    }
+    if(provider==="gemini"){
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${byok}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system_instruction:{parts:[{text:basePrompt}]},contents:[{parts:[{text:userMsg}]}]})});
+      if(!r.ok){const e=await r.json();throw new Error(e.error?.message||"Errore API Gemini");}
+      const d=await r.json();return d.candidates[0].content.parts[0].text;
+    }
+  }
+  // xNunc key — via API route server-side
+  const r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-opus-4-5",max_tokens:4096,system:basePrompt,messages:[{role:"user",content:userMsg}]})});
+  if(!r.ok){const e=await r.json();throw new Error(e.error||"Errore server xNunc");}
+  const d=await r.json();return d.content[0].text;
+}
 function fileExt(name){return(name.split(".").pop()||"").toLowerCase();}
 function fileSize(bytes){return bytes<1024*1024?`${(bytes/1024).toFixed(0)} KB`:`${(bytes/1024/1024).toFixed(1)} MB`;}
 
-function SkillModal({skill,isLogged,onClose,onLoginRequest}){
+function SkillModal({skill,isLogged,onClose,onLoginRequest,profile}){
   const[tab,setTab]=useState("usa");
   const[input,setInput]=useState("");
-  const[attachments,setAttachments]=useState([]); // [{name,size,type,content,ext}]
+  const[attachments,setAttachments]=useState([]);
   const[running,setRunning]=useState(false);
-  const[trigger,setTrigger]=useState(null);
+  const[aiOutput,setAiOutput]=useState(null);
+  const[aiError,setAiError]=useState(null);
+  const[thinkingAgents,setThinkingAgents]=useState([]);
   const[copied,setCopied]=useState(false);
   const outputRef=useRef(null);
   const fileInputRef=useRef(null);
-  const{disp,done}=useStream(trigger,DEMO_OUTPUT,20);
   const ac=AREA_COLOR[skill.area]||C.gray;
   const abg=AREA_BG[skill.area]||"#f5f3ee";
   const canExec=input.trim().length>0||attachments.length>0;
@@ -748,11 +803,21 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
   function handleDragLeave(e){if(!e.currentTarget.contains(e.relatedTarget))setDragging(false);}
   function removeAttachment(idx){setAttachments(prev=>prev.filter((_,i)=>i!==idx));}
 
-  function execSkill(){
+  async function execSkill(){
     if(!isLogged){onLoginRequest();return;}
     if(!canExec)return;
-    setRunning(true);setTrigger(null);
-    setTimeout(()=>{setRunning(false);setTrigger(Date.now());setTimeout(()=>outputRef.current?.scrollIntoView({behavior:"smooth"}),100);},1400);
+    const agents=getAgentsForSkill(skill);
+    setThinkingAgents(agents);
+    setRunning(true);setAiOutput(null);setAiError(null);
+    try{
+      const result=await callAI({skill,userInput:input,attachments,profile});
+      setAiOutput(result);
+      setTimeout(()=>outputRef.current?.scrollIntoView({behavior:"smooth"}),100);
+    }catch(e){
+      setAiError(e.message||"Errore durante l'elaborazione.");
+    }finally{
+      setRunning(false);setThinkingAgents([]);
+    }
   }
   function copyPrompt(){navigator.clipboard.writeText(PROMPTS[skill.id]||"").then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}
 
@@ -760,8 +825,8 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
   const tl={usa:skill.tipo==="tool"?"📊 Calcolatore":"▶ Esegui skill",dettagli:"Dettagli",storia:"Storia",miglioramenti:"Miglioramenti"};
 
   return(
-    <div style={{position:"fixed",inset:0,background:"#00000077",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px",overflowY:"auto"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"100%",maxWidth:920,boxShadow:"0 8px 48px #0004",border:`2px solid ${ac}`,marginTop:16,marginBottom:16}}>
+    <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px",overflowY:"auto"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"100%",maxWidth:1160,boxShadow:"0 8px 64px #0006",border:`2px solid ${ac}`,marginTop:16,marginBottom:16}}>
         <div style={{background:C.nox,padding:"20px 24px 0",borderRadius:"12px 12px 0 0"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
             <div>
@@ -841,28 +906,57 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
                   </button>
                   <span style={{fontSize:11,color:"#ccc",fontFamily:"Arial,sans-serif"}}>{input.length>0?`${input.length} car.`:""}</span>
                 </div>
-                <button onClick={execSkill} disabled={running||(isLogged&&!canExec)}
-                  style={{padding:"9px 22px",borderRadius:8,border:"none",background:running?"#ccc":(isLogged&&!canExec?"#eee":ac),color:(isLogged&&!canExec)?"#aaa":"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:8,whiteSpace:"nowrap"}}>
-                  {running?<><span style={{display:"inline-block",animation:"spin 1s linear infinite"}}>⟳</span>Elaborazione…</>:!isLogged?"🔒 Accedi per eseguire":"▶ Esegui skill"}
-                </button>
+                <div style={{display:"flex",gap:8}}>
+                  <button onClick={execSkill} disabled={running||(isLogged&&!canExec)}
+                    style={{padding:"9px 22px",borderRadius:8,border:"none",background:running?"#ccc":(isLogged&&!canExec?"#eee":ac),color:(isLogged&&!canExec)?"#aaa":"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:8,whiteSpace:"nowrap"}}>
+                    {running?<><span style={{display:"inline-block",animation:"spin 1s linear infinite"}}>⟳</span>Elaborazione…</>:!isLogged?"🔒 Accedi":"▶ Lancia"}
+                  </button>
+                </div>
               </div>
-              {(running||trigger)&&(
-                <div ref={outputRef}>
-                  <div style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em",marginBottom:8}}>
-                    OUTPUT {running&&<span style={{color:C.aurum}}>· generazione…</span>}{done&&<span style={{color:C.viridis}}>· completato</span>}
+              {/* Animazione thinking con agenti */}
+              {running&&thinkingAgents.length>0&&(
+                <div ref={outputRef} style={{background:"#f4f2ee",borderRadius:10,padding:"16px 20px",border:"1px solid #e8e4dc",marginBottom:8}}>
+                  <div style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em",marginBottom:10}}>
+                    <span style={{display:"inline-block",animation:"spin 1s linear infinite",marginRight:6}}>⟳</span>Sto elaborando…
                   </div>
-                  <div style={{background:"#f9f8f5",borderRadius:10,padding:"18px 20px",border:"1px solid #e8e4dc",minHeight:80,fontFamily:"Arial,sans-serif",fontSize:13.5,color:"#222"}}>
-                    {running?<span style={{color:C.gray}}>▌</span>:<RenderMd text={disp}/>}
+                  <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                    {thinkingAgents.map((a,i)=>(
+                      <div key={a.id} style={{display:"flex",alignItems:"center",gap:7,padding:"6px 12px",borderRadius:20,background:"#fff",border:`1.5px solid ${[ac,C.aurum,C.caelum][i%3]}44`,fontSize:12,fontFamily:"Arial,sans-serif",color:"#555",animation:`fadeIn .4s ease ${i*0.15}s both`}}>
+                        <span style={{fontSize:15}}>{a.emoji}</span>
+                        <span><strong style={{color:C.nox}}>{a.nome}</strong> · {a.ruolo}</span>
+                        <span style={{display:"inline-block",animation:"spin 1.2s linear infinite",color:C.aurum,fontSize:10}}>⟳</span>
+                      </div>
+                    ))}
                   </div>
-                  {done&&(
+                </div>
+              )}
+              {/* Output reale */}
+              {(aiOutput||aiError)&&(
+                <div ref={running?null:outputRef}>
+                  <div style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em",marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
+                    OUTPUT {aiOutput&&<span style={{color:C.viridis}}>· completato</span>}{aiError&&<span style={{color:"#C0392B"}}>· errore</span>}
+                    {aiOutput&&<span style={{fontSize:10,color:"#bbb",fontWeight:400}}>via {(profile?.keyMode==="byok")?`BYOK · ${profile?.aiProvider||"anthropic"}`:"xNunc · Anthropic"}</span>}
+                  </div>
+                  {aiError&&(
+                    <div style={{background:"#fff5f5",borderRadius:10,padding:"14px 18px",border:"1px solid #fcc",fontFamily:"Arial,sans-serif",fontSize:13,color:"#C0392B"}}>
+                      ⚠️ {aiError}
+                      {aiError.includes("chiave")&&<div style={{marginTop:6,fontSize:11,color:"#888"}}>Verifica la tua API key nel Profilo → tab Sicurezza.</div>}
+                    </div>
+                  )}
+                  {aiOutput&&(
+                    <>
+                    <div style={{background:"#f9f8f5",borderRadius:10,padding:"22px 24px",border:"1px solid #e8e4dc",fontFamily:"Arial,sans-serif",fontSize:13.5,color:"#222",lineHeight:1.8}}>
+                      <RenderMd text={aiOutput}/>
+                    </div>
                     <div style={{display:"flex",gap:8,marginTop:10,justifyContent:"space-between",alignItems:"center"}}>
-                      <span style={{fontSize:11,color:"#bbb",fontFamily:"Arial,sans-serif"}}>⚠️ Bozza AI — validare prima dell'uso professionale</span>
+                      <span style={{fontSize:11,color:"#bbb",fontFamily:"Arial,sans-serif"}}>⚠️ Output AI — validare prima dell'uso professionale</span>
                       <div style={{display:"flex",gap:8}}>
-                        <button onClick={()=>{navigator.clipboard.writeText(disp);}} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #ddd",background:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:5}}>🗐 Copia</button>
-                        <button onClick={()=>downloadAsWord(disp,skill.nome)} style={{padding:"6px 14px",borderRadius:6,border:"none",background:C.caelum,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700,display:"flex",alignItems:"center",gap:5}}>⬇ Word</button>
-                        <button onClick={()=>downloadAsPDF(disp,skill.nome)} style={{padding:"6px 14px",borderRadius:6,border:"none",background:C.viridis,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700,display:"flex",alignItems:"center",gap:5}}>⬇ PDF</button>
+                        <button onClick={()=>{navigator.clipboard.writeText(aiOutput);setCopied(true);setTimeout(()=>setCopied(false),2000);}} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #ddd",background:copied?"#E3F7F0":"#fff",color:copied?C.viridis:"#555",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:5}}>{copied?"✓ Copiato":"🗐 Copia"}</button>
+                        <button onClick={()=>downloadAsWord(aiOutput,skill.nome)} style={{padding:"6px 14px",borderRadius:6,border:"none",background:C.caelum,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>⬇ Word</button>
+                        <button onClick={()=>downloadAsPDF(aiOutput,skill.nome)} style={{padding:"6px 14px",borderRadius:6,border:"none",background:C.viridis,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>⬇ PDF</button>
                       </div>
                     </div>
+                    </>
                   )}
                 </div>
               )}
@@ -914,7 +1008,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest}){
           {tab==="miglioramenti"&&<MiglioramentiTab skill={skill} isLogged={isLogged} onLoginRequest={onLoginRequest} ac={ac}/>}
         </div>
       </div>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}`}</style>
     </div>
   );
 }
@@ -1193,6 +1287,8 @@ function ProfileModal({onClose,userProfile,setUserProfile}){
   const[albo,setAlbo]=useState(userProfile.albo||"");
   const[web,setWeb]=useState(userProfile.web||"");
   const[byok,setByok]=useState(userProfile.byokKey||"");
+  const[keyMode,setKeyMode]=useState(userProfile.keyMode||"xnunc");
+  const[aiProvider,setAiProvider]=useState(userProfile.aiProvider||"anthropic");
   const[showKey,setShowKey]=useState(false);
   const[saved,setSaved]=useState(false);
   const[errors,setErrors]=useState({});
@@ -1210,7 +1306,7 @@ function ProfileModal({onClose,userProfile,setUserProfile}){
 
   function salva(){
     if(!valida())return;
-    setUserProfile({nome,cognome,email,cell,citta,studio,ruolo,albo,web,byokKey:byok});
+    setUserProfile({nome,cognome,email,cell,citta,studio,ruolo,albo,web,byokKey:byok,keyMode,aiProvider});
     setSaved(true);
     setTimeout(()=>setSaved(false),2200);
   }
@@ -1299,9 +1395,89 @@ function ProfileModal({onClose,userProfile,setUserProfile}){
             </div>
           )}
 
-          {/* TAB 2 — Sicurezza & BYOK */}
+          {/* TAB 2 — Sicurezza & Chiave AI */}
           {tab===2&&(
             <div style={{display:"flex",flexDirection:"column",gap:14}}>
+
+              {/* Modalità esecuzione */}
+              <div style={{background:"#f9f8f5",borderRadius:10,padding:"16px",border:"1.5px solid #e8e4dc"}}>
+                <div style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:12}}>MODALITÀ ESECUZIONE WIDGET</div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                  {[
+                    {id:"xnunc",label:"Chiave xNunc",sub:"Inclusa nel piano — senza configurazione",emoji:"⚡"},
+                    {id:"byok", label:"Chiave personale (BYOK)",sub:"Usa la tua API key — massimo controllo",emoji:"🔑"},
+                  ].map(opt=>(
+                    <div key={opt.id} onClick={()=>setKeyMode(opt.id)}
+                      style={{padding:"12px 14px",borderRadius:10,border:`2px solid ${keyMode===opt.id?C.aurum:"#e0ddd8"}`,background:keyMode===opt.id?"#FDF3E3":"#fff",cursor:"pointer",transition:"all .15s"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}>
+                        <span style={{fontSize:18}}>{opt.emoji}</span>
+                        <span style={{fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:700,color:keyMode===opt.id?C.aurum:C.nox}}>{opt.label}</span>
+                        {keyMode===opt.id&&<span style={{marginLeft:"auto",fontSize:14,color:C.aurum}}>●</span>}
+                      </div>
+                      <div style={{fontSize:10,color:"#888",fontFamily:"Arial,sans-serif",lineHeight:1.5}}>{opt.sub}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Se xNunc */}
+              {keyMode==="xnunc"&&(
+                <div style={{background:"#E3F7F0",borderRadius:10,padding:"12px 14px",border:"1px solid #b8e8d4",display:"flex",gap:10,alignItems:"flex-start"}}>
+                  <span style={{fontSize:18}}>✓</span>
+                  <div style={{fontFamily:"Arial,sans-serif",fontSize:12,color:"#2d7d5a",lineHeight:1.6}}>
+                    <strong>Tutto incluso.</strong> I widget vengono eseguiti attraverso i server xNunc con Claude (Anthropic). Nessuna configurazione richiesta. Piano Free: <strong>20 esecuzioni/mese</strong>.
+                  </div>
+                </div>
+              )}
+
+              {/* Se BYOK */}
+              {keyMode==="byok"&&(
+                <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                  {/* Scelta provider */}
+                  <div style={{background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1px solid #eee"}}>
+                    <div style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:10}}>PROVIDER AI</div>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
+                      {[
+                        {id:"anthropic",label:"Anthropic (Claude)",placeholder:"sk-ant-api03-…",logo:"🟠"},
+                        {id:"openai",   label:"OpenAI (GPT-4o)",   placeholder:"sk-…",          logo:"⚫"},
+                        {id:"gemini",   label:"Google Gemini",     placeholder:"AIza…",          logo:"🔵"},
+                        {id:"copilot",  label:"Copilot (Azure)",   placeholder:"presto disponibile",logo:"🔷",disabled:true},
+                      ].map(p=>(
+                        <div key={p.id} onClick={()=>!p.disabled&&setAiProvider(p.id)}
+                          style={{padding:"9px 12px",borderRadius:8,border:`1.5px solid ${aiProvider===p.id?C.caelum:"#ddd"}`,background:aiProvider===p.id?"#EBF2FE":"#fff",cursor:p.disabled?"not-allowed":"pointer",opacity:p.disabled?.5:1,display:"flex",alignItems:"center",gap:7}}>
+                          <span style={{fontSize:16}}>{p.logo}</span>
+                          <span style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:aiProvider===p.id?700:400,color:aiProvider===p.id?C.caelum:"#555"}}>{p.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Campo chiave */}
+                  <div style={{background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1px solid #eee"}}>
+                    <div style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:8}}>
+                      CHIAVE API — {aiProvider.toUpperCase()}
+                    </div>
+                    <div style={{position:"relative"}}>
+                      <input type={showKey?"text":"password"} value={byok} onChange={e=>setByok(e.target.value)}
+                        placeholder={{anthropic:"sk-ant-api03-…",openai:"sk-…",gemini:"AIza…",copilot:""}[aiProvider]}
+                        style={{width:"100%",padding:"9px 40px 9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"monospace",outline:"none",boxSizing:"border-box",letterSpacing:byok&&!showKey?"0.1em":"normal"}}/>
+                      <button onClick={()=>setShowKey(v=>!v)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#aaa"}}>{showKey?"🙈":"👁"}</button>
+                    </div>
+                    <div style={{fontSize:10,color:"#bbb",fontFamily:"Arial,sans-serif",marginTop:6,lineHeight:1.5}}>
+                      Chiave salvata in locale (non inviata ai server xNunc). I dati transitano sotto il tuo account {aiProvider}.
+                    </div>
+                    {byok&&(
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
+                        <div style={{display:"flex",alignItems:"center",gap:6}}>
+                          <div style={{width:6,height:6,borderRadius:"50%",background:C.viridis}}/>
+                          <span style={{fontSize:10,color:C.viridis,fontFamily:"Arial,sans-serif",fontWeight:700}}>Chiave configurata</span>
+                        </div>
+                        <button onClick={()=>setByok("")} style={{padding:"4px 10px",borderRadius:6,border:"1px solid #fcc",background:"#fff5f5",color:"#C0392B",fontSize:10,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>× Rimuovi</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Cambio password */}
               <div style={{background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1px solid #eee"}}>
                 <div style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:8}}>CAMBIO PASSWORD</div>
@@ -1309,32 +1485,6 @@ function ProfileModal({onClose,userProfile,setUserProfile}){
                 <input placeholder="Nuova password" type="password" style={{...inputStyle(),marginBottom:8}}/>
                 <input placeholder="Conferma nuova password" type="password" style={inputStyle()}/>
                 <button style={{marginTop:10,padding:"7px 16px",borderRadius:8,border:"none",background:C.nox,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Aggiorna password</button>
-              </div>
-
-              {/* BYOK */}
-              <div style={{background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1.5px solid #e8e4dc"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-                  <div style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em"}}>API KEY ANTHROPIC (BYOK)</div>
-                  <span style={{fontSize:9,background:"#E3F7F0",color:C.viridis,padding:"2px 7px",borderRadius:4,fontWeight:700,fontFamily:"Arial,sans-serif"}}>OPZIONALE</span>
-                </div>
-                <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif",marginBottom:10,lineHeight:1.6}}>Usa la tua chiave Anthropic personale. I dati transitano sotto il tuo account — mai sotto quello di xNunc. Salvata cifrata AES-256, <strong style={{color:"#666"}}>mai visibile agli amministratori</strong>.</div>
-                <div style={{position:"relative"}}>
-                  <input type={showKey?"text":"password"} value={byok} onChange={e=>setByok(e.target.value)}
-                    placeholder="sk-ant-api03-…"
-                    style={{width:"100%",padding:"9px 40px 9px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"monospace",outline:"none",boxSizing:"border-box",letterSpacing:byok&&!showKey?"0.1em":"normal"}}/>
-                  <button onClick={()=>setShowKey(v=>!v)} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:14,color:"#aaa"}}>{showKey?"🙈":"👁"}</button>
-                </div>
-                {byok?(
-                  <div style={{display:"flex",alignItems:"center",gap:6,marginTop:6}}>
-                    <div style={{width:6,height:6,borderRadius:"50%",background:C.viridis}}/>
-                    <span style={{fontSize:10,color:C.viridis,fontFamily:"Arial,sans-serif",fontWeight:700}}>Modalità BYOK attiva — esecuzioni a carico del tuo account Anthropic</span>
-                  </div>
-                ):(
-                  <div style={{fontSize:10,color:"#bbb",fontFamily:"Arial,sans-serif",marginTop:6}}>Senza chiave: esecuzioni a carico di xNunc (piano Free: 20/mese)</div>
-                )}
-                {byok&&(
-                  <button onClick={()=>setByok("")} style={{marginTop:8,padding:"5px 12px",borderRadius:6,border:"1px solid #fcc",background:"#fff5f5",color:"#C0392B",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>× Rimuovi chiave</button>
-                )}
               </div>
 
               {/* Gestione account */}
@@ -2085,7 +2235,7 @@ export default function App(){
      messaggi:[{id:1,da:"Redazione",testo:"Benvenuto nella piattaforma! Siamo qui per supportarti nella creazione e revisione delle skill. Quando sei pronto a inviare una skill per la pubblicazione, usala pure o scrivici direttamente qui.",data:"16 Mar 2026",letto:true}],
      nonLetti:0}
   ]);
-  const[userProfile,setUserProfile]=useState({nome:"",cognome:"",studio:"",ruolo:"",email:"",cell:"",citta:"",albo:"",web:"",byokKey:""});
+  const[userProfile,setUserProfile]=useState({nome:"",cognome:"",studio:"",ruolo:"",email:"",cell:"",citta:"",albo:"",web:"",byokKey:"",keyMode:"xnunc",aiProvider:"anthropic"});
   const nonLettiTot=threads.reduce((n,t)=>n+(t.nonLetti||0),0);
   const[isAdmin,setIsAdmin]=useState(false);
   const[hiddenSkills,setHiddenSkills]=useState([]); // IDs oscurati (nascosti ma recuperabili)
@@ -2256,7 +2406,7 @@ export default function App(){
         userProfile={userProfile}
         onSaveDraft={draft=>setDraftSkills(prev=>[...prev,draft])}
       />}
-      {activeSkill&&<SkillModal skill={activeSkill} isLogged={isLogged} onClose={()=>setActiveSkill(null)} onLoginRequest={()=>{setActiveSkill(null);setShowLogin(true);}}/>}
+      {activeSkill&&<SkillModal skill={activeSkill} isLogged={isLogged} onClose={()=>setActiveSkill(null)} onLoginRequest={()=>{setActiveSkill(null);setShowLogin(true);}} profile={userProfile}/>}
       {showAdminPanel&&<AdminPanelModal
         onClose={()=>setShowAdminPanel(false)}
         hiddenSkills={hiddenSkills} setHiddenSkills={setHiddenSkills}
