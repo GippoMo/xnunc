@@ -1444,7 +1444,7 @@ function ProfileModal({onClose,userProfile,setUserProfile}){
                         {id:"copilot",  label:"Copilot (Azure)",   placeholder:"presto disponibile",logo:"🔷",disabled:true},
                       ].map(p=>(
                         <div key={p.id} onClick={()=>!p.disabled&&setAiProvider(p.id)}
-                          style={{padding:"9px 12px",borderRadius:8,border:`1.5px solid ${aiProvider===p.id?C.caelum:"#ddd"}`,background:aiProvider===p.id?"#EBF2FE":"#fff",cursor:p.disabled?"not-allowed":"pointer",opacity:p.disabled?.5:1,display:"flex",alignItems:"center",gap:7}}>
+                          style={{padding:"9px 12px",borderRadius:8,border:`1.5px solid ${aiProvider===p.id?C.caelum:"#ddd"}`,background:aiProvider===p.id?"#EBF2FE":"#fff",cursor:p.disabled?"not-allowed":"pointer",opacity:p.disabled?0.5:1,display:"flex",alignItems:"center",gap:7}}>
                           <span style={{fontSize:16}}>{p.logo}</span>
                           <span style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:aiProvider===p.id?700:400,color:aiProvider===p.id?C.caelum:"#555"}}>{p.label}</span>
                         </div>
