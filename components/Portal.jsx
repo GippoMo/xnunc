@@ -1555,6 +1555,24 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
   const[newMsg,setNewMsg]=useState(false);
   const[newMsgOgg,setNewMsgOgg]=useState("");
   const[newMsgTesto,setNewMsgTesto]=useState("");
+  const[editingId,setEditingId]=useState(null); // id draft in modifica
+  const[editVals,setEditVals]=useState({}); // campi in editing
+
+  function apriEdit(d){
+    setEditingId(d.id);
+    setEditVals({nome:d.nome||"",descrizione:d.descrizione||"",inputAtteso:d.inputAtteso||d.input_atteso||"",outputAtteso:d.outputAtteso||d.output_atteso||"",normativa:d.normativa||""});
+  }
+  function salvaEdit(id){
+    setDraftSkills(prev=>prev.map(d=>d.id===id?{
+      ...d,...editVals,
+      // aggiorna anche snake_case per compatibilità SkillModal
+      input_atteso:editVals.inputAtteso,
+      output_atteso:editVals.outputAtteso,
+      // reset testato se i campi sono stati modificati
+      testato:false,
+    }:d));
+    setEditingId(null);setEditVals({});
+  }
 
   const nomeCompl=`${userProfile.nome||""} ${userProfile.cognome||""}`.trim()||"Utente";
   const nonLettiTot=threads.reduce((n,t)=>n+(t.nonLetti||0),0);
@@ -1691,25 +1709,70 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
               ):(
                 draftSkills.filter(d=>d.stato!=="approvata").map(d=>{
                   const stColor=STATO_COLOR[d.stato]||C.gray;
+                  const isEditing=editingId===d.id;
+                  const ev=editVals;
+                  const fld=(label,key,rows)=>(
+                    <div style={{marginBottom:10}}>
+                      <label style={{fontFamily:"Arial,sans-serif",fontSize:9,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"block",marginBottom:4}}>{label}</label>
+                      {rows?(
+                        <textarea value={ev[key]||""} onChange={e=>setEditVals(p=>({...p,[key]:e.target.value}))} rows={rows}
+                          style={{width:"100%",padding:"8px 10px",borderRadius:7,border:"1.5px solid #ddd",fontSize:12,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box",resize:"vertical",lineHeight:1.5}}/>
+                      ):(
+                        <input value={ev[key]||""} onChange={e=>setEditVals(p=>({...p,[key]:e.target.value}))}
+                          style={{width:"100%",padding:"8px 10px",borderRadius:7,border:"1.5px solid #ddd",fontSize:12,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box"}}/>
+                      )}
+                    </div>
+                  );
                   return(
-                    <div key={d.id} style={{border:`1.5px solid ${stColor}33`,borderRadius:12,background:"#fff",padding:"16px",marginBottom:12,boxShadow:"0 1px 6px #0001"}}>
-                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                    <div key={d.id} style={{border:`1.5px solid ${isEditing?C.aurum:stColor+"33"}`,borderRadius:12,background:"#fff",padding:"16px",marginBottom:12,boxShadow:"0 1px 6px #0001",transition:"border-color .2s"}}>
+                      {/* Header card */}
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
                         <div>
                           <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:700,color:C.nox}}>{d.nome}</div>
-                          <div style={{fontSize:11,color:stColor,fontFamily:"Arial,sans-serif",marginTop:3,fontWeight:700}}>{STATO_LABEL[d.stato]}</div>
+                          <div style={{fontSize:11,color:stColor,fontFamily:"Arial,sans-serif",marginTop:3,fontWeight:700}}>{STATO_LABEL[d.stato]}{d.testato&&d.stato==="bozza"&&<span style={{color:C.viridis,marginLeft:8}}>✓ Testata</span>}</div>
                         </div>
-                        <div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif",textAlign:"right"}}>{d.area}<br/>{d.data}</div>
+                        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                          <div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif",textAlign:"right"}}>{d.area}<br/>{d.data}</div>
+                          {d.stato==="bozza"&&(
+                            <button onClick={()=>isEditing?setEditingId(null):apriEdit(d)}
+                              title={isEditing?"Chiudi editor":"Modifica i campi della skill"}
+                              style={{padding:"4px 10px",borderRadius:6,border:`1px solid ${isEditing?C.aurum:"#ddd"}`,background:isEditing?"#FDF3E3":"#fafaf8",color:isEditing?C.aurum:"#888",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:isEditing?700:400}}>
+                              {isEditing?"✕ Chiudi":"✏️ Modifica"}
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div style={{fontSize:12,color:"#666",fontFamily:"Arial,sans-serif",lineHeight:1.6,marginBottom:12}}>{truncate(d.descrizione,120)}</div>
+
+                      {!isEditing&&(
+                        <div style={{fontSize:12,color:"#666",fontFamily:"Arial,sans-serif",lineHeight:1.6,marginBottom:12}}>{truncate(d.descrizione,140)}</div>
+                      )}
+
+                      {/* Pannello editing inline */}
+                      {isEditing&&(
+                        <div style={{background:"#fdfcfa",borderRadius:10,padding:"14px",border:"1px solid #e8e4dc",marginBottom:12}}>
+                          <div style={{fontSize:10,fontWeight:700,color:C.aurum,letterSpacing:"0.1em",fontFamily:"Arial,sans-serif",marginBottom:12}}>MODIFICA SKILL</div>
+                          {fld("NOME",          "nome",     null)}
+                          {fld("DESCRIZIONE",   "descrizione", 2)}
+                          {fld("INPUT ATTESO",  "inputAtteso", 2)}
+                          {fld("OUTPUT ATTESO", "outputAtteso",2)}
+                          {fld("NORMATIVA",     "normativa",   1)}
+                          <div style={{display:"flex",gap:8,marginTop:4}}>
+                            <button onClick={()=>setEditingId(null)} style={{padding:"7px 14px",borderRadius:7,border:"1px solid #ddd",background:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>Annulla</button>
+                            <button onClick={()=>salvaEdit(d.id)} style={{flex:1,padding:"7px",borderRadius:7,border:"none",background:C.aurum,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Salva modifiche</button>
+                          </div>
+                          <div style={{fontSize:10,color:"#bbb",fontFamily:"Arial,sans-serif",marginTop:8}}>💡 Dopo aver salvato le modifiche dovrai testare di nuovo la skill prima di inviarla.</div>
+                        </div>
+                      )}
+
+                      {/* Barra azioni */}
                       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
                         <button onClick={()=>{
-                            // Marca come testato e apri SkillModal con mapping corretto camelCase→snake_case
                             setDraftSkills(prev=>prev.map(x=>x.id===d.id?{...x,testato:true}:x));
                             onTestSkill({
                               ...d,
                               sotto_area: d.sottoArea||d.area||"—",
-                              input_atteso: d.inputAtteso||"Descrivi il tuo caso specifico",
-                              output_atteso: d.outputAtteso||d.descrizione||"",
+                              input_atteso: d.input_atteso||d.inputAtteso||"Descrivi il tuo caso specifico",
+                              output_atteso: d.output_atteso||d.outputAtteso||d.descrizione||"",
                               complessita: d.complessita||"media",
                               frequenza: d.frequenza||"occasionale",
                               tags: d.tags||[],
@@ -1729,7 +1792,7 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
                         )}
                         {d.stato==="bozza"&&(
                           <button onClick={()=>setDraftSkills(prev=>prev.filter(x=>x.id!==d.id))}
-                            style={{padding:"6px 14px",borderRadius:7,border:"1px solid #fcc",background:"#fff",color:"#C0392B",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+                            style={{marginLeft:"auto",padding:"6px 14px",borderRadius:7,border:"1px solid #fcc",background:"#fff",color:"#C0392B",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
                             × Elimina
                           </button>
                         )}
