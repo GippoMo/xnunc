@@ -496,7 +496,7 @@ const WACC_GEOS=[{id:"it",label:"Italia",flag:"🇮🇹"},{id:"eu",label:"Europa
 const WACC_STEPS=["Contesto","Settore","Debito","Equity","Risultato"];
 
 async function waccAI(sys,usr,web=false){
-  const body={model:"claude-sonnet-4-20250514",max_tokens:2000,system:sys,messages:[{role:"user",content:usr}]};
+  const body={model:"claude-sonnet-4-6",max_tokens:2000,system:sys,messages:[{role:"user",content:usr}]};
   if(web) body.tools=[{type:"web_search_20250305",name:"web_search",max_uses:5}];
   const r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
   if(!r.ok) throw new Error("HTTP "+r.status);
@@ -744,25 +744,25 @@ async function callAI({skill,userInput,attachments,profile}){
   const byok=profile?.byokKey||"";
   if(keyMode==="byok"&&byok){
     if(provider==="anthropic"){
-      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":byok,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model:"claude-opus-4-5",max_tokens:4096,system:basePrompt,messages:[{role:"user",content:userMsg}]})});
-      if(!r.ok){const e=await r.json();throw new Error(e.error?.message||"Errore API Anthropic");}
-      const d=await r.json();return d.content[0].text;
+      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":byok,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:4096,system:basePrompt,messages:[{role:"user",content:userMsg}]})});
+      if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.message||"Errore API Anthropic ("+r.status+")");}
+      const d=await r.json();return d.content?.find(b=>b.type==="text")?.text||d.content?.[0]?.text||"";
     }
     if(provider==="openai"){
       const r=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${byok}`,"Content-Type":"application/json"},body:JSON.stringify({model:"gpt-4o",max_tokens:4096,messages:[{role:"system",content:basePrompt},{role:"user",content:userMsg}]})});
-      if(!r.ok){const e=await r.json();throw new Error(e.error?.message||"Errore API OpenAI");}
+      if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.message||"Errore API OpenAI ("+r.status+")");}
       const d=await r.json();return d.choices[0].message.content;
     }
     if(provider==="gemini"){
       const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${byok}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system_instruction:{parts:[{text:basePrompt}]},contents:[{parts:[{text:userMsg}]}]})});
-      if(!r.ok){const e=await r.json();throw new Error(e.error?.message||"Errore API Gemini");}
+      if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.message||"Errore API Gemini ("+r.status+")");}
       const d=await r.json();return d.candidates[0].content.parts[0].text;
     }
   }
   // xNunc key — via API route server-side
-  const r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-opus-4-5",max_tokens:4096,system:basePrompt,messages:[{role:"user",content:userMsg}]})});
-  if(!r.ok){const e=await r.json();throw new Error(e.error||"Errore server xNunc");}
-  const d=await r.json();return d.content[0].text;
+  const r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:4096,system:basePrompt,messages:[{role:"user",content:userMsg}]})});
+  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.error||e.message||"Errore API (HTTP "+r.status+")");}
+  const d=await r.json();return d.content?.find(b=>b.type==="text")?.text||d.content?.[0]?.text||"";
 }
 function fileExt(name){return(name.split(".").pop()||"").toLowerCase();}
 function fileSize(bytes){return bytes<1024*1024?`${(bytes/1024).toFixed(0)} KB`:`${(bytes/1024/1024).toFixed(1)} MB`;}
