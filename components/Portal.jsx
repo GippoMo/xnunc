@@ -814,7 +814,7 @@ async function callAI({skill,userInput,attachments,profile}){
       const d=await r.json();return d.choices[0].message.content;
     }
     if(provider==="gemini"){
-      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${byok}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({system_instruction:{parts:[{text:basePrompt}]},contents:[{parts:[{text:userMsg}]}]})});
+      const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":byok},body:JSON.stringify({system_instruction:{parts:[{text:basePrompt}]},contents:[{parts:[{text:userMsg}]}]})});
       if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.message||"Errore API Gemini ("+r.status+")");}
       const d=await r.json();return d.candidates[0].content.parts[0].text;
     }
@@ -1265,8 +1265,9 @@ function ImprovementDetailView({improv,setImprovements,profile,onBack,ac}){
 // MiglioramentiTab — discussione + proposte strutturate
 // ─────────────────────────────────────────────────────
 function MiglioramentiTab({skill,isLogged,onLoginRequest,ac,improvements,setImprovements,profile}){
+  const _pubDate=new Date().toLocaleDateString("it-IT",{day:"numeric",month:"short",year:"numeric"});
   const[posts,setPosts]=useState([
-    {id:1,autore:"Redazione",ruolo:"creator",avatar:"R",testo:"Skill pubblicata. Proposte di miglioramento benvenute — ogni contributo approvato vale +5 punti e avvicina la v2.0.",data:"16 Mar 2026",tipo:"nota"},
+    {id:1,autore:"Redazione",ruolo:"creator",avatar:"R",testo:"Skill pubblicata. Proposte di miglioramento benvenute — ogni contributo approvato vale +5 punti e avvicina la v2.0.",data:_pubDate,tipo:"nota"},
   ]);
   const[testo,setTesto]=useState("");
   const[tipo,setTipo]=useState("commento");
@@ -1570,7 +1571,7 @@ function ProfileField({label,required,children}){
   );
 }
 
-function ProfileModal({onClose,userProfile,setUserProfile}){
+function ProfileModal({onClose,userProfile,setUserProfile,onLogout,onDeleteAccount,onExportData,userPoints}){
   const[tab,setTab]=useState(0);
   const[nome,setNome]=useState(userProfile.nome||"");
   const[cognome,setCognome]=useState(userProfile.cognome||"");
@@ -1587,6 +1588,13 @@ function ProfileModal({onClose,userProfile,setUserProfile}){
   const[showKey,setShowKey]=useState(false);
   const[saved,setSaved]=useState(false);
   const[errors,setErrors]=useState({});
+  // Password change
+  const[pwAttuale,setPwAttuale]=useState("");
+  const[pwNuova,setPwNuova]=useState("");
+  const[pwConferma,setPwConferma]=useState("");
+  const[pwMsg,setPwMsg]=useState(null); // {ok,text}
+  // Delete account confirm
+  const[confirmDelete,setConfirmDelete]=useState(false);
 
   const inputStyle=(err)=>({width:"100%",padding:"9px 12px",borderRadius:8,border:`1.5px solid ${err?"#C0392B":"#ddd"}`,fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box"});
   const nomeCompl=`${nome} ${cognome}`.trim();
@@ -1595,6 +1603,7 @@ function ProfileModal({onClose,userProfile,setUserProfile}){
     const e={};
     if(!email.trim())e.email="Campo obbligatorio";
     else if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))e.email="Email non valida";
+    if(cell.trim()&&!/^[\+]?[\d\s\-]{7,15}$/.test(cell.trim()))e.cell="Formato non valido (es. +39 333 1234567)";
     setErrors(e);
     return Object.keys(e).length===0;
   }
@@ -1604,6 +1613,16 @@ function ProfileModal({onClose,userProfile,setUserProfile}){
     setUserProfile({nome,cognome,email,cell,citta,studio,ruolo,albo,web,byokKey:byok,keyMode,aiProvider});
     setSaved(true);
     setTimeout(()=>setSaved(false),2200);
+  }
+
+  function aggiornaPw(){
+    if(!pwAttuale){setPwMsg({ok:false,text:"Inserisci la password attuale"});return;}
+    if(pwNuova.length<8){setPwMsg({ok:false,text:"La nuova password deve avere almeno 8 caratteri"});return;}
+    if(pwNuova!==pwConferma){setPwMsg({ok:false,text:"Le password non coincidono"});return;}
+    // Mock — in produzione chiamerà un endpoint
+    setPwMsg({ok:true,text:"Password aggiornata con successo"});
+    setPwAttuale("");setPwNuova("");setPwConferma("");
+    setTimeout(()=>setPwMsg(null),3000);
   }
 
   const tabLabel=["👤 Personali","🏛 Studio","🔐 Sicurezza"];
@@ -1622,7 +1641,7 @@ function ProfileModal({onClose,userProfile,setUserProfile}){
               <div>
                 <div style={{fontFamily:"Georgia,serif",fontSize:16,color:"#fff",fontWeight:700,lineHeight:1.2}}>{nomeCompl||"Il tuo profilo"}</div>
                 <div style={{fontSize:11,color:"#888",fontFamily:"Arial,sans-serif",marginTop:2}}>{studio||email||"—"}</div>
-                <div style={{fontSize:9,color:C.viridis,fontFamily:"Arial,sans-serif",marginTop:3,fontWeight:700,letterSpacing:"0.08em"}}>● CONTRIBUTOR · 10 pt</div>
+                <div style={{fontSize:9,color:C.viridis,fontFamily:"Arial,sans-serif",marginTop:3,fontWeight:700,letterSpacing:"0.08em"}}>● CONTRIBUTOR · {userPoints||0} pt</div>
               </div>
             </div>
             <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer",padding:"0 4px"}}>×</button>
@@ -1656,7 +1675,8 @@ function ProfileModal({onClose,userProfile,setUserProfile}){
               </ProfileField>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 <ProfileField label="CELLULARE">
-                  <input value={cell} onChange={e=>setCell(e.target.value)} placeholder="+39 333 …" type="tel" style={inputStyle()}/>
+                  <input value={cell} onChange={e=>{setCell(e.target.value);setErrors(p=>({...p,cell:undefined}));}} placeholder="+39 333 …" type="tel" style={inputStyle(errors.cell)}/>
+                  {errors.cell&&<div style={{fontSize:10,color:"#C0392B",fontFamily:"Arial,sans-serif",marginTop:3}}>{errors.cell}</div>}
                 </ProfileField>
                 <ProfileField label="CITTÀ">
                   <input value={citta} onChange={e=>setCitta(e.target.value)} placeholder="Milano" style={inputStyle()}/>
@@ -1776,25 +1796,38 @@ function ProfileModal({onClose,userProfile,setUserProfile}){
               {/* Cambio password */}
               <div style={{background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1px solid #eee"}}>
                 <div style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:8}}>CAMBIO PASSWORD</div>
-                <input placeholder="Password attuale" type="password" style={{...inputStyle(),marginBottom:8}}/>
-                <input placeholder="Nuova password" type="password" style={{...inputStyle(),marginBottom:8}}/>
-                <input placeholder="Conferma nuova password" type="password" style={inputStyle()}/>
-                <button style={{marginTop:10,padding:"7px 16px",borderRadius:8,border:"none",background:C.nox,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Aggiorna password</button>
+                <input value={pwAttuale} onChange={e=>setPwAttuale(e.target.value)} placeholder="Password attuale" type="password" style={{...inputStyle(),marginBottom:8}}/>
+                <input value={pwNuova} onChange={e=>setPwNuova(e.target.value)} placeholder="Nuova password (min. 8 caratteri)" type="password" style={{...inputStyle(),marginBottom:8}}/>
+                <input value={pwConferma} onChange={e=>setPwConferma(e.target.value)} placeholder="Conferma nuova password" type="password" style={inputStyle()}/>
+                {pwMsg&&<div style={{marginTop:8,fontSize:11,fontFamily:"Arial,sans-serif",color:pwMsg.ok?C.viridis:"#C0392B",fontWeight:600}}>{pwMsg.ok?"✓ ":""}{pwMsg.text}</div>}
+                <button onClick={aggiornaPw} style={{marginTop:10,padding:"7px 16px",borderRadius:8,border:"none",background:C.nox,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Aggiorna password</button>
               </div>
 
               {/* Gestione account */}
               <div style={{borderTop:"1px solid #f0ede8",paddingTop:14}}>
                 <div style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:8}}>GESTIONE ACCOUNT</div>
-                <div style={{display:"flex",gap:10}}>
-                  <button style={{padding:"6px 14px",borderRadius:6,border:"1px solid #ddd",background:"#fff",color:"#555",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>📥 Esporta dati</button>
-                  <button style={{padding:"6px 14px",borderRadius:6,border:"1px solid #fcc",background:"#fff",color:"#C0392B",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Elimina account</button>
-                </div>
+                {confirmDelete?(
+                  <div style={{background:"#fff5f5",borderRadius:8,padding:"12px",border:"1px solid #fcc"}}>
+                    <div style={{fontFamily:"Arial,sans-serif",fontSize:12,color:"#C0392B",marginBottom:10,fontWeight:600}}>⚠️ Conferma eliminazione account</div>
+                    <div style={{fontSize:11,color:"#888",fontFamily:"Arial,sans-serif",marginBottom:10}}>Tutti i tuoi dati (profilo, skill in bozza, preferiti, messaggi) verranno cancellati definitivamente. L'operazione è irreversibile.</div>
+                    <div style={{display:"flex",gap:8}}>
+                      <button onClick={()=>setConfirmDelete(false)} style={{flex:1,padding:"6px 12px",borderRadius:6,border:"1px solid #ddd",background:"#fff",color:"#555",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Annulla</button>
+                      <button onClick={onDeleteAccount} style={{flex:1,padding:"6px 12px",borderRadius:6,border:"none",background:"#C0392B",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Sì, elimina</button>
+                    </div>
+                  </div>
+                ):(
+                  <div style={{display:"flex",gap:10}}>
+                    <button onClick={onExportData} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #ddd",background:"#fff",color:"#555",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>📥 Esporta dati</button>
+                    <button onClick={()=>setConfirmDelete(true)} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #fcc",background:"#fff",color:"#C0392B",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Elimina account</button>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* Footer pulsanti */}
           <div style={{display:"flex",gap:10,marginTop:20,paddingTop:16,borderTop:"1px solid #f0ede8"}}>
+            <button onClick={onLogout} style={{padding:"9px 14px",borderRadius:8,border:"1px solid #fcc",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#C0392B",fontWeight:600}} title="Esci dall'account">⎋ Esci</button>
             <button onClick={onClose} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>Chiudi</button>
             <button onClick={salva} style={{flex:2,padding:"9px",borderRadius:8,border:"none",background:saved?C.viridis:C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"background .3s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
               {saved?<>✓ Salvato</>:<>Salva profilo</>}
@@ -1857,7 +1890,7 @@ const IMPROV_STATI={
 const STATO_LABEL={bozza:"🔧 Bozza",in_revisione:"⏳ In revisione",approvata:"✓ Approvata"};
 const STATO_COLOR={bozza:C.caelum,in_revisione:C.aurum,approvata:C.viridis};
 
-function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,onTestSkill,onOpenProfile,onCreateSkill,isAdmin,improvements,setImprovements}){
+function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,onTestSkill,onOpenProfile,onCreateSkill,isAdmin,improvements,setImprovements,userPoints}){
   const[tab,setTab]=useState(0);
   const[activeThread,setActiveThread]=useState(null);
   const[msgTesto,setMsgTesto]=useState("");
@@ -1952,7 +1985,7 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
             </div>
             <div>
               <div style={{fontFamily:"Georgia,serif",fontSize:16,color:"#fff",fontWeight:700}}>{nomeCompl}</div>
-              <div style={{fontSize:11,color:"#666",fontFamily:"Arial,sans-serif"}}>{userProfile.studio||userProfile.email||"—"} · <span style={{color:C.viridis,fontWeight:700}}>10 pt</span></div>
+              <div style={{fontSize:11,color:"#666",fontFamily:"Arial,sans-serif"}}>{userProfile.studio||userProfile.email||"—"} · <span style={{color:C.viridis,fontWeight:700}}>{userPoints||0} pt</span></div>
             </div>
           </div>
           <div style={{display:"flex",gap:10,alignItems:"center"}}>
@@ -2737,9 +2770,10 @@ function lsSet(key,val){
 }
 
 export default function App(){
+  const _todayLabel=(()=>{const d=new Date();return d.toLocaleDateString("it-IT",{day:"numeric",month:"short",year:"numeric"});})();
   const DEFAULT_THREADS=[
     {id:1,titolo:"Benvenuto in xNunc",con:"Redazione",avatar:"R",avatarColor:C.aurum,
-     messaggi:[{id:1,da:"Redazione",testo:"Benvenuto nella piattaforma! Siamo qui per supportarti nella creazione e revisione delle skill. Quando sei pronto a inviare una skill per la pubblicazione, usala pure o scrivici direttamente qui.",data:"16 Mar 2026",letto:true}],
+     messaggi:[{id:1,da:"Redazione",testo:"Benvenuto nella piattaforma! Siamo qui per supportarti nella creazione e revisione delle skill. Quando sei pronto a inviare una skill per la pubblicazione, usala pure o scrivici direttamente qui.",data:_todayLabel,letto:true}],
      nonLetti:0}
   ];
   const DEFAULT_PROFILE={nome:"",cognome:"",studio:"",ruolo:"",email:"",cell:"",citta:"",albo:"",web:"",byokKey:"",keyMode:"xnunc",aiProvider:"anthropic"};
@@ -2790,7 +2824,56 @@ export default function App(){
 
   const ADMIN_EMAIL_CHECK="morales@bcand.it";
 
-  const areas=useMemo(()=>["Tutte",...Array.from(new Set(SKILLS.map(s=>s.area)))],[]);
+  // ── Punti dinamici ─────────────────────────────────
+  const userPoints=useMemo(()=>{
+    const email=userProfile.email;
+    let pts=0;
+    // +10 per ogni skill pubblicata
+    pts+=draftSkills.filter(d=>d.stato==="approvata"&&d.autoreEmail===email).length*10;
+    // +5 per ogni miglioramento approvato
+    pts+=(improvements||[]).filter(im=>im.contributorEmail===email&&im.stato==="approvata").length*5;
+    // +2 per ogni messaggio nei thread (messaggi inviati dall'utente)
+    threads.forEach(t=>t.messaggi?.forEach(m=>{if(m.da!=="Redazione"&&m.daEmail===email)pts+=2;}));
+    return pts;
+  },[userProfile.email,draftSkills,improvements,threads]);
+
+  // ── Logout ─────────────────────────────────────────
+  function handleLogout(){
+    setIsLogged(false);
+    setIsAdmin(false);
+    setShowProfile(false);
+    setShowDashboard(false);
+  }
+
+  // ── Elimina account ────────────────────────────────
+  function handleDeleteAccount(){
+    const KEYS=["xnunc_session","xnunc_profile","xnunc_favorites","xnunc_drafts","xnunc_threads","xnunc_hidden","xnunc_deleted","xnunc_improvements"];
+    KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch(_){}});
+    setIsLogged(false);setIsAdmin(false);
+    setUserProfile(DEFAULT_PROFILE);
+    setFavorites([]);setDraftSkills([]);setThreads(DEFAULT_THREADS);
+    setHiddenSkills([]);setDeletedSkills([]);setImprovements([]);
+    setShowProfile(false);setShowDashboard(false);
+  }
+
+  // ── Esporta dati ───────────────────────────────────
+  function handleExportData(){
+    const data={
+      esportato:new Date().toISOString(),
+      profilo:userProfile,
+      skillInBozza:draftSkills,
+      preferiti:favorites,
+      miglioramenti:improvements,
+    };
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;a.download=`xnunc_dati_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);URL.revokeObjectURL(url);
+  }
+
+  const areas=useMemo(()=>["Tutte",...Array.from(new Set(SKILLS.map(s=>s.area)))]);//eslint-disable-line
   // Admin vede tutto tranne le eliminate; utenti vedono solo le non-oscurate e non-eliminate
   const visibleSkills=useMemo(()=>SKILLS.filter(s=>isAdmin
     ?!deletedSkills.includes(s.id)
@@ -2823,7 +2906,7 @@ export default function App(){
                 )}
                 {!isAdmin&&<button onClick={()=>setShowCreateSkill(true)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${C.aurum}`,background:"transparent",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>}
                 <div onClick={()=>setShowDashboard(true)} title="La tua dashboard" style={{position:"relative",width:32,height:32,borderRadius:"50%",background:isAdmin?"#b8860b":C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"0 2px 8px #BA751744"}}>
-                  <span style={{color:"#fff",fontSize:13,fontWeight:700}}>{userProfile.nome?userProfile.nome[0].toUpperCase():"G"}</span>
+                  <span style={{color:"#fff",fontSize:13,fontWeight:700}}>{userProfile.nome?userProfile.nome[0].toUpperCase():userProfile.email?userProfile.email[0].toUpperCase():"?"}</span>
                   {nonLettiTot>0&&<div style={{position:"absolute",top:-4,right:-4,background:"#C0392B",color:"#fff",borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700}}>{nonLettiTot}</div>}
                 </div>
               </div>
@@ -2936,11 +3019,11 @@ export default function App(){
         </div>
       </div>
 
-      {showLogin&&<LoginModal onClose={()=>setShowLogin(false)} onLogin={(email)=>{setIsLogged(true);setIsAdmin(email===ADMIN_EMAIL_CHECK);setShowLogin(false);}}/>}
+      {showLogin&&<LoginModal onClose={()=>setShowLogin(false)} onLogin={(loginEmail)=>{setIsLogged(true);setIsAdmin(loginEmail===ADMIN_EMAIL_CHECK);setShowLogin(false);if(loginEmail&&!loginEmail.includes("@social.com"))setUserProfile(p=>p.email?p:{...p,email:loginEmail});}}/>}
       {showFAQ&&<FAQModal onClose={()=>setShowFAQ(false)}/>}
       {showManifesto&&<ManifestoModal onClose={()=>setShowManifesto(false)}/>}
       {showClassifica&&<ClassificaModal onClose={()=>setShowClassifica(false)}/>}
-      {showProfile&&<ProfileModal onClose={()=>setShowProfile(false)} userProfile={userProfile} setUserProfile={setUserProfile}/>}
+      {showProfile&&<ProfileModal onClose={()=>setShowProfile(false)} userProfile={userProfile} setUserProfile={setUserProfile} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} onExportData={handleExportData} userPoints={userPoints}/>}
       {showDashboard&&<DashboardModal
         onClose={()=>setShowDashboard(false)}
         favorites={favorites} setFavorites={setFavorites}
@@ -2949,6 +3032,7 @@ export default function App(){
         userProfile={userProfile}
         isAdmin={isAdmin}
         improvements={improvements} setImprovements={setImprovements}
+        userPoints={userPoints}
         onTestSkill={s=>{setShowDashboard(false);setActiveSkill(s);}}
         onOpenProfile={()=>{setShowDashboard(false);setShowProfile(true);}}
         onCreateSkill={()=>{setShowDashboard(false);setShowCreateSkill(true);}}
