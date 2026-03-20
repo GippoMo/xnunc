@@ -26,40 +26,27 @@ const FREQ_COLOR={ricorrente:C.viridis,occasionale:C.gray};
 // ─────────────────────────────────────────────────────
 // Platform SVG logos
 // ─────────────────────────────────────────────────────
-const LogoClaude = () => (
-  <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
-    <rect width="40" height="40" rx="8" fill="#D97757"/>
-    <path d="M20 8L28 20L20 32L12 20Z" fill="white" fillOpacity="0.9"/>
-    <path d="M12 20L20 14L28 20L20 26Z" fill="white" fillOpacity="0.5"/>
-  </svg>
+const LOGO_URLS={
+  claude:  "https://www.google.com/s2/favicons?domain=claude.ai&sz=64",
+  openai:  "https://www.google.com/s2/favicons?domain=openai.com&sz=64",
+  copilot: "https://www.google.com/s2/favicons?domain=copilot.microsoft.com&sz=64",
+  gemini:  "https://www.google.com/s2/favicons?domain=gemini.google.com&sz=64",
+};
+const PlatformLogo=({id,size=22})=>(
+  <img
+    src={LOGO_URLS[id]}
+    alt={id}
+    width={size} height={size}
+    style={{borderRadius:6,display:"block",objectFit:"contain"}}
+    onError={e=>{e.target.style.display="none";}}
+  />
 );
-const LogoOpenAI = () => (
-  <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
-    <rect width="40" height="40" rx="8" fill="#111"/>
-    <path d="M20 7C13 7 7 13 7 20s6 13 13 13 13-6 13-13S27 7 20 7z" stroke="white" strokeWidth="1.5" fill="none"/>
-    <path d="M14 20c0-3.3 2.7-6 6-6s6 2.7 6 6-2.7 6-6 6" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-    <path d="M20 14v12M14 20h12" stroke="white" strokeWidth="1.2" strokeLinecap="round" opacity="0.5"/>
-  </svg>
-);
-const LogoCopilot = () => (
-  <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
-    <rect width="40" height="40" rx="8" fill="#0078D4"/>
-    <path d="M20 8C13.4 8 8 13.4 8 20c0 6.6 5.4 12 12 12s12-5.4 12-12" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none"/>
-    <path d="M27 15l5-3-3 5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    <circle cx="20" cy="20" r="3" fill="white"/>
-    <path d="M20 13v3M20 24v3M13 20h3M24 20h3" stroke="white" strokeWidth="1.5" strokeLinecap="round" opacity="0.6"/>
-  </svg>
-);
-const LogoGemini = () => (
-  <svg width="22" height="22" viewBox="0 0 40 40" fill="none">
-    <rect width="40" height="40" rx="8" fill="#1A73E8"/>
-    <path d="M20 8C20 8 22 14 22 20C22 26 20 32 20 32C20 32 18 26 18 20C18 14 20 8 20 8Z" fill="white"/>
-    <path d="M8 20C8 20 14 18 20 18C26 18 32 20 32 20C32 20 26 22 20 22C14 22 8 20 8 20Z" fill="white"/>
-    <circle cx="20" cy="20" r="2" fill="#1A73E8"/>
-  </svg>
-);
-
-const PLATFORM_LOGOS = { claude:<LogoClaude/>, openai:<LogoOpenAI/>, copilot:<LogoCopilot/>, gemini:<LogoGemini/> };
+const PLATFORM_LOGOS={
+  claude: <PlatformLogo id="claude"/>,
+  openai: <PlatformLogo id="openai"/>,
+  copilot:<PlatformLogo id="copilot"/>,
+  gemini: <PlatformLogo id="gemini"/>,
+};
 
 const PLATFORMS = [
   { id:"claude",  label:"Claude",  sub:"Anthropic",        color:"#D97757", bg:"#FDF3EE",
@@ -1524,14 +1511,14 @@ function ProfileModal({onClose,userProfile,setUserProfile}){
                     <div style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:10}}>PROVIDER AI</div>
                     <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:8}}>
                       {[
-                        {id:"anthropic",label:"Anthropic (Claude)",placeholder:"sk-ant-api03-…",logo:"🟠"},
-                        {id:"openai",   label:"OpenAI (GPT-4o)",   placeholder:"sk-…",          logo:"⚫"},
-                        {id:"gemini",   label:"Google Gemini",     placeholder:"AIza…",          logo:"🔵"},
-                        {id:"copilot",  label:"Copilot (Azure)",   placeholder:"presto disponibile",logo:"🔷",disabled:true},
+                        {id:"anthropic",label:"Anthropic (Claude)",logoKey:"claude"},
+                        {id:"openai",   label:"OpenAI (GPT-4o)",   logoKey:"openai"},
+                        {id:"gemini",   label:"Google Gemini",     logoKey:"gemini"},
+                        {id:"copilot",  label:"Copilot (Azure)",   logoKey:"copilot",disabled:true},
                       ].map(p=>(
                         <div key={p.id} onClick={()=>!p.disabled&&setAiProvider(p.id)}
                           style={{padding:"9px 12px",borderRadius:8,border:`1.5px solid ${aiProvider===p.id?C.caelum:"#ddd"}`,background:aiProvider===p.id?"#EBF2FE":"#fff",cursor:p.disabled?"not-allowed":"pointer",opacity:p.disabled?0.5:1,display:"flex",alignItems:"center",gap:7}}>
-                          <span style={{fontSize:16}}>{p.logo}</span>
+                          <PlatformLogo id={p.logoKey} size={18}/>
                           <span style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:aiProvider===p.id?700:400,color:aiProvider===p.id?C.caelum:"#555"}}>{p.label}</span>
                         </div>
                       ))}
