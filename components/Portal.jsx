@@ -827,7 +827,7 @@ async function callAI({skill,userInput,attachments,profile}){
 function fileExt(name){return(name.split(".").pop()||"").toLowerCase();}
 function fileSize(bytes){return bytes<1024*1024?`${(bytes/1024).toFixed(0)} KB`:`${(bytes/1024/1024).toFixed(1)} MB`;}
 
-function SkillModal({skill,isLogged,onClose,onLoginRequest,profile}){
+function SkillModal({skill,isLogged,onClose,onLoginRequest,profile,improvements,setImprovements}){
   const[tab,setTab]=useState("usa");
   const[input,setInput]=useState("");
   const[attachments,setAttachments]=useState([]);
@@ -883,8 +883,8 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile}){
   }
   function copyPrompt(){navigator.clipboard.writeText(PROMPTS[skill.id]||"").then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}
 
-  const tabs=["usa","dettagli","storia","miglioramenti"];
-  const tl={usa:skill.tipo==="tool"?"📊 Calcolatore":"▶ Esegui skill",dettagli:"Dettagli",storia:"Storia",miglioramenti:"Miglioramenti"};
+  const tabs=["usa","dettagli","scarica","storia","miglioramenti"];
+  const tl={usa:skill.tipo==="tool"?"📊 Calcolatore":"▶ Esegui skill",dettagli:"Dettagli",scarica:"⬇ Scarica",storia:"Storia",miglioramenti:"Miglioramenti"};
 
   return(
     <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px",overflowY:"auto"}} onClick={onClose}>
@@ -1046,6 +1046,11 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile}){
                 <div><div style={{fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:700,color:C.gray,marginBottom:2}}>Istruzioni IA (System Prompt)</div><div style={{fontFamily:"Arial,sans-serif",fontSize:11,color:"#aaa"}}>Le istruzioni che guidano l'intelligenza artificiale. Identiche su Claude, ChatGPT, Copilot e Gemini.</div></div>
                 <button onClick={copyPrompt} style={{padding:"7px 16px",borderRadius:8,border:`1px solid ${copied?"#1D9E75":"#ddd"}`,background:copied?"#E3F7F0":"#fff",color:copied?"#1D9E75":"#555",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:copied?700:400,transition:"all .2s"}}>{copied?"✓ Copiato":"📋 Copia prompt"}</button>
               </div>
+            </div>
+          )}
+
+          {tab==="scarica"&&(
+            <div>
               <DownloadPanel skill={skill} allSkills={SKILLS}/>
             </div>
           )}
@@ -1068,7 +1073,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile}){
             </div>
           )}
 
-          {tab==="miglioramenti"&&<MiglioramentiTab skill={skill} isLogged={isLogged} onLoginRequest={onLoginRequest} ac={ac}/>}
+          {tab==="miglioramenti"&&<MiglioramentiTab skill={skill} isLogged={isLogged} onLoginRequest={onLoginRequest} ac={ac} improvements={improvements} setImprovements={setImprovements} profile={profile}/>}
         </div>
       </div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}`}</style>
@@ -1149,38 +1154,267 @@ function SkillCard({skill,onClick,isLogged,favorites,setFavorites,compact,isAdmi
 // App
 // ─────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────
-// MiglioramentiTab — discussione + proposte
+// ImprovementDetailView — chat + approvazione
 // ─────────────────────────────────────────────────────
-function MiglioramentiTab({skill,isLogged,onLoginRequest,ac}){
+function ImprovementDetailView({improv,setImprovements,profile,onBack,ac}){
+  const[chatMsg,setChatMsg]=useState("");
+  const[noteRif,setNoteRif]=useState("");
+  const[showNoteInput,setShowNoteInput]=useState(false);
+  const isCreator=profile?.email===ADMIN_EMAIL;
+  const isContributor=profile?.email===improv.contributorEmail;
+  const st=IMPROV_STATI[improv.stato]||IMPROV_STATI.bozza;
+
+  function inviaMsg(){
+    if(!chatMsg.trim())return;
+    const msg={id:Date.now(),da:`${profile?.nome||""} ${profile?.cognome||""}`.trim()||"Utente",daEmail:profile?.email||"",testo:chatMsg,data:new Date().toLocaleDateString("it-IT")};
+    setImprovements(prev=>prev.map(im=>im.id===improv.id?{...im,chat:[...(im.chat||[]),msg]}:im));
+    setChatMsg("");
+  }
+  function approvaCreatore(){
+    setImprovements(prev=>prev.map(im=>im.id===improv.id?{...im,stato:"in_redazione"}:im));
+    onBack();
+  }
+  function rifiutaCreatore(){
+    setImprovements(prev=>prev.map(im=>im.id===improv.id?{...im,stato:"rifiutata_creatore",noteCreatore:noteRif||"Miglioramento rifiutato dal creatore."}:im));
+    onBack();
+  }
+
+  const cf=improv.campiAggiornati||{};
+  return(
+    <div>
+      <button onClick={onBack} style={{background:"none",border:"none",color:ac,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",marginBottom:14,padding:0}}>← Torna ai miglioramenti</button>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+        <div style={{flex:1}}>
+          <div style={{fontFamily:"Georgia,serif",fontSize:16,fontWeight:700,color:C.nox}}>{improv.titolo}</div>
+          <div style={{fontSize:11,color:"#888",fontFamily:"Arial,sans-serif",marginTop:2}}>da {improv.contributorNome} · {improv.createdAt}</div>
+        </div>
+        <span style={{fontSize:11,fontWeight:700,color:st.color,background:st.color+"15",padding:"4px 10px",borderRadius:8,fontFamily:"Arial,sans-serif"}}>{st.label}</span>
+      </div>
+
+      {/* Descrizione miglioramento */}
+      <div style={{background:"#f5f3ee",borderRadius:10,padding:"12px 14px",marginBottom:14}}>
+        <div style={{fontSize:10,fontWeight:700,color:"#888",fontFamily:"Arial,sans-serif",marginBottom:4}}>DESCRIZIONE</div>
+        <div style={{fontSize:13,color:"#333",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{improv.descrizione}</div>
+        {improv.cambiamenti&&<><div style={{fontSize:10,fontWeight:700,color:"#888",fontFamily:"Arial,sans-serif",marginTop:10,marginBottom:4}}>CAMBIAMENTI SPECIFICI</div><div style={{fontSize:13,color:"#333",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{improv.cambiamenti}</div></>}
+      </div>
+
+      {/* Beta fields */}
+      {cf.nome&&(
+        <div style={{background:"#fff",borderRadius:10,border:`1.5px solid ${C.viridis}`,padding:"14px",marginBottom:14}}>
+          <div style={{fontSize:10,fontWeight:700,color:C.viridis,fontFamily:"Arial,sans-serif",marginBottom:10}}>⚡ VERSIONE BETA PROPOSTA</div>
+          {[["Nome",cf.nome],["Descrizione",cf.descrizione],["Input atteso",cf.input_atteso],["Output atteso",cf.output_atteso],["Normativa",cf.normativa]].map(([k,v])=>v&&(
+            <div key={k} style={{marginBottom:8}}>
+              <span style={{fontSize:10,fontWeight:700,color:"#888",fontFamily:"Arial,sans-serif"}}>{k.toUpperCase()}: </span>
+              <span style={{fontSize:12.5,color:"#333",fontFamily:"Arial,sans-serif",lineHeight:1.5}}>{v}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Bottoni approvazione creatore */}
+      {isCreator&&improv.stato==="attesa_creatore"&&(
+        <div style={{background:"#fffbf0",borderRadius:10,padding:"14px",border:"1px solid #e8a80066",marginBottom:14}}>
+          <div style={{fontSize:12,fontWeight:700,color:C.nox,fontFamily:"Arial,sans-serif",marginBottom:10}}>Sei il creatore — approva o rifiuta questo miglioramento</div>
+          {!showNoteInput
+            ?<div style={{display:"flex",gap:8}}>
+              <button onClick={approvaCreatore} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:C.viridis,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Approva → invia in Redazione</button>
+              <button onClick={()=>setShowNoteInput(true)} style={{padding:"9px 16px",borderRadius:8,border:"1px solid #fcc",background:"#fff5f5",color:"#C0392B",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✗ Rifiuta</button>
+            </div>
+            :<div>
+              <textarea value={noteRif} onChange={e=>setNoteRif(e.target.value)} placeholder="Motivo del rifiuto (opzionale)…" rows={2} style={{width:"100%",padding:"8px",borderRadius:7,border:"1.5px solid #ddd",fontSize:12,fontFamily:"Arial,sans-serif",boxSizing:"border-box",marginBottom:8}}/>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={rifiutaCreatore} style={{flex:1,padding:"8px",borderRadius:7,border:"none",background:"#C0392B",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Conferma rifiuto</button>
+                <button onClick={()=>setShowNoteInput(false)} style={{padding:"8px 14px",borderRadius:7,border:"1px solid #ddd",background:"#fff",color:"#888",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Annulla</button>
+              </div>
+            </div>
+          }
+        </div>
+      )}
+
+      {/* Note rifiuto */}
+      {improv.noteCreatore&&<div style={{background:"#fff5f5",borderRadius:8,padding:"10px 14px",marginBottom:14,border:"1px solid #fcc",fontSize:12,color:"#C0392B",fontFamily:"Arial,sans-serif"}}>Note dal creatore: {improv.noteCreatore}</div>}
+      {improv.noteRedazione&&<div style={{background:"#fff5f5",borderRadius:8,padding:"10px 14px",marginBottom:14,border:"1px solid #fcc",fontSize:12,color:"#C0392B",fontFamily:"Arial,sans-serif"}}>Note dalla Redazione: {improv.noteRedazione}</div>}
+
+      {/* Chat */}
+      <div style={{fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em",fontFamily:"Arial,sans-serif",marginBottom:10}}>💬 CHAT TRA CONTRIBUTOR E CREATORE</div>
+      <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:14,maxHeight:260,overflowY:"auto",padding:"4px 0"}}>
+        {(improv.chat||[]).length===0&&<div style={{fontSize:12,color:"#aaa",fontFamily:"Arial,sans-serif",fontStyle:"italic",textAlign:"center",padding:"16px 0"}}>Nessun messaggio ancora.</div>}
+        {(improv.chat||[]).map(m=>(
+          <div key={m.id} style={{display:"flex",gap:8,alignItems:"flex-start",flexDirection:m.daEmail===profile?.email?"row-reverse":"row"}}>
+            <div style={{width:28,height:28,borderRadius:"50%",background:m.daEmail===ADMIN_EMAIL?C.aurum:C.purpura,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+              <span style={{color:"#fff",fontSize:10,fontWeight:700}}>{(m.da||"U")[0].toUpperCase()}</span>
+            </div>
+            <div style={{maxWidth:"70%",background:m.daEmail===profile?.email?"#EBF2FE":"#f5f3ee",borderRadius:10,padding:"8px 12px",border:"1px solid #e8e4dc"}}>
+              <div style={{fontSize:10,fontWeight:700,color:"#888",fontFamily:"Arial,sans-serif",marginBottom:3}}>{m.da} · {m.data}</div>
+              <div style={{fontSize:13,color:"#333",fontFamily:"Arial,sans-serif",lineHeight:1.5}}>{m.testo}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {(isCreator||isContributor)&&(improv.stato==="attesa_creatore"||improv.stato==="in_redazione"||improv.stato==="beta_generata")&&(
+        <div style={{display:"flex",gap:8}}>
+          <input value={chatMsg} onChange={e=>setChatMsg(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&inviaMsg()} placeholder="Scrivi un messaggio…" style={{flex:1,padding:"8px 12px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",outline:"none"}}/>
+          <button onClick={inviaMsg} disabled={!chatMsg.trim()} style={{padding:"8px 16px",borderRadius:8,border:"none",background:chatMsg.trim()?ac:"#eee",color:chatMsg.trim()?"#fff":"#aaa",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Invia</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────
+// MiglioramentiTab — discussione + proposte strutturate
+// ─────────────────────────────────────────────────────
+function MiglioramentiTab({skill,isLogged,onLoginRequest,ac,improvements,setImprovements,profile}){
   const[posts,setPosts]=useState([
     {id:1,autore:"Redazione",ruolo:"creator",avatar:"R",testo:"Skill pubblicata. Proposte di miglioramento benvenute — ogni contributo approvato vale +5 punti e avvicina la v2.0.",data:"16 Mar 2026",tipo:"nota"},
   ]);
   const[testo,setTesto]=useState("");
-  const[tipo,setTipo]=useState("proposta");
+  const[tipo,setTipo]=useState("commento");
+  const[showForm,setShowForm]=useState(false);
+  const[form,setForm]=useState({titolo:"",descrizione:"",cambiamenti:""});
+  const[generating,setGenerating]=useState(false);
+  const[betaResult,setBetaResult]=useState(null);
+  const[betaError,setBetaError]=useState("");
+  const[activeImprovId,setActiveImprovId]=useState(null);
+
+  const skillImprovs=(improvements||[]).filter(im=>im.skillId===skill.id);
+  const myImprovs=skillImprovs.filter(im=>im.contributorEmail===(profile?.email||"__none__"));
+  const approvateCnt=skillImprovs.filter(im=>im.stato==="approvata").length;
 
   function invia(){
     if(!testo.trim())return;
-    setPosts(p=>[...p,{id:Date.now(),autore:"Tu",ruolo:"contributor",avatar:"G",testo,data:"Oggi",tipo}]);
+    const av=(profile?.nome?.[0]||"U").toUpperCase();
+    setPosts(p=>[...p,{id:Date.now(),autore:profile?.nome||"Tu",ruolo:"contributor",avatar:av,testo,data:new Date().toLocaleDateString("it-IT"),tipo}]);
     setTesto("");
   }
 
-  const approvateCnt=posts.filter(p=>p.tipo==="proposta"&&p.approvata).length;
+  async function generaBeta(){
+    if(!form.titolo.trim()||!form.descrizione.trim())return;
+    setGenerating(true);setBetaError("");setBetaResult(null);
+    try{
+      const sys=`Sei un esperto di prompt engineering per studi di Dottori Commercialisti italiani. Ricevi una skill esistente e una proposta di miglioramento. Genera una versione migliorata. Rispondi SOLO con JSON valido senza markdown: {"nome":"...","descrizione":"...","input_atteso":"...","output_atteso":"...","normativa":"..."}`;
+      const usr=`SKILL ATTUALE:\nNome: ${skill.nome}\nDescrizione: ${skill.descrizione}\nInput atteso: ${skill.input_atteso||""}\nOutput atteso: ${skill.output_atteso||""}\nNormativa: ${skill.normativa||""}\n\nPROPOSTA:\nTitolo: ${form.titolo}\nDescrizione: ${form.descrizione}\nCambiamenti: ${form.cambiamenti}\n\nGenera la versione migliorata mantenendo la struttura.`;
+      const r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:2000,system:sys,messages:[{role:"user",content:usr}]})});
+      if(!r.ok)throw new Error("HTTP "+r.status);
+      const d=await r.json();
+      const txt=d.content?.find(b=>b.type==="text")?.text||d.content?.[0]?.text||"";
+      setBetaResult(JSON.parse(txt.replace(/```json|```/g,"").trim()));
+    }catch(e){setBetaError("Errore: "+e.message);}
+    finally{setGenerating(false);}
+  }
+
+  function salvaBeta(){
+    const improv={
+      id:"improv_"+Date.now(),
+      skillId:skill.id, skillNome:skill.nome, skillArea:skill.area, skillSottoArea:skill.sotto_area||"",
+      contributorEmail:profile?.email||"anonimo",
+      contributorNome:`${profile?.nome||""} ${profile?.cognome||""}`.trim()||"Utente",
+      titolo:form.titolo, descrizione:form.descrizione, cambiamenti:form.cambiamenti,
+      campiAggiornati:betaResult,
+      stato:"beta_generata", chat:[], noteCreatore:"", noteRedazione:"",
+      createdAt:new Date().toLocaleDateString("it-IT"),
+    };
+    setImprovements(prev=>[...prev,improv]);
+    setShowForm(false);setBetaResult(null);setForm({titolo:"",descrizione:"",cambiamenti:""});
+  }
+
+  function inviaAlCreatore(improvId){
+    setImprovements(prev=>prev.map(im=>im.id===improvId?{...im,stato:"attesa_creatore"}:im));
+  }
+
+  // Vista dettaglio improvement
+  if(activeImprovId){
+    const improv=(improvements||[]).find(im=>im.id===activeImprovId);
+    if(improv)return <ImprovementDetailView improv={improv} setImprovements={setImprovements} profile={profile} onBack={()=>setActiveImprovId(null)} ac={ac}/>;
+  }
 
   return(
     <div>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+      {/* Header progress */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
         <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:"#666"}}>
-          <span style={{fontWeight:700,color:ac}}>{approvateCnt}/3</span> <span style={{color:"#888"}}>miglioramenti approvati per avanzare a v2.0</span>
+          <span style={{fontWeight:700,color:ac}}>{approvateCnt}/3</span> <span style={{color:"#888"}}>approvati per v2.0</span>
         </div>
-        <div style={{background:"#f5f3ee",borderRadius:20,padding:"3px 12px",fontSize:11,color:"#888",fontFamily:"Arial,sans-serif"}}>{posts.filter(p=>p.tipo==="proposta").length} proposte</div>
+        <div style={{background:"#f5f3ee",borderRadius:20,padding:"3px 12px",fontSize:11,color:"#888",fontFamily:"Arial,sans-serif"}}>{skillImprovs.length} proposte totali</div>
       </div>
-
-      {/* progress bar */}
       <div style={{height:4,borderRadius:2,background:"#eee",marginBottom:20,overflow:"hidden"}}>
         <div style={{height:"100%",width:`${Math.min(100,(approvateCnt/3)*100)}%`,background:ac,transition:"width .4s",borderRadius:2}}/>
       </div>
 
-      {/* thread */}
+      {/* Miei miglioramenti in corso */}
+      {myImprovs.length>0&&(
+        <div style={{marginBottom:20}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em",fontFamily:"Arial,sans-serif",marginBottom:8}}>I TUOI MIGLIORAMENTI</div>
+          {myImprovs.map(im=>{
+            const st=IMPROV_STATI[im.stato]||IMPROV_STATI.bozza;
+            return(
+              <div key={im.id} style={{background:"#fafaf8",borderRadius:10,padding:"10px 14px",border:"1.5px solid #e8e4dc",marginBottom:8,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                <div style={{flex:1,minWidth:120}}>
+                  <div style={{fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:700,color:C.nox}}>{im.titolo}</div>
+                  <div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif"}}>{im.createdAt}</div>
+                </div>
+                <span style={{fontSize:10,fontWeight:700,color:st.color,background:st.color+"15",padding:"3px 8px",borderRadius:8,fontFamily:"Arial,sans-serif",whiteSpace:"nowrap"}}>{st.label}</span>
+                <button onClick={()=>setActiveImprovId(im.id)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${ac}`,background:"#fff",color:ac,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Apri →</button>
+                {im.stato==="beta_generata"&&(
+                  <button onClick={()=>inviaAlCreatore(im.id)} style={{padding:"5px 12px",borderRadius:6,border:"none",background:ac,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>📬 Invia al creatore</button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* CTA nuovo miglioramento strutturato */}
+      {isLogged&&!showForm&&(
+        <button onClick={()=>setShowForm(true)} style={{width:"100%",padding:"10px",borderRadius:10,border:`1.5px dashed ${ac}`,background:ac+"0a",color:ac,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",marginBottom:16}}>
+          ⚡ Proponi un miglioramento strutturato
+        </button>
+      )}
+
+      {/* Form miglioramento */}
+      {showForm&&(
+        <div style={{background:"#f5f3ee",borderRadius:12,padding:"18px",border:`1.5px solid ${ac}44`,marginBottom:16}}>
+          <div style={{fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:700,color:C.nox,marginBottom:14}}>⚡ Nuovo miglioramento — genera beta</div>
+          {[
+            {key:"titolo",label:"Titolo",ph:"Es.: Aggiornamento normativa 2024",rows:1},
+            {key:"descrizione",label:"Descrizione del cambiamento",ph:"Cosa miglioreresti e perché?",rows:3},
+            {key:"cambiamenti",label:"Cambiamenti specifici (opzionale)",ph:"Dettagli tecnici, riferimenti normativi…",rows:2},
+          ].map(({key,label,ph,rows})=>(
+            <div key={key} style={{marginBottom:10}}>
+              <div style={{fontSize:11,fontWeight:700,color:"#555",fontFamily:"Arial,sans-serif",marginBottom:4}}>{label}</div>
+              {rows===1
+                ?<input value={form[key]} onChange={e=>setForm(p=>({...p,[key]:e.target.value}))} placeholder={ph} style={{width:"100%",padding:"8px 10px",borderRadius:7,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",boxSizing:"border-box"}}/>
+                :<textarea value={form[key]} onChange={e=>setForm(p=>({...p,[key]:e.target.value}))} placeholder={ph} rows={rows} style={{width:"100%",padding:"8px 10px",borderRadius:7,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",resize:"vertical",boxSizing:"border-box"}}/>
+              }
+            </div>
+          ))}
+          {!betaResult&&(
+            <button onClick={generaBeta} disabled={generating||!form.titolo.trim()||!form.descrizione.trim()} style={{width:"100%",padding:"10px",borderRadius:8,border:"none",background:(generating||!form.titolo.trim()||!form.descrizione.trim())?"#eee":ac,color:(generating||!form.titolo.trim()||!form.descrizione.trim())?"#aaa":"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",marginBottom:8}}>
+              {generating?<><span style={{display:"inline-block",animation:"spin 1s linear infinite"}}>⟳</span> Generazione in corso…</>:"⚡ Genera versione beta con AI"}
+            </button>
+          )}
+          {betaError&&<div style={{color:"#C0392B",fontSize:12,fontFamily:"Arial,sans-serif",marginBottom:8}}>⚠️ {betaError}</div>}
+          {betaResult&&(
+            <div style={{background:"#fff",borderRadius:10,padding:"14px",border:`1.5px solid ${C.viridis}`,marginBottom:10}}>
+              <div style={{fontSize:11,fontWeight:700,color:C.viridis,fontFamily:"Arial,sans-serif",marginBottom:8}}>✓ BETA GENERATA — anteprima</div>
+              {[["Nome",betaResult.nome],["Descrizione",betaResult.descrizione],["Input atteso",betaResult.input_atteso],["Output atteso",betaResult.output_atteso],["Normativa",betaResult.normativa]].map(([k,v])=>v&&(
+                <div key={k} style={{marginBottom:6}}>
+                  <span style={{fontSize:10,fontWeight:700,color:"#888",fontFamily:"Arial,sans-serif"}}>{k.toUpperCase()}: </span>
+                  <span style={{fontSize:12.5,color:"#333",fontFamily:"Arial,sans-serif",lineHeight:1.5}}>{v}</span>
+                </div>
+              ))}
+              <div style={{display:"flex",gap:8,marginTop:10}}>
+                <button onClick={salvaBeta} style={{flex:1,padding:"8px",borderRadius:7,border:"none",background:C.viridis,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Salva in sviluppo</button>
+                <button onClick={()=>setBetaResult(null)} style={{padding:"8px 14px",borderRadius:7,border:"1px solid #ddd",background:"#fff",color:"#555",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Rigenera</button>
+              </div>
+            </div>
+          )}
+          <button onClick={()=>{setShowForm(false);setBetaResult(null);setForm({titolo:"",descrizione:"",cambiamenti:""}); }} style={{width:"100%",padding:"7px",borderRadius:7,border:"1px solid #ddd",background:"#fff",color:"#888",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Annulla</button>
+        </div>
+      )}
+
+      {/* Thread discussione */}
+      <div style={{fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em",fontFamily:"Arial,sans-serif",marginBottom:10}}>DISCUSSIONE GENERALE</div>
       <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
         {posts.map(p=>(
           <div key={p.id} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
@@ -1193,27 +1427,15 @@ function MiglioramentiTab({skill,isLogged,onLoginRequest,ac}){
                 <span style={{fontSize:10,color:"#bbb",fontFamily:"Arial,sans-serif"}}>{p.data}</span>
               </div>
               <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:"#333",lineHeight:1.6}}>{p.testo}</div>
-              {p.tipo==="proposta"&&<div style={{marginTop:6,fontSize:10,color:"#888",fontFamily:"Arial,sans-serif",fontStyle:"italic"}}>💡 Proposta in attesa di revisione</div>}
             </div>
           </div>
         ))}
       </div>
-
-      {/* input */}
       {isLogged?(
         <div style={{background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1.5px solid #e8e4dc"}}>
-          <div style={{display:"flex",gap:8,marginBottom:10}}>
-            {["proposta","commento"].map(t=>(
-              <button key={t} onClick={()=>setTipo(t)} style={{padding:"5px 14px",borderRadius:20,border:`1px solid ${tipo===t?ac:"#ddd"}`,background:tipo===t?ac+"22":"#fff",color:tipo===t?ac:"#888",fontSize:11,fontWeight:tipo===t?700:400,cursor:"pointer",fontFamily:"Arial,sans-serif",textTransform:"capitalize"}}>
-                {t==="proposta"?"💡 Proposta":"💬 Commento"}
-              </button>
-            ))}
-          </div>
-          <textarea value={testo} onChange={e=>setTesto(e.target.value)}
-            placeholder={tipo==="proposta"?"Descrivi il miglioramento che vorresti vedere: cosa cambieresti nel prompt, negli esempi, nei campi…":"Scrivi un commento o una domanda sulla skill…"}
-            rows={3} style={{width:"100%",padding:"10px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
+          <textarea value={testo} onChange={e=>setTesto(e.target.value)} placeholder="Scrivi un commento o una domanda sulla skill…" rows={3} style={{width:"100%",padding:"10px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
-            <span style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif"}}>{tipo==="proposta"?"+5 punti se approvata":"+2 punti"}</span>
+            <span style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif"}}>+2 punti per commento</span>
             <button onClick={invia} disabled={!testo.trim()} style={{padding:"7px 18px",borderRadius:8,border:"none",background:testo.trim()?ac:"#eee",color:testo.trim()?"#fff":"#aaa",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Invia →</button>
           </div>
         </div>
@@ -1615,13 +1837,27 @@ async function notificaEmail({destinatario,oggetto,corpo}){
 }
 
 // ─────────────────────────────────────────────────────
+// Improvement workflow config
+// ─────────────────────────────────────────────────────
+const IMPROV_STATI={
+  bozza:              {label:"✏️ Bozza",              color:C.caelum},
+  beta_generata:      {label:"⚡ Beta pronta",         color:C.aurum},
+  attesa_creatore:    {label:"⏳ Attesa creatore",     color:C.aurum},
+  approvata_creatore: {label:"✓ Approv. creatore",    color:C.viridis},
+  rifiutata_creatore: {label:"✗ Rif. creatore",       color:"#C0392B"},
+  in_redazione:       {label:"📋 In Redazione",        color:C.caelum},
+  approvata:          {label:"✅ Pubblicata",           color:C.viridis},
+  rifiutata_redazione:{label:"✗ Rif. Redazione",      color:"#C0392B"},
+};
+
+// ─────────────────────────────────────────────────────
 // DashboardModal — area riservata utente
 // Tabs: ⭐ Preferiti | 🔧 In sviluppo | 💬 Messaggi
 // ─────────────────────────────────────────────────────
 const STATO_LABEL={bozza:"🔧 Bozza",in_revisione:"⏳ In revisione",approvata:"✓ Approvata"};
 const STATO_COLOR={bozza:C.caelum,in_revisione:C.aurum,approvata:C.viridis};
 
-function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,onTestSkill,onOpenProfile,onCreateSkill,isAdmin}){
+function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,onTestSkill,onOpenProfile,onCreateSkill,isAdmin,improvements,setImprovements}){
   const[tab,setTab]=useState(0);
   const[activeThread,setActiveThread]=useState(null);
   const[msgTesto,setMsgTesto]=useState("");
@@ -1694,9 +1930,13 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
     setActiveThread(thread);
   }
 
+  const myImprovs=(improvements||[]).filter(im=>im.contributorEmail===userProfile.email&&im.stato!=="approvata"&&im.stato!=="rifiutata_redazione");
+  const pendingMyApproval=(improvements||[]).filter(im=>im.stato==="attesa_creatore"&&(isAdmin||im.contributorEmail===userProfile.email));
+  const[activeDashImprov,setActiveDashImprov]=useState(null);
+
   const tabBar=[
     {label:"⭐ Preferiti",count:favSkills.length+draftSkills.filter(d=>d.stato==="approvata").length},
-    {label:"🔧 In sviluppo",count:draftSkills.filter(d=>d.stato!=="approvata").length},
+    {label:"🔧 In sviluppo",count:draftSkills.filter(d=>d.stato!=="approvata").length+(myImprovs.length)+(isAdmin?pendingMyApproval.length:0)},
     {label:"💬 Messaggi",count:nonLettiTot},
   ];
 
@@ -1883,6 +2123,52 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
                 })
               )}
             </div>
+
+            {/* Sezione miglioramenti in corso */}
+            {activeDashImprov?(
+              <div style={{padding:"0 20px 20px"}}>
+                {(()=>{
+                  const improv=(improvements||[]).find(im=>im.id===activeDashImprov);
+                  if(!improv)return null;
+                  return <ImprovementDetailView improv={improv} setImprovements={setImprovements} profile={userProfile} onBack={()=>setActiveDashImprov(null)} ac={C.aurum}/>;
+                })()}
+              </div>
+            ):(myImprovs.length>0||(isAdmin&&pendingMyApproval.length>0))&&(
+              <div style={{padding:"0 20px 20px"}}>
+                <div style={{borderTop:"1px solid #eee",paddingTop:20,marginTop:8}}>
+                  <div style={{fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em",fontFamily:"Arial,sans-serif",marginBottom:12}}>MIGLIORAMENTI WIDGET IN CORSO</div>
+                  {/* Pending approvals for creator/admin */}
+                  {isAdmin&&pendingMyApproval.length>0&&(
+                    <div style={{marginBottom:12}}>
+                      <div style={{fontSize:11,color:C.aurum,fontWeight:700,fontFamily:"Arial,sans-serif",marginBottom:6}}>⏳ In attesa della tua approvazione ({pendingMyApproval.length})</div>
+                      {pendingMyApproval.map(im=>(
+                        <div key={im.id} style={{background:"#fffbf0",borderRadius:10,padding:"10px 14px",border:"1.5px solid #e8a80066",marginBottom:8,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                          <div style={{flex:1}}>
+                            <div style={{fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:700,color:C.nox}}>{im.titolo}</div>
+                            <div style={{fontSize:11,color:"#888",fontFamily:"Arial,sans-serif"}}>su <strong>{im.skillNome}</strong> · da {im.contributorNome}</div>
+                          </div>
+                          <button onClick={()=>setActiveDashImprov(im.id)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${C.aurum}`,background:"#fff",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Esamina →</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* My contributions */}
+                  {myImprovs.map(im=>{
+                    const st=IMPROV_STATI[im.stato]||IMPROV_STATI.bozza;
+                    return(
+                      <div key={im.id} style={{background:"#fafaf8",borderRadius:10,padding:"10px 14px",border:"1.5px solid #e8e4dc",marginBottom:8,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                        <div style={{flex:1,minWidth:120}}>
+                          <div style={{fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:700,color:C.nox}}>{im.titolo}</div>
+                          <div style={{fontSize:11,color:"#888",fontFamily:"Arial,sans-serif"}}>su <strong>{im.skillNome}</strong> · {im.createdAt}</div>
+                        </div>
+                        <span style={{fontSize:10,fontWeight:700,color:st.color,background:st.color+"15",padding:"3px 8px",borderRadius:8,fontFamily:"Arial,sans-serif",whiteSpace:"nowrap"}}>{st.label}</span>
+                        <button onClick={()=>setActiveDashImprov(im.id)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${C.caelum}`,background:"#fff",color:C.caelum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Dettagli →</button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           )}
 
           {/* TAB 2 — Messaggi */}
@@ -2206,11 +2492,15 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
 // ─────────────────────────────────────────────────────
 // AdminPanelModal — pannello di controllo Redazione
 // ─────────────────────────────────────────────────────
-function AdminPanelModal({onClose,hiddenSkills,setHiddenSkills,deletedSkills,setDraftSkills,draftSkills}){
-  const[tab,setTab]=useState("catalogo"); // "catalogo" | "revisione"
-  const[confirmDelete,setConfirmDelete]=useState(null); // skill id da eliminare definitivamente
+function AdminPanelModal({onClose,hiddenSkills,setHiddenSkills,deletedSkills,setDraftSkills,draftSkills,improvements,setImprovements,userProfile}){
+  const[tab,setTab]=useState("catalogo"); // "catalogo" | "revisione" | "miglioramenti"
+  const[confirmDelete,setConfirmDelete]=useState(null);
+  const[activeImprovId,setActiveImprovId]=useState(null);
+  const[noteRif,setNoteRif]=useState("");
+  const[rifId,setRifId]=useState(null);
   const hiddenList=SKILLS.filter(s=>hiddenSkills.includes(s.id));
   const inRevisione=(draftSkills||[]).filter(s=>s.stato==="in_revisione");
+  const inRedazione=(improvements||[]).filter(im=>im.stato==="in_redazione");
 
   function approvaSkill(id){
     setDraftSkills(prev=>prev.map(s=>s.id===id?{...s,stato:"approvata"}:s));
@@ -2243,6 +2533,7 @@ function AdminPanelModal({onClose,hiddenSkills,setHiddenSkills,deletedSkills,set
             {n:hiddenSkills.length,label:"Oscurate",color:"#e8a800"},
             {n:deletedSkills.length,label:"Eliminate",color:"#C0392B"},
             {n:inRevisione.length,label:"In revisione",color:C.caelum},
+            {n:inRedazione.length,label:"Migliorie",color:C.purpura},
           ].map(({n,label,color})=>(
             <div key={label} style={{flex:1,padding:"14px 10px",textAlign:"center",borderRight:`1px solid ${C.aurum}22`}}>
               <div style={{fontSize:22,fontWeight:700,color,fontFamily:"Georgia,serif"}}>{n}</div>
@@ -2253,9 +2544,11 @@ function AdminPanelModal({onClose,hiddenSkills,setHiddenSkills,deletedSkills,set
 
         {/* Tabs */}
         <div style={{display:"flex",borderBottom:`1px solid ${C.aurum}22`,padding:"0 20px"}}>
-          {[["catalogo","📋 Catalogo"],["revisione","🔍 Revisione skill"]].map(([id,label])=>(
-            <button key={id} onClick={()=>setTab(id)} style={{padding:"12px 16px",background:"none",border:"none",borderBottom:tab===id?`2px solid ${C.aurum}`:"2px solid transparent",color:tab===id?C.aurum:"#888",fontSize:13,fontWeight:tab===id?700:400,cursor:"pointer",fontFamily:"Arial,sans-serif",marginBottom:-1}}>
-              {label}{id==="revisione"&&inRevisione.length>0&&<span style={{marginLeft:6,background:C.caelum,color:"#fff",borderRadius:8,fontSize:9,padding:"1px 5px"}}>{inRevisione.length}</span>}
+          {[["catalogo","📋 Catalogo"],["revisione","🔍 Revisione skill"],["miglioramenti","⚡ Miglioramenti"]].map(([id,label])=>(
+            <button key={id} onClick={()=>{setTab(id);setActiveImprovId(null);}} style={{padding:"12px 16px",background:"none",border:"none",borderBottom:tab===id?`2px solid ${C.aurum}`:"2px solid transparent",color:tab===id?C.aurum:"#888",fontSize:13,fontWeight:tab===id?700:400,cursor:"pointer",fontFamily:"Arial,sans-serif",marginBottom:-1}}>
+              {label}
+              {id==="revisione"&&inRevisione.length>0&&<span style={{marginLeft:6,background:C.caelum,color:"#fff",borderRadius:8,fontSize:9,padding:"1px 5px"}}>{inRevisione.length}</span>}
+              {id==="miglioramenti"&&inRedazione.length>0&&<span style={{marginLeft:6,background:C.purpura,color:"#fff",borderRadius:8,fontSize:9,padding:"1px 5px"}}>{inRedazione.length}</span>}
             </button>
           ))}
         </div>
@@ -2327,17 +2620,99 @@ function AdminPanelModal({onClose,hiddenSkills,setHiddenSkills,deletedSkills,set
                         <span style={{background:"#1a3040",color:C.caelum,borderRadius:6,fontSize:10,padding:"3px 8px",fontWeight:700}}>IN REVISIONE</span>
                       </div>
                       {s.descrizione&&<div style={{fontSize:12,color:"#aaa",marginBottom:12,lineHeight:1.5}}>{s.descrizione}</div>}
-                      {s.agenti&&s.agenti.length>0&&(
-                        <div style={{fontSize:11,color:"#888",marginBottom:10}}>
-                          Agenti: {s.agenti.map(a=><span key={a} style={{background:"#222",borderRadius:4,padding:"1px 6px",marginRight:4,color:"#aaa"}}>{a}</span>)}
-                        </div>
-                      )}
                       <div style={{display:"flex",gap:8,marginTop:12}}>
                         <button onClick={()=>approvaSkill(s.id)} style={{flex:1,padding:"8px",borderRadius:8,border:"none",background:C.viridis,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer"}}>✓ Approva e pubblica</button>
                         <button onClick={()=>rifiutaSkill(s.id,"Richiesta revisione: aggiungi maggiore dettaglio alle istruzioni.")} style={{flex:1,padding:"8px",borderRadius:8,border:`1px solid #C0392B`,background:"transparent",color:"#C0392B",fontSize:13,fontWeight:700,cursor:"pointer"}}>✕ Rimanda in bozza</button>
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Tab: Miglioramenti in Redazione */}
+          {tab==="miglioramenti"&&(
+            <div>
+              {activeImprovId?(
+                <div>
+                  {(()=>{
+                    const improv=(improvements||[]).find(im=>im.id===activeImprovId);
+                    if(!improv)return null;
+                    const cf=improv.campiAggiornati||{};
+                    return(
+                      <div>
+                        <button onClick={()=>{setActiveImprovId(null);setRifId(null);setNoteRif("");}} style={{background:"none",border:"none",color:C.aurum,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",marginBottom:14,padding:0}}>← Torna alla lista</button>
+                        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:14}}>
+                          <div style={{flex:1}}>
+                            <div style={{fontFamily:"Georgia,serif",fontSize:16,fontWeight:700,color:C.lux}}>{improv.titolo}</div>
+                            <div style={{fontSize:11,color:"#888",fontFamily:"Arial,sans-serif",marginTop:2}}>da {improv.contributorNome} · su <strong style={{color:C.aurum}}>{improv.skillNome}</strong> · {improv.createdAt}</div>
+                          </div>
+                        </div>
+                        <div style={{background:"#1a1c14",borderRadius:10,padding:"12px 14px",marginBottom:12,border:"1px solid #333"}}>
+                          <div style={{fontSize:10,fontWeight:700,color:"#888",fontFamily:"Arial,sans-serif",marginBottom:6}}>DESCRIZIONE</div>
+                          <div style={{fontSize:13,color:"#ccc",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{improv.descrizione}</div>
+                          {improv.cambiamenti&&<><div style={{fontSize:10,fontWeight:700,color:"#888",fontFamily:"Arial,sans-serif",marginTop:10,marginBottom:4}}>CAMBIAMENTI</div><div style={{fontSize:13,color:"#ccc",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{improv.cambiamenti}</div></>}
+                        </div>
+                        {cf.nome&&(
+                          <div style={{background:"#0e1f14",borderRadius:10,border:`1px solid ${C.viridis}44`,padding:"12px 14px",marginBottom:14}}>
+                            <div style={{fontSize:10,fontWeight:700,color:C.viridis,fontFamily:"Arial,sans-serif",marginBottom:8}}>⚡ VERSIONE BETA PROPOSTA</div>
+                            {[["Nome",cf.nome],["Descrizione",cf.descrizione],["Input atteso",cf.input_atteso],["Output atteso",cf.output_atteso],["Normativa",cf.normativa]].map(([k,v])=>v&&(
+                              <div key={k} style={{marginBottom:6}}><span style={{fontSize:10,fontWeight:700,color:"#666",fontFamily:"Arial,sans-serif"}}>{k.toUpperCase()}: </span><span style={{fontSize:12.5,color:"#bbb",fontFamily:"Arial,sans-serif",lineHeight:1.5}}>{v}</span></div>
+                            ))}
+                          </div>
+                        )}
+                        {/* Chat */}
+                        <div style={{fontSize:11,fontWeight:700,color:"#888",letterSpacing:"0.08em",fontFamily:"Arial,sans-serif",marginBottom:8}}>CHAT CONTRIBUTOR ↔ CREATORE</div>
+                        <div style={{background:"#111",borderRadius:10,padding:"12px",marginBottom:14,maxHeight:200,overflowY:"auto"}}>
+                          {(improv.chat||[]).length===0?<div style={{color:"#555",fontSize:12,fontFamily:"Arial,sans-serif",textAlign:"center",padding:"16px 0"}}>Nessun messaggio.</div>
+                            :(improv.chat||[]).map(m=>(
+                              <div key={m.id} style={{marginBottom:8}}>
+                                <span style={{fontSize:10,fontWeight:700,color:C.aurum,fontFamily:"Arial,sans-serif"}}>{m.da} · {m.data}</span>
+                                <div style={{fontSize:12,color:"#bbb",fontFamily:"Arial,sans-serif",lineHeight:1.5,marginTop:2}}>{m.testo}</div>
+                              </div>
+                            ))
+                          }
+                        </div>
+                        {/* Approvazione Redazione */}
+                        {rifId===improv.id?(
+                          <div>
+                            <textarea value={noteRif} onChange={e=>setNoteRif(e.target.value)} placeholder="Motivo del rifiuto (opzionale)…" rows={2} style={{width:"100%",padding:"8px",borderRadius:7,border:"1px solid #444",background:"#1a1a1a",color:"#ccc",fontSize:12,fontFamily:"Arial,sans-serif",boxSizing:"border-box",marginBottom:8}}/>
+                            <div style={{display:"flex",gap:8}}>
+                              <button onClick={()=>{setImprovements(prev=>prev.map(im=>im.id===improv.id?{...im,stato:"rifiutata_redazione",noteRedazione:noteRif||"Miglioramento non approvato dalla Redazione."}:im));setActiveImprovId(null);setRifId(null);setNoteRif("");}} style={{flex:1,padding:"8px",borderRadius:7,border:"none",background:"#C0392B",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Conferma rifiuto</button>
+                              <button onClick={()=>setRifId(null)} style={{padding:"8px 14px",borderRadius:7,border:"1px solid #444",background:"transparent",color:"#888",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Annulla</button>
+                            </div>
+                          </div>
+                        ):(
+                          <div style={{display:"flex",gap:8}}>
+                            <button onClick={()=>{setImprovements(prev=>prev.map(im=>im.id===improv.id?{...im,stato:"approvata"}:im));setActiveImprovId(null);}} style={{flex:1,padding:"10px",borderRadius:8,border:"none",background:C.viridis,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Approva e pubblica miglioramento</button>
+                            <button onClick={()=>setRifId(improv.id)} style={{padding:"10px 18px",borderRadius:8,border:`1px solid #C0392B`,background:"transparent",color:"#C0392B",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✕ Rifiuta</button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              ):inRedazione.length===0?(
+                <div style={{textAlign:"center",padding:"40px 0",color:"#666",fontSize:13}}>
+                  <div style={{fontSize:32,marginBottom:8}}>⚡</div>
+                  Nessun miglioramento in attesa di approvazione finale.
+                </div>
+              ):(
+                <div>
+                  <div style={{fontSize:14,fontWeight:700,color:C.lux,marginBottom:16}}>Miglioramenti approvati dal creatore — in attesa della Redazione</div>
+                  <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                    {inRedazione.map(im=>(
+                      <div key={im.id} style={{background:"#1a1c14",borderRadius:12,border:`1px solid ${C.purpura}44`,padding:"14px 16px",display:"flex",alignItems:"center",gap:10}}>
+                        <div style={{flex:1}}>
+                          <div style={{fontWeight:700,fontSize:14,color:C.lux}}>{im.titolo}</div>
+                          <div style={{fontSize:11,color:"#888",marginTop:2}}>su <span style={{color:C.aurum}}>{im.skillNome}</span> · da {im.contributorNome} · {im.createdAt}</div>
+                        </div>
+                        <span style={{fontSize:10,fontWeight:700,color:C.purpura,background:C.purpura+"22",padding:"3px 8px",borderRadius:8,fontFamily:"Arial,sans-serif"}}>IN REDAZIONE</span>
+                        <button onClick={()=>setActiveImprovId(im.id)} style={{padding:"6px 14px",borderRadius:6,border:`1px solid ${C.aurum}`,background:"transparent",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Esamina →</button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -2410,6 +2785,8 @@ export default function App(){
   useEffect(()=>{lsSet("xnunc_threads",threads);},[threads]);
   useEffect(()=>{lsSet("xnunc_hidden",hiddenSkills);},[hiddenSkills]);
   useEffect(()=>{lsSet("xnunc_deleted",deletedSkills);},[deletedSkills]);
+  const[improvements,setImprovements]=useState(()=>ls("xnunc_improvements",[]));
+  useEffect(()=>{lsSet("xnunc_improvements",improvements);},[improvements]);
 
   const ADMIN_EMAIL_CHECK="morales@bcand.it";
 
@@ -2571,6 +2948,7 @@ export default function App(){
         threads={threads} setThreads={setThreads}
         userProfile={userProfile}
         isAdmin={isAdmin}
+        improvements={improvements} setImprovements={setImprovements}
         onTestSkill={s=>{setShowDashboard(false);setActiveSkill(s);}}
         onOpenProfile={()=>{setShowDashboard(false);setShowProfile(true);}}
         onCreateSkill={()=>{setShowDashboard(false);setShowCreateSkill(true);}}
@@ -2580,12 +2958,14 @@ export default function App(){
         userProfile={userProfile}
         onSaveDraft={draft=>setDraftSkills(prev=>[...prev,draft])}
       />}
-      {activeSkill&&<SkillModal skill={activeSkill} isLogged={isLogged} onClose={()=>setActiveSkill(null)} onLoginRequest={()=>{setActiveSkill(null);setShowLogin(true);}} profile={userProfile}/>}
+      {activeSkill&&<SkillModal skill={activeSkill} isLogged={isLogged} onClose={()=>setActiveSkill(null)} onLoginRequest={()=>{setActiveSkill(null);setShowLogin(true);}} profile={userProfile} improvements={improvements} setImprovements={setImprovements}/>}
       {showAdminPanel&&<AdminPanelModal
         onClose={()=>setShowAdminPanel(false)}
         hiddenSkills={hiddenSkills} setHiddenSkills={setHiddenSkills}
         deletedSkills={deletedSkills}
         draftSkills={draftSkills} setDraftSkills={setDraftSkills}
+        improvements={improvements} setImprovements={setImprovements}
+        userProfile={userProfile}
       />}
     </div>
   );
