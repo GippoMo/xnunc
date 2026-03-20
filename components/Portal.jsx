@@ -2044,7 +2044,7 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
 
           {/* TAB 1 — In sviluppo */}
           {tab===1&&(
-            <div>
+            <><div>
               {draftSkills.filter(d=>d.stato!=="approvata").length===0?(
                 <div style={{textAlign:"center",padding:"48px 0"}}>
                   <div style={{fontSize:32,marginBottom:8}}>🔧</div>
@@ -2201,7 +2201,7 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
                   })}
                 </div>
               </div>
-            )}
+            )}</>
           )}
 
           {/* TAB 2 — Messaggi */}
