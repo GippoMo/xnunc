@@ -715,15 +715,15 @@ const FILE_ACCEPT=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg";
 // Agenti interni xNunc — motore sotto il cofano
 // ─────────────────────────────────────────────────────
 const XNUNC_AGENTS=[
-  {id:"luca",  nome:"Luca",  ruolo:"Tax Advisor",      emoji:"⚖️", aree:["Fiscale","Beni strumentali","Finanza agevolata"],  desc:"Esperto di fiscalità italiana, IVA, imposte dirette e normativa tributaria."},
-  {id:"marco", nome:"Marco", ruolo:"Bilancio & Audit",  emoji:"📊", aree:["Chiusura bilancio","Verifiche sindacali"],          desc:"Specialista in chiusure di bilancio, revisione contabile e controllo interno."},
-  {id:"elena", nome:"Elena", ruolo:"Big Four Advisor",  emoji:"🏢", aree:["Verifiche sindacali","Societario"],                 desc:"Standard EY/PWC/KPMG: compliance, due diligence, reportistica strutturata."},
-  {id:"paolo", nome:"Paolo", ruolo:"Strategy Partner",  emoji:"🎯", aree:["Valutazione Aziendale","Societario"],               desc:"Consulenza strategica McKinsey/Bain: analisi, piano industriale, posizionamento."},
-  {id:"gianni",nome:"Gianni",ruolo:"CFO Advisor",       emoji:"💼", aree:["Valutazione Aziendale","Finanza agevolata"],        desc:"Finanza d'impresa, business plan, valutazioni aziendali, M&A."},
-  {id:"sofia", nome:"Sofia", ruolo:"Tech Architect",    emoji:"⚙️", aree:[],                                                  desc:"Prompt engineering, automazione AI, architettura sistemi intelligenti."},
-  {id:"sara",  nome:"Sara",  ruolo:"UX Writer",         emoji:"🎨", aree:[],                                                  desc:"Chiarezza comunicativa, output strutturati, leggibilità professionale."},
-  {id:"aldo",  nome:"Aldo",  ruolo:"Legal Counsel",     emoji:"📜", aree:["Societario"],                                      desc:"Diritto societario, contrattualistica, compliance normativa italiana."},
-  {id:"marta", nome:"Marta", ruolo:"Research Analyst",  emoji:"🔍", aree:[],                                                  desc:"Ricerca normativa, aggiornamenti legislativi, analisi documentale."},
+  {id:"luca",  nome:"xLuca",  ruolo:"Tax Advisor",      emoji:"⚖️", aree:["Fiscale","Beni strumentali","Finanza agevolata"],  desc:"Esperto di fiscalità italiana, IVA, imposte dirette e normativa tributaria."},
+  {id:"marco", nome:"xMarco", ruolo:"Bilancio & Audit",  emoji:"📊", aree:["Chiusura bilancio","Verifiche sindacali"],          desc:"Specialista in chiusure di bilancio, revisione contabile e controllo interno."},
+  {id:"elena", nome:"xElena", ruolo:"Big Four Advisor",  emoji:"🏢", aree:["Verifiche sindacali","Societario"],                 desc:"Standard EY/PWC/KPMG: compliance, due diligence, reportistica strutturata."},
+  {id:"paolo", nome:"xPaolo", ruolo:"Strategy Partner",  emoji:"🎯", aree:["Valutazione Aziendale","Societario"],               desc:"Consulenza strategica McKinsey/Bain: analisi, piano industriale, posizionamento."},
+  {id:"gianni",nome:"xGianni",ruolo:"CFO Advisor",       emoji:"💼", aree:["Valutazione Aziendale","Finanza agevolata"],        desc:"Finanza d'impresa, business plan, valutazioni aziendali, M&A."},
+  {id:"sofia", nome:"xSofia", ruolo:"Tech Architect",    emoji:"⚙️", aree:[],                                                  desc:"Prompt engineering, automazione AI, architettura sistemi intelligenti."},
+  {id:"sara",  nome:"xSara",  ruolo:"UX Writer",         emoji:"🎨", aree:[],                                                  desc:"Chiarezza comunicativa, output strutturati, leggibilità professionale."},
+  {id:"aldo",  nome:"xAldo",  ruolo:"Legal Counsel",     emoji:"📜", aree:["Societario"],                                      desc:"Diritto societario, contrattualistica, compliance normativa italiana."},
+  {id:"marta", nome:"xMarta", ruolo:"Research Analyst",  emoji:"🔍", aree:[],                                                  desc:"Ricerca normativa, aggiornamenti legislativi, analisi documentale."},
 ];
 
 function getAgentsForSkill(skill){
@@ -736,7 +736,7 @@ function getAgentsForSkill(skill){
 async function callAI({skill,userInput,attachments,profile}){
   const agents=getAgentsForSkill(skill);
   const agentCtx=agents.map(a=>`${a.nome} — ${a.ruolo}: ${a.desc}`).join("\n");
-  const basePrompt=`Sei un team di esperti per studi di Dottori Commercialisti italiani.\nTeam attivo:\n${agentCtx}\n\nSKILL: ${skill.nome}\nArea: ${skill.area} / ${skill.sotto_area}\nObiettivo: ${skill.output_atteso||skill.descrizione}\n\nRegole:\n- Output professionale, strutturato, pronto all'uso\n- Italiano corretto, tono da esperto\n- Includi disclaimer se il tema lo richiede\n- Non citare il provider AI né i nomi degli agenti nell'output`;
+  const basePrompt=`Sei un team di esperti per studi di Dottori Commercialisti italiani.\nTeam attivo:\n${agentCtx}\n\nSKILL: ${skill.nome}\nArea: ${skill.area} / ${skill.sotto_area}\nObiettivo: ${skill.output_atteso||skill.descrizione}\n\nRegole:\n- Output professionale, strutturato, pronto all'uso\n- Italiano corretto, tono da esperto\n- Non citare il provider AI né i nomi degli agenti nell'output\n- OBBLIGATORIO: ogni risposta deve terminare esattamente con questa riga:\n\n---\n*⚠️ Output elaborato con supporto AI — Verificare prima dell'utilizzo professionale. Non sostituisce la consulenza di un Dottore Commercialista abilitato.*`;
   const attachText=(attachments||[]).filter(a=>a.content).map(a=>`[${a.name}]\n${a.content}`).join("\n\n");
   const userMsg=[userInput,attachText?`\n---\nDocumenti allegati:\n${attachText}`:""].filter(Boolean).join("");
   const keyMode=profile?.keyMode||"xnunc";
@@ -948,8 +948,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile}){
                     <div style={{background:"#f9f8f5",borderRadius:10,padding:"22px 24px",border:"1px solid #e8e4dc",fontFamily:"Arial,sans-serif",fontSize:13.5,color:"#222",lineHeight:1.8}}>
                       <RenderMd text={aiOutput}/>
                     </div>
-                    <div style={{display:"flex",gap:8,marginTop:10,justifyContent:"space-between",alignItems:"center"}}>
-                      <span style={{fontSize:11,color:"#bbb",fontFamily:"Arial,sans-serif"}}>⚠️ Output AI — validare prima dell'uso professionale</span>
+                    <div style={{display:"flex",gap:8,marginTop:10,justifyContent:"flex-end",alignItems:"center"}}>
                       <div style={{display:"flex",gap:8}}>
                         <button onClick={()=>{navigator.clipboard.writeText(aiOutput);setCopied(true);setTimeout(()=>setCopied(false),2000);}} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #ddd",background:copied?"#E3F7F0":"#fff",color:copied?C.viridis:"#555",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:5}}>{copied?"✓ Copiato":"🗐 Copia"}</button>
                         <button onClick={()=>downloadAsWord(aiOutput,skill.nome)} style={{padding:"6px 14px",borderRadius:6,border:"none",background:C.caelum,color:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>⬇ Word</button>
@@ -2270,8 +2269,28 @@ function AdminPanelModal({onClose,hiddenSkills,setHiddenSkills,deletedSkills,set
   );
 }
 
+// ─────────────────────────────────────────────────────
+// localStorage helpers
+// ─────────────────────────────────────────────────────
+function ls(key,fallback){
+  if(typeof window==="undefined")return fallback;
+  try{const v=localStorage.getItem(key);return v!==null?JSON.parse(v):fallback;}
+  catch{return fallback;}
+}
+function lsSet(key,val){
+  if(typeof window==="undefined")return;
+  try{localStorage.setItem(key,JSON.stringify(val));}catch{}
+}
+
 export default function App(){
-  const[isLogged,setIsLogged]=useState(false);
+  const DEFAULT_THREADS=[
+    {id:1,titolo:"Benvenuto in xNunc",con:"Redazione",avatar:"R",avatarColor:C.aurum,
+     messaggi:[{id:1,da:"Redazione",testo:"Benvenuto nella piattaforma! Siamo qui per supportarti nella creazione e revisione delle skill. Quando sei pronto a inviare una skill per la pubblicazione, usala pure o scrivici direttamente qui.",data:"16 Mar 2026",letto:true}],
+     nonLetti:0}
+  ];
+  const DEFAULT_PROFILE={nome:"",cognome:"",studio:"",ruolo:"",email:"",cell:"",citta:"",albo:"",web:"",byokKey:"",keyMode:"xnunc",aiProvider:"anthropic"};
+
+  const[isLogged,setIsLogged]=useState(()=>ls("xnunc_session",{isLogged:false,isAdmin:false}).isLogged);
   // CSS globale per hover effects (inline style non supporta :hover)
   if(typeof document!=="undefined"){
     const id="xnunc-styles";
@@ -2294,19 +2313,24 @@ export default function App(){
   const[filterComp,setFilterComp]=useState("Tutte");
   const[filterFreq,setFilterFreq]=useState("Tutte");
   const[activeSkill,setActiveSkill]=useState(null);
-  const[favorites,setFavorites]=useState([]);
-  const[draftSkills,setDraftSkills]=useState([]);
-  const[threads,setThreads]=useState([
-    {id:1,titolo:"Benvenuto in xNunc",con:"Redazione",avatar:"R",avatarColor:C.aurum,
-     messaggi:[{id:1,da:"Redazione",testo:"Benvenuto nella piattaforma! Siamo qui per supportarti nella creazione e revisione delle skill. Quando sei pronto a inviare una skill per la pubblicazione, usala pure o scrivici direttamente qui.",data:"16 Mar 2026",letto:true}],
-     nonLetti:0}
-  ]);
-  const[userProfile,setUserProfile]=useState({nome:"",cognome:"",studio:"",ruolo:"",email:"",cell:"",citta:"",albo:"",web:"",byokKey:"",keyMode:"xnunc",aiProvider:"anthropic"});
+  const[favorites,setFavorites]=useState(()=>ls("xnunc_favorites",[]));
+  const[draftSkills,setDraftSkills]=useState(()=>ls("xnunc_drafts",[]));
+  const[threads,setThreads]=useState(()=>ls("xnunc_threads",DEFAULT_THREADS));
+  const[userProfile,setUserProfile]=useState(()=>({...DEFAULT_PROFILE,...ls("xnunc_profile",{})}));
   const nonLettiTot=threads.reduce((n,t)=>n+(t.nonLetti||0),0);
-  const[isAdmin,setIsAdmin]=useState(false);
-  const[hiddenSkills,setHiddenSkills]=useState([]); // IDs oscurati (nascosti ma recuperabili)
-  const[deletedSkills,setDeletedSkills]=useState([]); // IDs eliminati definitivamente
+  const[isAdmin,setIsAdmin]=useState(()=>ls("xnunc_session",{isLogged:false,isAdmin:false}).isAdmin);
+  const[hiddenSkills,setHiddenSkills]=useState(()=>ls("xnunc_hidden",[])); // IDs oscurati (nascosti ma recuperabili)
+  const[deletedSkills,setDeletedSkills]=useState(()=>ls("xnunc_deleted",[])); // IDs eliminati definitivamente
   const[showAdminPanel,setShowAdminPanel]=useState(false);
+
+  // ── Persist state to localStorage ──────────────────
+  useEffect(()=>{lsSet("xnunc_session",{isLogged,isAdmin});},[isLogged,isAdmin]);
+  useEffect(()=>{lsSet("xnunc_profile",userProfile);},[userProfile]);
+  useEffect(()=>{lsSet("xnunc_favorites",favorites);},[favorites]);
+  useEffect(()=>{lsSet("xnunc_drafts",draftSkills);},[draftSkills]);
+  useEffect(()=>{lsSet("xnunc_threads",threads);},[threads]);
+  useEffect(()=>{lsSet("xnunc_hidden",hiddenSkills);},[hiddenSkills]);
+  useEffect(()=>{lsSet("xnunc_deleted",deletedSkills);},[deletedSkills]);
 
   const ADMIN_EMAIL_CHECK="morales@bcand.it";
 
