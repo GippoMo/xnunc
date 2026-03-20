@@ -861,7 +861,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile}){
                 <span style={{fontSize:12,color:"#2d7d5a",fontFamily:"Arial,sans-serif"}}><strong>I tuoi dati non vengono salvati.</strong> L'input transita in memoria e viene scartato al termine della chiamata. Solo metadati anonimi registrati.</span>
               </div>
               <label style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em",display:"block",marginBottom:5}}>INPUT RICHIESTO</label>
-              <div style={{background:abg,borderRadius:8,padding:"9px 13px",borderLeft:`3px solid ${ac}`,marginBottom:10,fontSize:13,color:"#555",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{skill.input_atteso}</div>
+              <div style={{background:abg,borderRadius:8,padding:"9px 13px",borderLeft:`3px solid ${ac}`,marginBottom:10,fontSize:13,color:"#555",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{skill.input_atteso||"Descrivi il tuo caso specifico"}</div>
               {/* Drop zone */}
               <div
                 onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}
@@ -874,7 +874,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile}){
                     </div>
                   </div>
                 )}
-                <textarea value={input} onChange={e=>setInput(e.target.value)} placeholder={`Es.: ${skill.input_atteso.substring(0,60)}${skill.input_atteso.length>60?"...":""}`} rows={5}
+                <textarea value={input} onChange={e=>setInput(e.target.value)} placeholder={`Es.: ${(skill.input_atteso||"").substring(0,60)}${(skill.input_atteso||"").length>60?"...":""}`} rows={5}
                   style={{width:"100%",padding:"11px",borderRadius:8,border:`1.5px solid ${input.trim()||attachments.length>0?"#ccc":"#eee"}`,fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box",background:"#fff"}}/>
 
                 {/* Allegati chips */}
@@ -1702,24 +1702,39 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
                       </div>
                       <div style={{fontSize:12,color:"#666",fontFamily:"Arial,sans-serif",lineHeight:1.6,marginBottom:12}}>{truncate(d.descrizione,120)}</div>
                       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                        <button onClick={()=>onTestSkill({...d,id:d.id,sotto_area:d.sottoArea||d.area,complessita:"media",frequenza:"occasionale",tags:d.tags||[]})}
+                        <button onClick={()=>{
+                            // Marca come testato e apri SkillModal con mapping corretto camelCase→snake_case
+                            setDraftSkills(prev=>prev.map(x=>x.id===d.id?{...x,testato:true}:x));
+                            onTestSkill({
+                              ...d,
+                              sotto_area: d.sottoArea||d.area||"—",
+                              input_atteso: d.inputAtteso||"Descrivi il tuo caso specifico",
+                              output_atteso: d.outputAtteso||d.descrizione||"",
+                              complessita: d.complessita||"media",
+                              frequenza: d.frequenza||"occasionale",
+                              tags: d.tags||[],
+                            });
+                          }}
                           style={{padding:"6px 14px",borderRadius:7,border:`1px solid ${C.caelum}`,background:"#fff",color:C.caelum,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
-                          ▶ Testa
+                          ▶ Fai un test
                         </button>
+                        {d.stato==="bozza"&&d.testato&&(
+                          <button onClick={()=>inviaAllRedazione(d)}
+                            style={{padding:"6px 14px",borderRadius:7,border:"none",background:C.aurum,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+                            📬 Manda in Redazione
+                          </button>
+                        )}
+                        {d.stato==="bozza"&&!d.testato&&(
+                          <span style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif",alignSelf:"center",fontStyle:"italic"}}>← Testa prima di inviare</span>
+                        )}
                         {d.stato==="bozza"&&(
-                          <>
-                            <button onClick={()=>inviaAllRedazione(d)}
-                              style={{padding:"6px 14px",borderRadius:7,border:"none",background:C.aurum,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
-                              📬 Invia alla Redazione
-                            </button>
-                            <button onClick={()=>setDraftSkills(prev=>prev.filter(x=>x.id!==d.id))}
-                              style={{padding:"6px 14px",borderRadius:7,border:"1px solid #fcc",background:"#fff",color:"#C0392B",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
-                              × Elimina
-                            </button>
-                          </>
+                          <button onClick={()=>setDraftSkills(prev=>prev.filter(x=>x.id!==d.id))}
+                            style={{padding:"6px 14px",borderRadius:7,border:"1px solid #fcc",background:"#fff",color:"#C0392B",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+                            × Elimina
+                          </button>
                         )}
                         {d.stato==="in_revisione"&&(
-                          <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif",alignSelf:"center",fontStyle:"italic"}}>In attesa di revisione dalla Redazione</div>
+                          <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif",alignSelf:"center",fontStyle:"italic"}}>⏳ In attesa di revisione dalla Redazione</div>
                         )}
                       </div>
                     </div>
@@ -1872,7 +1887,12 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
     const draft={
       id:"DRAFT-"+Date.now(),
       nome,area,descrizione,inputAtteso,outputAtteso,normativa,
-      tags:[],sottoArea:area,stato:"bozza",
+      // mapping anche in snake_case per compatibilità con SkillModal
+      input_atteso:inputAtteso||"Descrivi il tuo caso specifico",
+      output_atteso:outputAtteso||descrizione||"",
+      sotto_area:area,
+      complessita:"media",frequenza:"occasionale",
+      tags:[],sottoArea:area,stato:"bozza",testato:false,
       data:new Date().toLocaleDateString("it-IT"),
       agenti
     };
@@ -1892,10 +1912,12 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
     return(
       <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}}>
         <div style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:400,padding:"48px 32px",textAlign:"center",boxShadow:"0 8px 48px #0004"}}>
-          <div style={{fontSize:48,marginBottom:12}}>💾</div>
-          <div style={{fontFamily:"Georgia,serif",fontSize:20,color:C.nox,marginBottom:8}}>Skill salvata in bozze!</div>
-          <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:4}}>La trovi nella tua Dashboard → <strong>In sviluppo</strong>.<br/>Puoi testarla, modificarla e poi inviarla alla Redazione quando sei pronto.</div>
-          <div style={{fontSize:12,color:C.caelum,fontFamily:"Arial,sans-serif",fontWeight:700,marginTop:8}}>🔧 In sviluppo</div>
+          <div style={{fontSize:48,marginBottom:12}}>⚡</div>
+          <div style={{fontFamily:"Georgia,serif",fontSize:20,color:C.nox,marginBottom:8}}>Versione beta generata!</div>
+          <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:12,lineHeight:1.6}}>La trovi nella tua Dashboard → <strong>In sviluppo</strong>.<br/>Fai un test per verificarla, poi inviala alla Redazione.</div>
+          <div style={{background:"#E3EEF9",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#378ADD",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>
+            <strong>Passo successivo:</strong> Apri la Dashboard → Fai un test → Manda in Redazione
+          </div>
         </div>
       </div>
     );
@@ -2007,48 +2029,29 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
             </div>
           )}
 
-          {/* Step 3: Revisione */}
+          {/* Step 3: Revisione + Genera versione beta */}
           {step===3&&(
             <div>
-              <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:C.gray,marginBottom:16}}>Controlla tutti i dati prima di inviare per approvazione.</div>
+              <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:C.gray,marginBottom:16}}>Controlla i dati. Dopo la generazione puoi testarla liberamente prima di inviarla alla Redazione.</div>
               {[
                 {label:"NOME",val:nome},{label:"AREA",val:area},{label:"DESCRIZIONE",val:descrizione},
-                {label:"INPUT",val:inputAtteso},{label:"OUTPUT",val:outputAtteso},{label:"NORMATIVA",val:normativa},
+                {label:"INPUT ATTESO",val:inputAtteso},{label:"OUTPUT ATTESO",val:outputAtteso},{label:"NORMATIVA",val:normativa},
               ].map(({label,val})=>(
-                <div key={label} style={{marginBottom:10,padding:"10px 14px",background:"#f9f8f5",borderRadius:8,borderLeft:`3px solid ${C.aurum}`}}>
-                  <div style={{fontSize:9,fontWeight:700,color:C.gray,letterSpacing:"0.12em",fontFamily:"Arial,sans-serif",marginBottom:4}}>{label}</div>
+                <div key={label} style={{marginBottom:8,padding:"9px 14px",background:"#f9f8f5",borderRadius:8,borderLeft:`3px solid ${C.aurum}`}}>
+                  <div style={{fontSize:9,fontWeight:700,color:C.gray,letterSpacing:"0.12em",fontFamily:"Arial,sans-serif",marginBottom:3}}>{label}</div>
                   <div style={{fontSize:13,color:C.nox,fontFamily:"Arial,sans-serif",lineHeight:1.5}}>{val||<span style={{color:"#ccc",fontStyle:"italic"}}>non specificato</span>}</div>
                 </div>
               ))}
-              <div style={{background:"#E3F7F0",borderRadius:8,padding:"10px 14px",marginTop:16,marginBottom:16,display:"flex",gap:8,alignItems:"center"}}>
-                <span>✅</span>
-                <span style={{fontSize:12,color:C.viridis,fontFamily:"Arial,sans-serif",lineHeight:1.5}}>La skill verrà inviata alla Redazione per revisione. Riceverai una notifica quando sarà approvata e pubblicata nel catalogo.</span>
-              </div>
-              <div style={{display:"flex",gap:10}}>
-                <button onClick={()=>setStep(2)} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>← Modifica</button>
-                <button onClick={()=>setStep(4)} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Invia per approvazione →</button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Pubblica */}
-          {step===4&&(
-            <div style={{textAlign:"center",padding:"12px 0"}}>
-              <div style={{fontSize:40,marginBottom:12}}>📬</div>
-              <div style={{fontFamily:"Georgia,serif",fontSize:18,color:C.nox,marginBottom:8}}>Quasi pronto!</div>
-              <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:20,lineHeight:1.6}}>
-                <strong>"{nome}"</strong> verrà salvata nella tua area <strong>In sviluppo</strong>.<br/>
-                Puoi testarla, modificarla e quando sei soddisfatto inviarla alla Redazione con un click.
-              </div>
-              <div style={{background:"#E3EEF9",borderRadius:10,padding:"12px 16px",marginBottom:20,display:"flex",gap:10,alignItems:"center"}}>
-                <span style={{fontSize:18}}>🔧</span>
-                <div style={{fontSize:12,color:"#378ADD",fontFamily:"Arial,sans-serif",lineHeight:1.5}}>
-                  <strong>Flusso:</strong> Bozza → Testa → Invia alla Redazione → Revisione → Pubblicata nel catalogo
+              <div style={{background:"#E3EEF9",borderRadius:10,padding:"12px 16px",margin:"14px 0",display:"flex",gap:10,alignItems:"flex-start"}}>
+                <span style={{fontSize:18,flexShrink:0}}>🔧</span>
+                <div style={{fontSize:12,color:"#378ADD",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>
+                  La skill verrà salvata nella tua area <strong>In sviluppo</strong> come <strong>versione beta</strong>.<br/>
+                  Potrai testarla, modificarla e inviarla alla Redazione solo quando sei soddisfatto del risultato.
                 </div>
               </div>
               <div style={{display:"flex",gap:10}}>
-                <button onClick={()=>setStep(3)} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>← Indietro</button>
-                <button onClick={salvaNelleBoze} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:C.caelum,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>💾 Salva in bozze</button>
+                <button onClick={()=>setStep(2)} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>← Modifica</button>
+                <button onClick={salvaNelleBoze} style={{flex:1,padding:"10px",borderRadius:8,border:"none",background:C.aurum,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>⚡ Genera versione beta →</button>
               </div>
             </div>
           )}
