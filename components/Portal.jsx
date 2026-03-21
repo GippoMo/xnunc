@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { supabase, signIn, signUp, signOut, getProfile, upsertProfile, logAiCall } from "../lib/supabase";
+import { supabase, signIn, signUp, signOut, resetPassword, getProfile, upsertProfile, logAiCall } from "../lib/supabase";
 
 // ─────────────────────────────────────────────────────
 // xNunc brand palette
@@ -440,56 +440,163 @@ function DownloadPanel({skill,allSkills}){
 // ─────────────────────────────────────────────────────
 // Login Modal
 // ─────────────────────────────────────────────────────
+function LegalModal({tipo,onClose}){
+  const isPrivacy=tipo==="privacy";
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.82)",zIndex:3000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:560,maxHeight:"80vh",overflow:"hidden",display:"flex",flexDirection:"column",boxShadow:"0 20px 60px rgba(0,0,0,0.3)"}}>
+        <div style={{padding:"24px 32px 20px",borderBottom:"2px solid #0A0B0F",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+          <div>
+            <div style={{fontFamily:"Arial,sans-serif",fontSize:9,color:"#BA7517",fontWeight:700,letterSpacing:"0.2em",marginBottom:6}}>DOCUMENTO LEGALE</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:19,color:"#0A0B0F"}}>{isPrivacy?"Privacy Policy":"Termini di Servizio"}</div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer"}}>×</button>
+        </div>
+        <div style={{padding:"24px 32px",overflowY:"auto",fontFamily:"Arial,sans-serif",fontSize:12,color:"#444",lineHeight:1.7}}>
+          {isPrivacy?(
+            <>
+              <p style={{fontWeight:700,color:"#0A0B0F",marginBottom:8}}>Titolare del trattamento</p>
+              <p style={{marginBottom:16}}>BC &amp; Studio Prof.le Consulenza Societaria Tributaria — morales@bcand.it</p>
+              <p style={{fontWeight:700,color:"#0A0B0F",marginBottom:8}}>Dati raccolti</p>
+              <p style={{marginBottom:16}}>xNunc raccoglie esclusivamente email e password per l'autenticazione. Non vengono raccolti dati sull'utilizzo delle skill né contenuti inseriti dall'utente: tutti gli input rimangono nel browser dell'utente (localStorage) o vengono trasmessi direttamente al provider AI scelto (Anthropic, OpenAI, Gemini) senza transito attraverso i nostri server.</p>
+              <p style={{fontWeight:700,color:"#0A0B0F",marginBottom:8}}>Base giuridica</p>
+              <p style={{marginBottom:16}}>Il trattamento è fondato sul contratto (art. 6 par. 1 lett. b GDPR) per la gestione dell'account.</p>
+              <p style={{fontWeight:700,color:"#0A0B0F",marginBottom:8}}>Conservazione</p>
+              <p style={{marginBottom:16}}>I dati di autenticazione sono conservati su infrastruttura Supabase (EU) fino alla cancellazione dell'account. L'utente può richiedere la cancellazione in qualsiasi momento dal proprio profilo.</p>
+              <p style={{fontWeight:700,color:"#0A0B0F",marginBottom:8}}>Diritti dell'interessato</p>
+              <p>Accesso, rettifica, cancellazione, portabilità e opposizione al trattamento: scrivere a morales@bcand.it.</p>
+            </>
+          ):(
+            <>
+              <p style={{fontWeight:700,color:"#0A0B0F",marginBottom:8}}>Accettazione</p>
+              <p style={{marginBottom:16}}>Accedendo a xNunc l'utente accetta integralmente i presenti Termini. L'utilizzo è riservato a professionisti abilitati (Dottori Commercialisti, Revisori Legali) e ai loro collaboratori.</p>
+              <p style={{fontWeight:700,color:"#0A0B0F",marginBottom:8}}>Natura del servizio</p>
+              <p style={{marginBottom:16}}>xNunc è uno strumento di supporto professionale basato su intelligenza artificiale. Gli output generati hanno natura orientativa e non sostituiscono la consulenza professionale qualificata. L'utente è responsabile della verifica e dell'utilizzo di qualsiasi output.</p>
+              <p style={{fontWeight:700,color:"#0A0B0F",marginBottom:8}}>Limitazione di responsabilità</p>
+              <p style={{marginBottom:16}}>Il titolare non risponde di danni derivanti dall'utilizzo improprio degli output AI, da interruzioni del servizio o da malfunzionamenti dei provider AI di terze parti (Anthropic, OpenAI, Google).</p>
+              <p style={{fontWeight:700,color:"#0A0B0F",marginBottom:8}}>Proprietà intellettuale</p>
+              <p style={{marginBottom:16}}>Il catalogo delle skill, i prompt e l'interfaccia sono proprietà di BC &amp; Studio. È vietata la riproduzione senza autorizzazione scritta.</p>
+              <p style={{fontWeight:700,color:"#0A0B0F",marginBottom:8}}>Foro competente</p>
+              <p>Per qualsiasi controversia è competente in via esclusiva il Foro di Milano. Legge applicabile: diritto italiano.</p>
+            </>
+          )}
+        </div>
+        <div style={{padding:"16px 32px",borderTop:"1px solid #E8E4DC",flexShrink:0}}>
+          <button onClick={onClose} style={{width:"100%",padding:"10px",border:"none",background:"#0A0B0F",color:"#F1EFE8",fontFamily:"Arial",fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",borderRadius:2}}>Chiudi</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LoginModal({onClose,onLogin}){
   const[tab,setTab]=useState("login");
   const[email,setEmail]=useState("");
   const[pw,setPw]=useState("");
+  const[pw2,setPw2]=useState("");
   const[authError,setAuthError]=useState("");
   const[authLoading,setAuthLoading]=useState(false);
+  const[resetMode,setResetMode]=useState(false);
+  const[resetSent,setResetSent]=useState(false);
+  const[legalModal,setLegalModal]=useState(null); // "privacy" | "termini"
+
+  const pwMismatch=tab==="registrati"&&pw2&&pw!==pw2;
+  const canSubmit=!authLoading&&email&&pw&&(tab==="login"||(pw===pw2&&pw.length>=8));
+
+  async function handleSubmit(){
+    if(resetMode){
+      setAuthLoading(true);setAuthError("");
+      try{await resetPassword(email);setResetSent(true);}
+      catch(e){setAuthError(e.message||"Errore invio email");}
+      finally{setAuthLoading(false);}
+      return;
+    }
+    if(!canSubmit)return;
+    setAuthLoading(true);setAuthError("");
+    try{await onLogin(email,pw,tab);}
+    catch(e){setAuthError(e.message||"Errore di accesso");}
+    finally{setAuthLoading(false);}
+  }
+
+  const inputStyle={width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",outline:"none",boxSizing:"border-box"};
+
   return(
+    <>
+    {legalModal&&<LegalModal tipo={legalModal} onClose={()=>setLegalModal(null)}/>}
     <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:400,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",overflow:"hidden"}}>
+        {/* Header */}
         <div style={{background:"#FAF9F7",padding:"28px 32px 24px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"2px solid #0A0B0F"}}>
           <div>
-            <div style={{fontFamily:"Arial,sans-serif",fontSize:9,color:"#BA7517",fontWeight:700,letterSpacing:"0.2em",marginBottom:8}}>ACCEDI</div>
-            <div style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:400,color:"#0A0B0F"}}>Accedi a xNunc</div>
+            <div style={{fontFamily:"Arial,sans-serif",fontSize:9,color:"#BA7517",fontWeight:700,letterSpacing:"0.2em",marginBottom:8}}>{resetMode?"RECUPERO ACCESSO":"AUTENTICAZIONE"}</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:400,color:"#0A0B0F"}}>{resetMode?"Recupera password":"Accedi a xNunc"}</div>
           </div>
-          <button onClick={onClose} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer",padding:0,transition:"color .2s",hover:{color:"#0A0B0F"}}}>×</button>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer",padding:0}}>×</button>
         </div>
-        <div style={{display:"flex",borderBottom:"2px solid #0A0B0F",padding:"0 28px",gap:4,alignItems:"flex-end"}}>
-          {["login","registrati"].map(t=>(
-            <button key={t} onClick={()=>setTab(t)} style={{padding:"8px 16px",border:"none",cursor:"pointer",background:tab===t?"#0A0B0F":"none",color:tab===t?"#F1EFE8":"#aaa",fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,letterSpacing:"0.14em",borderRadius:tab===t?"4px 4px 0 0":"4px 4px 0 0",marginBottom:tab===t?"-2px":0,transition:"all .2s"}}>Accedi</button>
+
+        {/* Tabs (solo se non in reset mode) */}
+        {!resetMode&&<div style={{display:"flex",borderBottom:"2px solid #0A0B0F",padding:"0 28px",gap:4,alignItems:"flex-end"}}>
+          {[["login","Accedi"],["registrati","Registrati"]].map(([t,label])=>(
+            <button key={t} onClick={()=>{setTab(t);setAuthError("");setPw2("");}} style={{padding:"8px 16px",border:"none",cursor:"pointer",background:tab===t?"#0A0B0F":"none",color:tab===t?"#F1EFE8":"#aaa",fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,letterSpacing:"0.14em",marginBottom:tab===t?"-2px":0,transition:"all .2s"}}>{label}</button>
           ))}
-          {["login","registrati"].map(t=>(
-            t==="registrati"&&<button key={t} onClick={()=>setTab(t)} style={{padding:"8px 16px",border:"none",cursor:"pointer",background:tab===t?"#0A0B0F":"none",color:tab===t?"#F1EFE8":"#aaa",fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,letterSpacing:"0.14em",borderRadius:tab===t?"4px 4px 0 0":"4px 4px 0 0",marginBottom:tab===t?"-2px":0,transition:"all .2s"}}>Registrati</button>
-          ))}
-        </div>
-        <div style={{padding:"28px 32px",gap:18,background:"#FAF9F7",display:"flex",flexDirection:"column"}}>
-          <div style={{display:"flex",gap:10,marginBottom:4}}>
-            <button disabled title="Prossimamente" style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 14px",border:"1px solid #E8E4DC",background:"#F5F3EF",color:"#C0BDB8",fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",cursor:"not-allowed",opacity:0.7,borderRadius:2}}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#C0BDB8"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#C0BDB8"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#C0BDB8"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#C0BDB8"/></svg>
-              Google
-              <span style={{fontSize:8,color:"#C0BDB8",letterSpacing:"0.12em"}}>PRESTO</span>
-            </button>
-            <button disabled title="Prossimamente" style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 14px",border:"1px solid #E8E4DC",background:"#F5F3EF",color:"#C0BDB8",fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",cursor:"not-allowed",opacity:0.7,borderRadius:2}}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#C0BDB8"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-              LinkedIn
-              <span style={{fontSize:8,color:"#C0BDB8",letterSpacing:"0.12em"}}>PRESTO</span>
-            </button>
-          </div>
-          <div style={{display:"flex",alignItems:"center",gap:10,margin:"4px 0 8px"}}>
-            <div style={{flex:1,height:1,background:"#E8E4DC"}}/>
-            <span style={{fontSize:9,color:"#C0BDB8",letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"Arial"}}>oppure</span>
-            <div style={{flex:1,height:1,background:"#E8E4DC"}}/>
-          </div>
-          <input value={email} onChange={e=>{setEmail(e.target.value);setAuthError("");}} placeholder="Email" type="email" style={{width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",outline:"none",boxSizing:"border-box"}}/>
-          <input value={pw} onChange={e=>{setPw(e.target.value);setAuthError("");}} placeholder="Password" type="password" onKeyDown={e=>e.key==="Enter"&&onLogin(email,pw,tab)} style={{width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",outline:"none",boxSizing:"border-box",marginBottom:4}}/>
-          {authError&&<div style={{fontSize:11,color:"#C0392B",padding:"6px 10px",background:"#FEF0EF",border:"1px solid #F5C6C2",borderRadius:2}}>{authError}</div>}
-          <button onClick={async()=>{setAuthLoading(true);setAuthError("");try{await onLogin(email,pw,tab);}catch(e){setAuthError(e.message||"Errore di accesso");}finally{setAuthLoading(false);}}} disabled={authLoading||!email||!pw} style={{width:"100%",padding:"11px 20px",borderRadius:4,border:"none",background:authLoading||!email||!pw?"#ccc":"#0A0B0F",color:"#F1EFE8",fontWeight:700,fontSize:11,cursor:authLoading||!email||!pw?"not-allowed":"pointer",fontFamily:"Arial",letterSpacing:"0.1em",textTransform:"uppercase",transition:"background .2s",marginBottom:16,marginTop:8}}>{authLoading?"Attendere…":tab==="login"?"Accedi":"Crea account"}</button>
-          <p style={{textAlign:"center",fontSize:11,color:"#888",marginTop:0}}>Accedendo accetti la Privacy Policy e i Termini di servizio.</p>
+        </div>}
+
+        <div style={{padding:"28px 32px",gap:14,background:"#FAF9F7",display:"flex",flexDirection:"column"}}>
+
+          {/* Bottoni social (solo login/registrati) */}
+          {!resetMode&&<>
+            <div style={{display:"flex",gap:10}}>
+              <button disabled title="Prossimamente" style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 14px",border:"1px solid #E8E4DC",background:"#F5F3EF",color:"#C0BDB8",fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",cursor:"not-allowed",opacity:0.7,borderRadius:2}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#C0BDB8"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#C0BDB8"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#C0BDB8"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#C0BDB8"/></svg>
+                Google<span style={{fontSize:8,letterSpacing:"0.12em"}}>PRESTO</span>
+              </button>
+              <button disabled title="Prossimamente" style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px 14px",border:"1px solid #E8E4DC",background:"#F5F3EF",color:"#C0BDB8",fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",cursor:"not-allowed",opacity:0.7,borderRadius:2}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#C0BDB8"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                LinkedIn<span style={{fontSize:8,letterSpacing:"0.12em"}}>PRESTO</span>
+              </button>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{flex:1,height:1,background:"#E8E4DC"}}/>
+              <span style={{fontSize:9,color:"#C0BDB8",letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"Arial"}}>oppure</span>
+              <div style={{flex:1,height:1,background:"#E8E4DC"}}/>
+            </div>
+          </>}
+
+          {/* Form */}
+          {resetSent?(
+            <div style={{background:"#F0FAF5",border:"1px solid #A8E6C8",borderRadius:2,padding:"14px 16px",fontFamily:"Arial",fontSize:12,color:"#1D9E75",textAlign:"center",lineHeight:1.6}}>
+              Email inviata a <strong>{email}</strong>.<br/>Controlla la casella e clicca il link per reimpostare la password.
+              <button onClick={()=>{setResetMode(false);setResetSent(false);}} style={{display:"block",margin:"12px auto 0",background:"none",border:"none",color:"#0A0B0F",fontFamily:"Arial",fontSize:11,fontWeight:700,cursor:"pointer",letterSpacing:"0.08em",textDecoration:"underline"}}>Torna al login</button>
+            </div>
+          ):(
+            <>
+              <input value={email} onChange={e=>{setEmail(e.target.value);setAuthError("");}} placeholder="Email" type="email" onKeyDown={e=>e.key==="Enter"&&handleSubmit()} style={inputStyle}/>
+              {!resetMode&&<>
+                <input value={pw} onChange={e=>{setPw(e.target.value);setAuthError("");}} placeholder={tab==="registrati"?"Password (min. 8 caratteri)":"Password"} type="password" onKeyDown={e=>e.key==="Enter"&&handleSubmit()} style={{...inputStyle,borderBottomColor:pwMismatch?"#C0392B":"#D8D4CE"}}/>
+                {tab==="registrati"&&<input value={pw2} onChange={e=>{setPw2(e.target.value);setAuthError("");}} placeholder="Conferma password" type="password" onKeyDown={e=>e.key==="Enter"&&handleSubmit()} style={{...inputStyle,borderBottomColor:pwMismatch?"#C0392B":"#D8D4CE"}}/>}
+                {pwMismatch&&<div style={{fontSize:11,color:"#C0392B",marginTop:-8}}>Le password non coincidono</div>}
+                {tab==="registrati"&&pw&&pw.length<8&&<div style={{fontSize:11,color:"#C0392B",marginTop:-8}}>Minimo 8 caratteri</div>}
+              </>}
+              {authError&&<div style={{fontSize:11,color:"#C0392B",padding:"6px 10px",background:"#FEF0EF",border:"1px solid #F5C6C2",borderRadius:2}}>{authError}</div>}
+              <button onClick={handleSubmit} disabled={resetMode?(!email||authLoading):!canSubmit} style={{width:"100%",padding:"11px 20px",borderRadius:4,border:"none",background:(resetMode?(!email||authLoading):!canSubmit)?"#ccc":"#0A0B0F",color:"#F1EFE8",fontWeight:700,fontSize:11,cursor:(resetMode?(!email||authLoading):!canSubmit)?"not-allowed":"pointer",fontFamily:"Arial",letterSpacing:"0.1em",textTransform:"uppercase",transition:"background .2s",marginTop:4}}>
+                {authLoading?"Attendere…":resetMode?"Invia email di recupero":tab==="login"?"Accedi":"Crea account"}
+              </button>
+              {tab==="login"&&!resetMode&&<button onClick={()=>{setResetMode(true);setAuthError("");}} style={{background:"none",border:"none",color:"#aaa",fontFamily:"Arial",fontSize:11,cursor:"pointer",padding:0,textAlign:"center",textDecoration:"underline"}}>Password dimenticata?</button>}
+              {resetMode&&<button onClick={()=>{setResetMode(false);setAuthError("");}} style={{background:"none",border:"none",color:"#aaa",fontFamily:"Arial",fontSize:11,cursor:"pointer",padding:0,textAlign:"center",textDecoration:"underline"}}>← Torna al login</button>}
+            </>
+          )}
+
+          {/* Footer legale */}
+          <p style={{textAlign:"center",fontSize:10,color:"#aaa",margin:"4px 0 0",lineHeight:1.6}}>
+            Accedendo accetti la{" "}
+            <span onClick={()=>setLegalModal("privacy")} style={{color:"#0A0B0F",fontWeight:700,cursor:"pointer",textDecoration:"underline"}}>Privacy Policy</span>
+            {" "}e i{" "}
+            <span onClick={()=>setLegalModal("termini")} style={{color:"#0A0B0F",fontWeight:700,cursor:"pointer",textDecoration:"underline"}}>Termini di Servizio</span>.
+          </p>
         </div>
       </div>
     </div>
+    </>
   );
 }
 
