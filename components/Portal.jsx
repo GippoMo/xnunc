@@ -3423,35 +3423,6 @@ export default function App(){
           </div>
         )}
 
-        {/* Filters */}
-        <div style={{background:"#fff",borderRadius:12,padding:"14px 18px",boxShadow:"0 2px 8px #0001",marginBottom:20,border:"1.5px solid #e8e4dc"}}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cerca skill per nome, area, tag, normativa…"
-            style={{width:"100%",padding:"9px 13px",borderRadius:8,border:`1.5px solid ${search.trim()?C.aurum:"#ddd"}`,fontSize:13.5,fontFamily:"Arial,sans-serif",outline:"none",marginBottom:10,boxSizing:"border-box",background:search.trim()?"#fff":"#fafaf8",transition:"border-color .2s"}}/>
-          <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-            <div style={{display:"flex",gap:3,alignItems:"center",flexWrap:"wrap"}}>
-              <span style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginRight:2}}>AREA FUNZIONALE</span>
-              {areas.map(a=><Pill key={a} label={a} active={filterArea===a} onClick={()=>setFilterArea(a)} color={AREA_COLOR[a]||C.nox}/>)}
-            </div>
-            <div style={{display:"flex",gap:3,alignItems:"center"}}>
-              <span style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginRight:2}}>DIFFICOLTÀ</span>
-              {["Tutte","alta","media","bassa"].map(c=><Pill key={c} label={c} active={filterComp===c} onClick={()=>setFilterComp(c)} color={COMP_COLOR[c]||C.nox}/>)}
-            </div>
-            <div style={{display:"flex",gap:3,alignItems:"center"}}>
-              <span style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginRight:2}}>FREQUENZA D'USO</span>
-              {["Tutte","ricorrente","occasionale"].map(f=><Pill key={f} label={f} active={filterFreq===f} onClick={()=>setFilterFreq(f)} color={FREQ_COLOR[f]||C.nox}/>)}
-            </div>
-            <div style={{marginLeft:"auto",display:"flex",alignItems:"center",gap:8}}>
-              {(filterArea!=="Tutte"||filterComp!=="Tutte"||filterFreq!=="Tutte"||search.trim())&&(
-                <span style={{fontSize:11,color:C.viridis,background:"#E3F7F0",padding:"2px 9px",borderRadius:12,fontWeight:700,fontFamily:"Arial,sans-serif",cursor:"pointer"}}
-                  onClick={()=>{setFilterArea("Tutte");setFilterComp("Tutte");setFilterFreq("Tutte");setSearch("");}}>
-                  {[filterArea!=="Tutte",filterComp!=="Tutte",filterFreq!=="Tutte",!!search.trim()].filter(Boolean).length} filtri attivi · ✕
-                </span>
-              )}
-              <span style={{fontSize:12,color:C.gray,fontFamily:"Arial,sans-serif"}}>{filtered.length} skill</span>
-            </div>
-          </div>
-        </div>
-
         {/* Grid */}
         <div id="catalogo-section"/>
         {filtered.length===0?(
