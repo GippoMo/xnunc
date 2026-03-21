@@ -444,29 +444,31 @@ function LoginModal({onClose,onLogin}){
   const[email,setEmail]=useState("");
   const[pw,setPw]=useState("");
   return(
-    <div style={{position:"fixed",inset:0,background:"#00000077",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"100%",maxWidth:400,boxShadow:"0 8px 48px #0004",overflow:"hidden"}}>
-        <div style={{background:C.nox,padding:"20px 24px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <span style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:700}}><span style={{color:C.aurum}}>x</span><span style={{color:"#fff"}}>Nunc</span></span>
-          <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer"}}>×</button>
+    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:400,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",overflow:"hidden"}}>
+        <div style={{background:"#FAF9F7",padding:"28px 32px 24px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"2px solid #0A0B0F"}}>
+          <div>
+            <div style={{fontFamily:"Arial,sans-serif",fontSize:9,color:"#BA7517",fontWeight:700,letterSpacing:"0.2em",marginBottom:8}}>ACCEDI</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:400,color:"#0A0B0F"}}>Accedi a xNunc</div>
+          </div>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer",padding:0,transition:"color .2s",hover:{color:"#0A0B0F"}}}>×</button>
         </div>
-        <div style={{display:"flex",borderBottom:"1px solid #eee"}}>
+        <div style={{display:"flex",borderBottom:"2px solid #0A0B0F",padding:"0 28px",gap:4,alignItems:"flex-end"}}>
           {["login","registrati"].map(t=>(
-            <button key={t} onClick={()=>setTab(t)} style={{flex:1,padding:"12px",border:"none",cursor:"pointer",background:tab===t?"#fff":"#f9f8f5",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:tab===t?700:400,color:tab===t?C.nox:C.gray,borderBottom:tab===t?`2px solid ${C.aurum}`:"2px solid transparent"}}>{t==="login"?"Accedi":"Registrati"}</button>
+            <button key={t} onClick={()=>setTab(t)} style={{padding:"8px 16px",border:"none",cursor:"pointer",background:tab===t?"#0A0B0F":"none",color:tab===t?"#F1EFE8":"#aaa",fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,letterSpacing:"0.14em",borderRadius:tab===t?"4px 4px 0 0":"4px 4px 0 0",marginBottom:tab===t?"-2px":0,transition:"all .2s"}}>Accedi</button>
+          ))}
+          {["login","registrati"].map(t=>(
+            t==="registrati"&&<button key={t} onClick={()=>setTab(t)} style={{padding:"8px 16px",border:"none",cursor:"pointer",background:tab===t?"#0A0B0F":"none",color:tab===t?"#F1EFE8":"#aaa",fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,letterSpacing:"0.14em",borderRadius:tab===t?"4px 4px 0 0":"4px 4px 0 0",marginBottom:tab===t?"-2px":0,transition:"all .2s"}}>Registrati</button>
           ))}
         </div>
-        <div style={{padding:"24px"}}>
-          <button onClick={()=>onLogin("google@social.com")} style={{width:"100%",padding:"11px",borderRadius:8,border:"1.5px solid #ddd",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:600,marginBottom:10}}>
-            <span style={{fontSize:18}}>G</span>Continua con Google
-          </button>
-          <button onClick={()=>onLogin("linkedin@social.com")} style={{width:"100%",padding:"11px",borderRadius:8,border:"none",background:"#0A66C2",display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:600,color:"#fff",marginBottom:16}}>
-            <span style={{fontWeight:900}}>in</span>Continua con LinkedIn
-          </button>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:16}}><div style={{flex:1,height:1,background:"#eee"}}/><span style={{fontSize:11,color:C.gray}}>oppure</span><div style={{flex:1,height:1,background:"#eee"}}/></div>
-          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" type="email" style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #ddd",marginBottom:8,fontSize:13,boxSizing:"border-box",fontFamily:"Arial,sans-serif"}}/>
-          <input value={pw} onChange={e=>setPw(e.target.value)} placeholder="Password" type="password" style={{width:"100%",padding:"9px 12px",borderRadius:8,border:"1px solid #ddd",marginBottom:12,fontSize:13,boxSizing:"border-box",fontFamily:"Arial,sans-serif"}}/>
-          <button onClick={()=>onLogin(email)} style={{width:"100%",padding:"11px",borderRadius:8,border:"none",background:C.aurum,color:"#fff",fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>{tab==="login"?"Accedi":"Crea account"}</button>
-          <p style={{textAlign:"center",fontSize:11,color:C.gray,marginTop:12}}>Accedendo accetti la Privacy Policy e i Termini di servizio.</p>
+        <div style={{padding:"28px 32px",gap:18,background:"#FAF9F7",display:"flex",flexDirection:"column"}}>
+          <button onClick={()=>onLogin("google@social.com")} style={{width:"100%",padding:"11px",borderRadius:4,border:"1px solid #D8D4CE",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:600,color:"#333",marginBottom:0,transition:"border-color .2s"}}>Google</button>
+          <button onClick={()=>onLogin("linkedin@social.com")} style={{width:"100%",padding:"11px",borderRadius:4,border:"1px solid #D8D4CE",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:600,color:"#333",marginBottom:0,transition:"border-color .2s"}}>LinkedIn</button>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><div style={{flex:1,height:1,background:"#E8E4DC"}}/><span style={{fontSize:11,color:"#888"}}>oppure</span><div style={{flex:1,height:1,background:"#E8E4DC"}}/></div>
+          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" type="email" style={{width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",outline:"none",boxSizing:"border-box"}}/>
+          <input value={pw} onChange={e=>setPw(e.target.value)} placeholder="Password" type="password" style={{width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",outline:"none",boxSizing:"border-box",marginBottom:4}}/>
+          <button onClick={()=>onLogin(email)} style={{width:"100%",padding:"11px 20px",borderRadius:4,border:"none",background:"#0A0B0F",color:"#F1EFE8",fontWeight:700,fontSize:11,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.1em",textTransform:"uppercase",transition:"background .2s",marginBottom:16,marginTop:8}}>{tab==="login"?"Accedi":"Crea account"}</button>
+          <p style={{textAlign:"center",fontSize:11,color:"#888",marginTop:0}}>Accedendo accetti la Privacy Policy e i Termini di servizio.</p>
         </div>
       </div>
     </div>
@@ -885,37 +887,37 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile,improvements,
   function copyPrompt(){navigator.clipboard.writeText(PROMPTS[skill.id]||"").then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2000);});}
 
   const tabs=["usa","dettagli","scarica","storia","miglioramenti"];
-  const tl={usa:skill.tipo==="tool"?"📊 Calcolatore":"▶ Esegui skill",dettagli:"Dettagli",scarica:"⬇ Scarica",storia:"Storia",miglioramenti:"Miglioramenti"};
+  const tl={usa:skill.tipo==="tool"?"Calcolatore":"Esegui skill",dettagli:"Dettagli",scarica:"Scarica",storia:"Storia",miglioramenti:"Miglioramenti"};
 
   return(
-    <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px",overflowY:"auto"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"100%",maxWidth:1160,boxShadow:"0 8px 64px #0006",border:`2px solid ${ac}`,marginTop:16,marginBottom:16}}>
-        <div style={{background:C.nox,padding:"20px 24px 0",borderRadius:"12px 12px 0 0"}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px",overflowY:"auto"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:1160,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",marginTop:16,marginBottom:16}}>
+        <div style={{background:"#FAF9F7",padding:"28px 32px 24px",borderBottom:"2px solid #0A0B0F"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
             <div>
-              <div style={{fontSize:11,color:ac,fontWeight:700,letterSpacing:"0.1em",fontFamily:"Arial,sans-serif",marginBottom:6}}>{skill.area.toUpperCase()} · {skill.id}</div>
-              <div style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:700,color:"#fff",lineHeight:1.3}}>{skill.nome}</div>
-              <div style={{fontSize:12,color:"#aaa",fontFamily:"Arial,sans-serif",marginTop:4}}>{skill.sotto_area}</div>
+              <div style={{fontSize:9,color:"#BA7517",fontWeight:700,letterSpacing:"0.2em",fontFamily:"Arial,sans-serif",marginBottom:6}}>{skill.area.toUpperCase()}</div>
+              <div style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:400,color:"#0A0B0F",lineHeight:1.3}}>{skill.nome}</div>
+              <div style={{fontSize:12,color:"#888",fontFamily:"Arial,sans-serif",marginTop:4}}>{skill.sotto_area}</div>
             </div>
-            <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer",padding:"4px 8px"}}>×</button>
+            <button onClick={onClose} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer",padding:0,transition:"color .2s"}}>×</button>
           </div>
           <div style={{marginBottom:12,display:"flex",gap:4,flexWrap:"wrap"}}>
-            <Badge label="v1.0" color="#aaa" bg="#ffffff22"/>
-            <Badge label={skill.complessita} color={COMP_COLOR[skill.complessita]} bg={COMP_COLOR[skill.complessita]+"44"}/>
-            <Badge label={skill.frequenza} color={FREQ_COLOR[skill.frequenza]} bg={FREQ_COLOR[skill.frequenza]+"44"}/>
-            {(skill.tags||[]).slice(0,3).map(t=><Badge key={t} label={t} color="#aaa" bg="#ffffff22"/>)}
+            <Badge label="v1.0" color="#aaa" bg="#E8E4DC"/>
+            <Badge label={skill.complessita} color={COMP_COLOR[skill.complessita]} bg={COMP_COLOR[skill.complessita]+"22"}/>
+            <Badge label={skill.frequenza} color={FREQ_COLOR[skill.frequenza]} bg={FREQ_COLOR[skill.frequenza]+"22"}/>
+            {(skill.tags||[]).slice(0,3).map(t=><Badge key={t} label={t} color="#888" bg="#E8E4DC"/>)}
           </div>
-          <div style={{display:"flex",gap:0}}>
+          <div style={{display:"flex",borderBottom:"2px solid #0A0B0F",padding:"0",gap:4,alignItems:"flex-end"}}>
             {tabs.map(t=>(
-              <button key={t} onClick={()=>setTab(t)} style={{padding:"8px 16px",border:"none",cursor:"pointer",background:"transparent",color:tab===t?"#fff":"#888",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:tab===t?700:400,borderBottom:tab===t?`2px solid ${skill.tipo==="tool"&&t==="usa"?C.viridis:ac}`:"2px solid transparent",display:"flex",alignItems:"center",gap:5}}>
+              <button key={t} onClick={()=>setTab(t)} style={{padding:"8px 16px",border:"none",cursor:"pointer",background:tab===t?"#0A0B0F":"none",color:tab===t?"#F1EFE8":"#aaa",fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,letterSpacing:"0.14em",borderRadius:tab===t?"4px 4px 0 0":"4px 4px 0 0",marginBottom:tab===t?"-2px":0,display:"flex",alignItems:"center",gap:5,transition:"all .2s"}}>
                 {tl[t]}
-                {skill.tipo==="tool"&&t==="usa"&&<span style={{fontSize:8,background:C.viridis,color:"#fff",padding:"1px 5px",borderRadius:3,fontWeight:700,letterSpacing:"0.08em"}}>LIVE</span>}
+                {skill.tipo==="tool"&&t==="usa"&&<span style={{fontSize:8,background:"#1D9E75",color:"#fff",padding:"1px 5px",borderRadius:3,fontWeight:700,letterSpacing:"0.08em"}}>LIVE</span>}
               </button>
             ))}
           </div>
         </div>
 
-        <div style={{padding:"20px 24px"}}>
+        <div style={{padding:"28px 32px",gap:18,background:"#FAF9F7"}}>
           {tab==="usa"&&(
             <div>
               {skill.tipo==="tool"?<WACCTool/>:(
@@ -1193,7 +1195,7 @@ function ImprovementDetailView({improv,setImprovements,profile,onBack,ac}){
       </div>
 
       {/* Descrizione miglioramento */}
-      <div style={{background:"#f5f3ee",borderRadius:10,padding:"12px 14px",marginBottom:14}}>
+      <div style={{background:"#F5F3EF",borderLeft:"2px solid #D8D4CE",borderRadius:0,padding:"12px 14px",marginBottom:14}}>
         <div style={{fontSize:10,fontWeight:700,color:"#888",fontFamily:"Arial,sans-serif",marginBottom:4}}>DESCRIZIONE</div>
         <div style={{fontSize:13,color:"#333",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{improv.descrizione}</div>
         {improv.cambiamenti&&<><div style={{fontSize:10,fontWeight:700,color:"#888",fontFamily:"Arial,sans-serif",marginTop:10,marginBottom:4}}>CAMBIAMENTI SPECIFICI</div><div style={{fontSize:13,color:"#333",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{improv.cambiamenti}</div></>}
@@ -1218,14 +1220,14 @@ function ImprovementDetailView({improv,setImprovements,profile,onBack,ac}){
           <div style={{fontSize:12,fontWeight:700,color:C.nox,fontFamily:"Arial,sans-serif",marginBottom:10}}>Sei il creatore — approva o rifiuta questo miglioramento</div>
           {!showNoteInput
             ?<div style={{display:"flex",gap:8}}>
-              <button onClick={approvaCreatore} style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:C.viridis,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Approva → invia in Redazione</button>
-              <button onClick={()=>setShowNoteInput(true)} style={{padding:"9px 16px",borderRadius:8,border:"1px solid #fcc",background:"#fff5f5",color:"#C0392B",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✗ Rifiuta</button>
+              <button onClick={approvaCreatore} style={{flex:1,padding:"11px 20px",borderRadius:4,border:"none",background:"#1D9E75",color:"#fff",fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",fontFamily:"Arial"}}>Approva</button>
+              <button onClick={()=>setShowNoteInput(true)} style={{flex:1,padding:"11px 20px",borderRadius:4,border:"1px solid #D8D4CE",background:"none",color:"#C0392B",fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",fontFamily:"Arial"}}>Rifiuta</button>
             </div>
             :<div>
-              <textarea value={noteRif} onChange={e=>setNoteRif(e.target.value)} placeholder="Motivo del rifiuto (opzionale)…" rows={2} style={{width:"100%",padding:"8px",borderRadius:7,border:"1.5px solid #ddd",fontSize:12,fontFamily:"Arial,sans-serif",boxSizing:"border-box",marginBottom:8}}/>
+              <textarea value={noteRif} onChange={e=>setNoteRif(e.target.value)} placeholder="Motivo del rifiuto (opzionale)…" rows={2} style={{width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:12,fontFamily:"Arial",boxSizing:"border-box",marginBottom:8,outline:"none"}}/>
               <div style={{display:"flex",gap:8}}>
-                <button onClick={rifiutaCreatore} style={{flex:1,padding:"8px",borderRadius:7,border:"none",background:"#C0392B",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Conferma rifiuto</button>
-                <button onClick={()=>setShowNoteInput(false)} style={{padding:"8px 14px",borderRadius:7,border:"1px solid #ddd",background:"#fff",color:"#888",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Annulla</button>
+                <button onClick={rifiutaCreatore} style={{flex:1,padding:"11px 20px",borderRadius:4,border:"none",background:"#C0392B",color:"#fff",fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",fontFamily:"Arial"}}>Conferma</button>
+                <button onClick={()=>setShowNoteInput(false)} style={{flex:1,padding:"11px 20px",borderRadius:4,border:"1px solid #D8D4CE",background:"none",color:"#666",fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",cursor:"pointer",fontFamily:"Arial"}}>Annulla</button>
               </div>
             </div>
           }
@@ -1611,7 +1613,7 @@ function ProfileModal({onClose,userProfile,setUserProfile,onLogout,onDeleteAccou
   // Delete account confirm
   const[confirmDelete,setConfirmDelete]=useState(false);
 
-  const inputStyle=(err)=>({width:"100%",padding:"9px 12px",borderRadius:8,border:`1.5px solid ${err?"#C0392B":"#ddd"}`,fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box"});
+  const inputStyle=(err)=>({width:"100%",border:"none",borderBottom:`1px solid ${err?"#C0392B":"#D8D4CE"}`,padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",outline:"none",boxSizing:"border-box"});
   const nomeCompl=`${nome} ${cognome}`.trim();
 
   function valida(){
@@ -1643,29 +1645,25 @@ function ProfileModal({onClose,userProfile,setUserProfile,onLogout,onDeleteAccou
   const tabLabel=["👤 Personali","🏛 Studio","🔐 Sicurezza"];
 
   return(
-    <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px",overflowY:"auto"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:520,boxShadow:"0 8px 48px #0004",border:`2px solid ${C.aurum}`,marginTop:16,marginBottom:16,overflow:"hidden"}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px",overflowY:"auto"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:520,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",marginTop:16,marginBottom:16,overflow:"hidden"}}>
 
-        {/* Header NOX */}
-        <div style={{background:C.nox,padding:"20px 24px 0",borderRadius:"14px 14px 0 0"}}>
+        {/* Header */}
+        <div style={{background:"#FAF9F7",padding:"28px 32px 24px",borderBottom:"2px solid #0A0B0F"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
-            <div style={{display:"flex",alignItems:"center",gap:14}}>
-              <div style={{width:46,height:46,borderRadius:"50%",background:C.aurum,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 2px 12px ${C.aurum}55`,flexShrink:0}}>
-                <span style={{color:"#fff",fontSize:17,fontWeight:700}}>{nomeCompl?nomeCompl[0].toUpperCase():"?"}</span>
-              </div>
-              <div>
-                <div style={{fontFamily:"Georgia,serif",fontSize:16,color:"#fff",fontWeight:700,lineHeight:1.2}}>{nomeCompl||"Il tuo profilo"}</div>
-                <div style={{fontSize:11,color:"#888",fontFamily:"Arial,sans-serif",marginTop:2}}>{studio||email||"—"}</div>
-                <div style={{fontSize:9,color:C.viridis,fontFamily:"Arial,sans-serif",marginTop:3,fontWeight:700,letterSpacing:"0.08em"}}>● CONTRIBUTOR · {userPoints||0} pt</div>
-              </div>
+            <div>
+              <div style={{fontFamily:"Arial,sans-serif",fontSize:9,color:"#BA7517",fontWeight:700,letterSpacing:"0.2em",marginBottom:8}}>PROFILO</div>
+              <div style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:400,color:"#0A0B0F"}}>{nomeCompl||"Il tuo profilo"}</div>
+              {userPoints!==undefined&&<div style={{fontFamily:"Georgia,serif",fontSize:34,fontWeight:300,color:"#BA7517",lineHeight:1,marginTop:8}}>{userPoints}</div>}
+              {userPoints!==undefined&&<div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif",letterSpacing:"0.15em",fontWeight:700,marginTop:2}}>PUNTI CONTRIBUTOR</div>}
             </div>
-            <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer",padding:"0 4px"}}>×</button>
+            <button onClick={onClose} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer",padding:0,transition:"color .2s"}}>×</button>
           </div>
           {/* Tab strip */}
-          <div style={{display:"flex",gap:0}}>
+          <div style={{display:"flex",borderBottom:"2px solid #0A0B0F",padding:"0",gap:4,alignItems:"flex-end",marginTop:16}}>
             {tabLabel.map((t,i)=>(
-              <button key={i} onClick={()=>setTab(i)} style={{padding:"8px 14px",border:"none",cursor:"pointer",background:"transparent",color:tab===i?"#fff":"#666",fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:tab===i?700:400,borderBottom:tab===i?`2px solid ${C.aurum}`:"2px solid transparent"}}>
-                {t}
+              <button key={i} onClick={()=>setTab(i)} style={{padding:"8px 16px",border:"none",cursor:"pointer",background:tab===i?"#0A0B0F":"none",color:tab===i?"#F1EFE8":"#aaa",fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,letterSpacing:"0.14em",borderRadius:tab===i?"4px 4px 0 0":"4px 4px 0 0",marginBottom:tab===i?"-2px":0,transition:"all .2s"}}>
+                {t.replace(/[👤🏛🔐]/g,'')}
               </button>
             ))}
           </div>
@@ -1841,11 +1839,11 @@ function ProfileModal({onClose,userProfile,setUserProfile,onLogout,onDeleteAccou
           )}
 
           {/* Footer pulsanti */}
-          <div style={{display:"flex",gap:10,marginTop:20,paddingTop:16,borderTop:"1px solid #f0ede8"}}>
-            <button onClick={onLogout} style={{padding:"9px 14px",borderRadius:8,border:"1px solid #fcc",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#C0392B",fontWeight:600}} title="Esci dall'account">⎋ Esci</button>
-            <button onClick={onClose} style={{flex:1,padding:"9px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>Chiudi</button>
-            <button onClick={salva} style={{flex:2,padding:"9px",borderRadius:8,border:"none",background:saved?C.viridis:C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"background .3s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              {saved?<>✓ Salvato</>:<>Salva profilo</>}
+          <div style={{display:"flex",gap:10,marginTop:20,paddingTop:20,borderTop:"1px solid #E8E4DC",padding:"20px 0 0 0"}}>
+            <button onClick={onLogout} style={{padding:"11px 20px",borderRadius:4,border:"none",background:"none",color:"#aaa",fontSize:10,cursor:"pointer",fontFamily:"Arial",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",transition:"color .2s"}} title="Esci dall'account">Esci</button>
+            <button onClick={onClose} style={{flex:1,padding:"11px 20px",borderRadius:4,border:"1px solid #D8D4CE",background:"none",fontSize:11,cursor:"pointer",fontFamily:"Arial",color:"#666",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",transition:"all .2s"}}>Chiudi</button>
+            <button onClick={salva} style={{flex:2,padding:"11px 20px",borderRadius:4,border:"none",background:saved?"#1D9E75":"#0A0B0F",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.1em",textTransform:"uppercase",transition:"background .3s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              {saved?<>Salvato</>:<>Salva</>}
             </button>
           </div>
         </div>
@@ -1989,38 +1987,33 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
   ];
 
   return(
-    <div style={{position:"fixed",inset:0,background:"#00000099",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"0"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",width:"100%",maxWidth:860,height:"100vh",display:"flex",flexDirection:"column",boxShadow:"4px 0 32px #0004",borderRight:`2px solid ${C.aurum}`,marginLeft:0,marginRight:"auto"}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"0"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",width:"100%",maxWidth:860,height:"100vh",display:"flex",flexDirection:"column",boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",marginLeft:0,marginRight:"auto"}}>
 
         {/* Header */}
-        <div style={{background:C.nox,padding:"16px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-          <div style={{display:"flex",alignItems:"center",gap:14}}>
-            <div style={{width:40,height:40,borderRadius:"50%",background:C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:`0 2px 10px ${C.aurum}55`}} onClick={onOpenProfile}>
-              <span style={{color:"#fff",fontSize:15,fontWeight:700}}>{nomeCompl[0]?.toUpperCase()||"?"}</span>
-            </div>
-            <div>
-              <div style={{fontFamily:"Georgia,serif",fontSize:16,color:"#fff",fontWeight:700}}>{nomeCompl}</div>
-              <div style={{fontSize:11,color:"#666",fontFamily:"Arial,sans-serif"}}>{userProfile.studio||userProfile.email||"—"} · <span style={{color:C.viridis,fontWeight:700}}>{userPoints||0} pt</span></div>
-            </div>
+        <div style={{background:"#FAF9F7",padding:"28px 32px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,borderBottom:"2px solid #0A0B0F"}}>
+          <div>
+            <div style={{fontFamily:"Arial,sans-serif",fontSize:9,color:"#BA7517",fontWeight:700,letterSpacing:"0.2em",marginBottom:8}}>DASHBOARD</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:400,color:"#0A0B0F"}}>{nomeCompl}</div>
           </div>
           <div style={{display:"flex",gap:10,alignItems:"center"}}>
-            <button onClick={onOpenProfile} style={{padding:"5px 12px",borderRadius:6,border:"1px solid #333",background:"transparent",color:"#888",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>⚙️ Profilo</button>
-            <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer",lineHeight:1}}>×</button>
+            <button onClick={onOpenProfile} style={{padding:"11px 20px",borderRadius:4,border:"1px solid #D8D4CE",background:"none",color:"#666",fontSize:10,cursor:"pointer",fontFamily:"Arial",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase"}}>Profilo</button>
+            <button onClick={onClose} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer",lineHeight:1,transition:"color .2s"}}>×</button>
           </div>
         </div>
 
         {/* Tab bar */}
-        <div style={{background:"#f9f8f5",borderBottom:"1px solid #e8e4dc",display:"flex",flexShrink:0}}>
+        <div style={{background:"#FAF9F7",borderBottom:"2px solid #0A0B0F",display:"flex",flexShrink:0,padding:"0 28px",gap:4,alignItems:"flex-end"}}>
           {tabBar.map(({label,count},i)=>(
-            <button key={i} onClick={()=>setTab(i)} style={{flex:1,padding:"12px 8px",border:"none",cursor:"pointer",background:"transparent",color:tab===i?C.nox:"#888",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:tab===i?700:400,borderBottom:tab===i?`2px solid ${C.aurum}`:"2px solid transparent",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+            <button key={i} onClick={()=>setTab(i)} style={{padding:"8px 16px",border:"none",cursor:"pointer",background:tab===i?"#0A0B0F":"none",color:tab===i?"#F1EFE8":"#aaa",fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,letterSpacing:"0.14em",borderRadius:tab===i?"4px 4px 0 0":"4px 4px 0 0",marginBottom:tab===i?"-2px":0,display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all .2s"}}>
               {label}
-              {count>0&&<span style={{background:tab===i?C.aurum:"#ddd",color:tab===i?"#fff":"#888",borderRadius:10,fontSize:10,padding:"1px 6px",fontWeight:700}}>{count}</span>}
+              {count>0&&<span style={{background:tab===i?"#F1EFE8":"#E8E4DC",color:tab===i?"#0A0B0F":"#888",borderRadius:3,fontSize:9,padding:"1px 5px",fontWeight:700}}>{count}</span>}
             </button>
           ))}
         </div>
 
         {/* Content */}
-        <div style={{flex:1,overflowY:"auto",padding:"20px 24px"}}>
+        <div style={{flex:1,overflowY:"auto",padding:"28px 32px",background:"#FAF9F7"}}>
 
           {/* TAB 0 — Preferiti */}
           {tab===0&&(
@@ -2417,13 +2410,13 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
 
   if(published){
     return(
-      <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}}>
-        <div style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:400,padding:"48px 32px",textAlign:"center",boxShadow:"0 8px 48px #0004"}}>
-          <div style={{fontSize:48,marginBottom:12}}>⚡</div>
-          <div style={{fontFamily:"Georgia,serif",fontSize:20,color:C.nox,marginBottom:8}}>Versione beta generata!</div>
-          <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:12,lineHeight:1.6}}>La trovi nella tua Dashboard → <strong>In sviluppo</strong>.<br/>Fai un test per verificarla, poi inviala alla Redazione.</div>
-          <div style={{background:"#E3EEF9",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#378ADD",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>
-            <strong>Passo successivo:</strong> Apri la Dashboard → Fai un test → Manda in Redazione
+      <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1100,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}}>
+        <div style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:400,padding:"48px 32px",textAlign:"center",boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)"}}>
+          <div style={{fontSize:48,marginBottom:12}}>✓</div>
+          <div style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:400,color:"#0A0B0F",marginBottom:8}}>Generata!</div>
+          <div style={{fontSize:13,color:"#888",fontFamily:"Arial,sans-serif",marginBottom:12,lineHeight:1.6}}>La skill è nella tua Dashboard sotto <strong>In sviluppo</strong>.<br/>Testala, quindi inviala alla Redazione.</div>
+          <div style={{background:"#F5F3EF",borderLeft:"2px solid #D8D4CE",padding:"12px 14px",fontSize:12,color:"#666",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>
+            Dashboard → In sviluppo → Testa → Invia Redazione
           </div>
         </div>
       </div>
@@ -2431,39 +2424,38 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
   }
 
   return(
-    <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px",overflowY:"auto"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:16,width:"100%",maxWidth:600,boxShadow:"0 8px 48px #0004",border:`2px solid ${C.aurum}`,marginTop:16,marginBottom:16}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px",overflowY:"auto"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:600,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",marginTop:16,marginBottom:16}}>
         {/* Header */}
-        <div style={{background:C.nox,padding:"20px 24px",borderRadius:"14px 14px 0 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div style={{background:"#FAF9F7",padding:"28px 32px 24px",borderBottom:"2px solid #0A0B0F",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
           <div>
-            <div style={{fontSize:10,color:C.aurum,fontWeight:700,letterSpacing:"0.15em",fontFamily:"Arial,sans-serif",marginBottom:4}}>CREA UNA NUOVA SKILL</div>
-            <div style={{fontFamily:"Georgia,serif",fontSize:18,color:"#fff",fontWeight:700}}>{WIZARD_STEPS[step]}</div>
+            <div style={{fontSize:9,color:"#BA7517",fontWeight:700,letterSpacing:"0.2em",fontFamily:"Arial,sans-serif",marginBottom:8}}>CREA SKILL</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:400,color:"#0A0B0F"}}>Step {step+1} / 4</div>
           </div>
-          <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer"}}>×</button>
+          <button onClick={onClose} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer",transition:"color .2s"}}>×</button>
         </div>
 
         {/* Step indicators */}
-        <div style={{padding:"16px 24px",background:"#fafaf8",borderBottom:"1px solid #eee",display:"flex",alignItems:"center",gap:8}}>
+        <div style={{padding:"16px 32px",background:"#FAF9F7",borderBottom:"1px solid #E8E4DC",display:"flex",alignItems:"center",gap:8}}>
           {WIZARD_STEPS.map((s,i)=>(
             <div key={s} style={{display:"flex",alignItems:"center",gap:8}}>
               <div style={stepStyle(i)}>{i<step?"✓":i+1}</div>
-              <span style={{fontSize:11,color:i===step?C.aurum:i<step?C.viridis:"#bbb",fontFamily:"Arial,sans-serif",fontWeight:i===step?700:400}}>{s}</span>
-              {i<WIZARD_STEPS.length-1&&<div style={{width:16,height:1,background:"#ddd"}}/>}
+              {i<WIZARD_STEPS.length-1&&<div style={{width:16,height:1,background:"#E8E4DC"}}/>}
             </div>
           ))}
         </div>
 
-        <div style={{padding:"24px"}}>
+        <div style={{padding:"28px 32px",background:"#FAF9F7"}}>
           {/* Step 0: Idea */}
           {step===0&&(
             <div>
               <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:C.gray,marginBottom:16,lineHeight:1.6}}>Descrivi in italiano cosa vuoi che faccia la skill. Più sei specifico, migliore sarà il risultato dell'AI.</div>
               <textarea value={idea} onChange={e=>setIdea(e.target.value)}
                 placeholder="Es.: Analizza un contratto di locazione commerciale e verifica la conformità alle norme fiscali per il locatore, identificando le detrazioni applicabili e le scadenze di registrazione…"
-                rows={5} style={{width:"100%",padding:"11px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
+                rows={5} style={{width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
 
               {/* Documenti di contesto */}
-              <div style={{marginTop:14,background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1px solid #e8e4dc"}}>
+              <div style={{marginTop:14,background:"#F5F3EF",borderLeft:"2px solid #D8D4CE",borderRadius:0,padding:"12px 14px",border:"none"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                   <div>
                     <div style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em"}}>📎 DOCUMENTI DI CONTESTO <span style={{fontWeight:400,color:"#aaa"}}>(opzionale)</span></div>
@@ -3149,14 +3141,13 @@ export default function App(){
       />}
       {/* Logout confirm */}
       {showLogoutConfirm&&(
-        <div style={{position:"fixed",inset:0,background:"#00000077",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}} onClick={()=>setShowLogoutConfirm(false)}>
-          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,padding:"28px 28px 22px",maxWidth:340,width:"100%",boxShadow:"0 8px 40px #0005",textAlign:"center"}}>
-            <div style={{fontSize:32,marginBottom:10}}>⎋</div>
-            <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:700,color:C.nox,marginBottom:8}}>Esci dall'account?</div>
-            <div style={{fontSize:13,color:"#888",fontFamily:"Arial,sans-serif",marginBottom:22,lineHeight:1.6}}>I dati locali (preferiti, bozze) rimangono salvati sul dispositivo. Potrai rientrare in qualsiasi momento.</div>
+        <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}} onClick={()=>setShowLogoutConfirm(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,padding:"28px",maxWidth:340,width:"100%",boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",textAlign:"center"}}>
+            <div style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:400,color:"#0A0B0F",marginBottom:16}}>Esci?</div>
+            <div style={{fontSize:13,color:"#888",fontFamily:"Arial,sans-serif",marginBottom:24,lineHeight:1.6}}>Preferiti e bozze restano sul dispositivo. Rientrerai quando vuoi.</div>
             <div style={{display:"flex",gap:10}}>
-              <button onClick={()=>setShowLogoutConfirm(false)} style={{flex:1,padding:"10px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555",fontWeight:600}}>Annulla</button>
-              <button onClick={handleLogout} style={{flex:1,padding:"10px",borderRadius:8,border:"none",background:"#C0392B",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Sì, esci</button>
+              <button onClick={()=>setShowLogoutConfirm(false)} style={{flex:1,padding:"11px 20px",borderRadius:4,border:"1px solid #D8D4CE",background:"none",fontSize:11,cursor:"pointer",fontFamily:"Arial",color:"#666",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",transition:"all .2s"}}>Annulla</button>
+              <button onClick={handleLogout} style={{flex:1,padding:"11px 20px",borderRadius:4,border:"none",background:"#C0392B",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.1em",textTransform:"uppercase",transition:"background .2s"}}>Esci</button>
             </div>
           </div>
         </div>
