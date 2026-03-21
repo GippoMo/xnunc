@@ -462,9 +462,10 @@ function LoginModal({onClose,onLogin}){
           ))}
         </div>
         <div style={{padding:"28px 32px",gap:18,background:"#FAF9F7",display:"flex",flexDirection:"column"}}>
-          <button onClick={()=>onLogin("google@social.com")} style={{width:"100%",padding:"11px",borderRadius:4,border:"1px solid #D8D4CE",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:600,color:"#333",marginBottom:0,transition:"border-color .2s"}}>Google</button>
-          <button onClick={()=>onLogin("linkedin@social.com")} style={{width:"100%",padding:"11px",borderRadius:4,border:"1px solid #D8D4CE",background:"#fff",display:"flex",alignItems:"center",justifyContent:"center",gap:10,cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:600,color:"#333",marginBottom:0,transition:"border-color .2s"}}>LinkedIn</button>
-          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}><div style={{flex:1,height:1,background:"#E8E4DC"}}/><span style={{fontSize:11,color:"#888"}}>oppure</span><div style={{flex:1,height:1,background:"#E8E4DC"}}/></div>
+          <div style={{background:"#F5F3EF",borderLeft:"2px solid #D8D4CE",padding:"10px 14px",fontFamily:"Arial,sans-serif",fontSize:11,color:"#aaa",letterSpacing:"0.04em"}}>
+            <span style={{fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",fontSize:9,color:"#C8C4BE",display:"block",marginBottom:3}}>Accesso social</span>
+            Integrazione Google e LinkedIn in arrivo. Usa email e password per ora.
+          </div>
           <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" type="email" style={{width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",outline:"none",boxSizing:"border-box"}}/>
           <input value={pw} onChange={e=>setPw(e.target.value)} placeholder="Password" type="password" style={{width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",outline:"none",boxSizing:"border-box",marginBottom:4}}/>
           <button onClick={()=>onLogin(email)} style={{width:"100%",padding:"11px 20px",borderRadius:4,border:"none",background:"#0A0B0F",color:"#F1EFE8",fontWeight:700,fontSize:11,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.1em",textTransform:"uppercase",transition:"background .2s",marginBottom:16,marginTop:8}}>{tab==="login"?"Accedi":"Crea account"}</button>
@@ -795,11 +796,11 @@ function getAgentsForSkill(skill){
   return all.slice(0,3);
 }
 
-async function callAI({skill,userInput,attachments,profile}){
+async function callAI({skill,userInput,attachments,profile,_overridePrompt}){
   const agents=getAgentsForSkill(skill);
   const agentCtx=agents.map(a=>`${a.nome} — ${a.ruolo}: ${a.desc}`).join("\n");
   const docsCtx=skill.docsContesto?`\n\n---\nBASE DOCUMENTALE DELLA SKILL (documenti caricati dal creatore — usa come riferimento primario):\n${skill.docsContesto}`:"";
-  const basePrompt=`Sei un team di esperti per studi di Dottori Commercialisti italiani.\nTeam attivo:\n${agentCtx}\n\nSKILL: ${skill.nome}\nArea: ${skill.area} / ${skill.sotto_area}\nObiettivo: ${skill.output_atteso||skill.descrizione}${docsCtx}\n\nRegole:\n- Output professionale, strutturato, pronto all'uso\n- Italiano corretto, tono da esperto\n- Non citare il provider AI né i nomi degli agenti nell'output\n- Se sono presenti documenti di base documentale, usali come fonte autorevole preferenziale\n- OBBLIGATORIO: ogni risposta deve terminare esattamente con questa riga:\n\n---\n*⚠️ Output elaborato con supporto AI — Verificare prima dell'utilizzo professionale. Non sostituisce la consulenza di un Dottore Commercialista abilitato.*`;
+  const basePrompt=_overridePrompt||`Sei un team di esperti per studi di Dottori Commercialisti italiani.\nTeam attivo:\n${agentCtx}\n\nSKILL: ${skill.nome}\nArea: ${skill.area} / ${skill.sotto_area}\nObiettivo: ${skill.output_atteso||skill.descrizione}${docsCtx}\n\nRegole:\n- Output professionale, strutturato, pronto all'uso\n- Italiano corretto, tono da esperto\n- Non citare il provider AI né i nomi degli agenti nell'output\n- Se sono presenti documenti di base documentale, usali come fonte autorevole preferenziale\n- OBBLIGATORIO: ogni risposta deve terminare esattamente con questa riga:\n\n---\n*⚠️ Output elaborato con supporto AI — Verificare prima dell'utilizzo professionale. Non sostituisce la consulenza di un Dottore Commercialista abilitato.*`;
   const attachText=(attachments||[]).filter(a=>a.content).map(a=>`[${a.name}]\n${a.content}`).join("\n\n");
   const userMsg=[userInput,attachText?`\n---\nDocumenti allegati:\n${attachText}`:""].filter(Boolean).join("");
   const keyMode=profile?.keyMode||"xnunc";
@@ -1049,8 +1050,18 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile,improvements,
                   <div style={{fontSize:13,color:"#333",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{skill.output_atteso}</div>
                 </div>
               </div>
-              {skill.normativa&&<div style={{background:"#f5f3ee",borderRadius:8,padding:"10px 14px",marginBottom:14,display:"flex",gap:8}}><span style={{fontSize:10,fontWeight:700,color:"#888",fontFamily:"Arial,sans-serif",flexShrink:0,marginTop:2}}>NORMATIVA</span><span style={{fontSize:12.5,color:"#555",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{skill.normativa}</span></div>}
-              <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:16}}>{(skill.tags||[]).map(t=><Badge key={t} label={t} color={ac} bg={abg}/>)}</div>
+              {skill.normativa&&<div style={{background:"#F5F3EF",borderLeft:"2px solid #D8D4CE",padding:"10px 14px",marginBottom:14,display:"flex",gap:10}}><span style={{fontSize:9,fontWeight:700,color:"#aaa",fontFamily:"Arial,sans-serif",flexShrink:0,marginTop:2,letterSpacing:"0.12em",textTransform:"uppercase"}}>Normativa</span><span style={{fontSize:12,color:"#555",fontFamily:"Arial,sans-serif",lineHeight:1.6}}>{skill.normativa}</span></div>}
+              {skill.docsNomi&&skill.docsNomi.length>0&&(
+                <div style={{background:"#F5F3EF",borderLeft:"2px solid #D8D4CE",padding:"10px 14px",marginBottom:14}}>
+                  <div style={{fontSize:9,fontWeight:700,color:"#aaa",fontFamily:"Arial,sans-serif",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:6}}>Base documentale</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                    {skill.docsNomi.map((n,i)=>(
+                      <span key={i} style={{fontSize:10,color:"#666",fontFamily:"Arial,sans-serif",border:"1px solid #E8E4DC",padding:"2px 10px",fontWeight:600,letterSpacing:"0.04em"}}>{n}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:16}}>{(skill.tags||[]).map(t=><Badge key={t} label={t} color={ac}/>)}</div>
               <div style={{borderTop:"1px solid #eee",paddingTop:14,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div><div style={{fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:700,color:C.gray,marginBottom:2}}>Istruzioni IA (System Prompt)</div><div style={{fontFamily:"Arial,sans-serif",fontSize:11,color:"#aaa"}}>Le istruzioni che guidano l'intelligenza artificiale. Identiche su Claude, ChatGPT, Copilot e Gemini.</div></div>
                 <button onClick={copyPrompt} style={{padding:"7px 16px",borderRadius:8,border:`1px solid ${copied?"#1D9E75":"#ddd"}`,background:copied?"#E3F7F0":"#fff",color:copied?"#1D9E75":"#555",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:copied?700:400,transition:"all .2s"}}>{copied?"✓ Copiato":"📋 Copia prompt"}</button>
@@ -1846,7 +1857,6 @@ function ProfileModal({onClose,userProfile,setUserProfile,onLogout,onDeleteAccou
 
           {/* Footer pulsanti */}
           <div style={{display:"flex",gap:10,marginTop:20,paddingTop:20,borderTop:"1px solid #E8E4DC",padding:"20px 0 0 0"}}>
-            <button onClick={onLogout} style={{padding:"11px 20px",borderRadius:4,border:"none",background:"none",color:"#aaa",fontSize:10,cursor:"pointer",fontFamily:"Arial",fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",transition:"color .2s"}} title="Esci dall'account">Esci</button>
             <button onClick={onClose} style={{flex:1,padding:"11px 20px",borderRadius:4,border:"1px solid #D8D4CE",background:"none",fontSize:11,cursor:"pointer",fontFamily:"Arial",color:"#666",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",transition:"all .2s"}}>Chiudi</button>
             <button onClick={salva} style={{flex:2,padding:"11px 20px",borderRadius:4,border:"none",background:saved?"#1D9E75":"#0A0B0F",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.1em",textTransform:"uppercase",transition:"background .3s",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
               {saved?<>Salvato</>:<>Salva</>}
@@ -2359,23 +2369,72 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
 
   const areas=Object.keys(AREA_COLOR);
 
-  function elaboraConAI(){
+  async function elaboraConAI(){
     if(!idea.trim())return;
-    // Se nessun agente selezionato → usa tutti
-    if(agenti.length===0) setAgenti(WIZARD_AGENTS.map(a=>a.id));
+    const agentiAttivi=agenti.length===0?WIZARD_AGENTS.map(a=>a.id):agenti;
+    if(agenti.length===0) setAgenti(agentiAttivi);
     setElaborating(true);
-    setTimeout(()=>{
-      // Simula risposta AI che genera i campi della skill
-      const exNome=idea.split(" ").slice(0,4).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" ");
-      setNome(exNome);
-      setDescrizione(`Skill che ${idea.toLowerCase()}. Genera un output strutturato e professionale, con riferimenti normativi aggiornati.`);
-      setInputAtteso("Dati identificativi del cliente o del caso: ragione sociale, settore, periodo di riferimento, importi rilevanti.");
-      setOutputAtteso("Report strutturato con analisi, riferimenti normativi, raccomandazioni operative e next step.");
-      setNormativa("Da definire in base al contesto specifico.");
-      setElaborating(false);
-      setElaborated(true);
-      setStep(2);
-    },2200);
+    const docsCtx=wizardDocs.filter(d=>d.content&&!d.error).map(d=>`[${d.name}]\n${d.content}`).join("\n\n---\n\n");
+    const agentNomi=WIZARD_AGENTS.filter(a=>agentiAttivi.includes(a.id)).map(a=>a.nome).join(", ");
+    const wizardSkill={
+      id:"WIZARD-TEMP",
+      nome:"Nuova Skill",
+      area:"Fiscale",
+      sotto_area:"",
+      descrizione:idea,
+      input_atteso:"",
+      output_atteso:"",
+      normativa:"",
+      tags:[],
+      docsContesto:docsCtx||"",
+    };
+    const wizardPrompt=`Sei un esperto di AI per studi di Dottori Commercialisti italiani. Team di revisione attivo: ${agentNomi}.
+
+L'utente vuole creare una skill AI con questa idea:
+"${idea}"
+${docsCtx?`\n\nBase documentale allegata:\n${docsCtx.slice(0,8000)}`:""}
+
+Genera i campi della skill in formato JSON. Rispondi SOLO con il JSON, senza markdown, senza commenti:
+{
+  "nome": "Nome conciso e professionale (max 6 parole)",
+  "descrizione": "Descrizione completa della skill (2-3 frasi, tono professionale)",
+  "input_atteso": "Cosa deve fornire l'utente per usare la skill",
+  "output_atteso": "Cosa produce la skill in output",
+  "normativa": "Riferimenti normativi italiani pertinenti (oppure stringa vuota se non applicabile)",
+  "tags": ["tag1","tag2","tag3"]
+}`;
+    try{
+      const raw=await callAI({
+        skill:{...wizardSkill,prompt:wizardPrompt},
+        userInput:"Genera la skill",
+        attachments:[],
+        profile:userProfile,
+        _overridePrompt:wizardPrompt
+      });
+      // Prova a fare il parse del JSON dalla risposta
+      const match=raw.match(/\{[\s\S]*\}/);
+      if(match){
+        const parsed=JSON.parse(match[0]);
+        if(parsed.nome) setNome(parsed.nome);
+        if(parsed.descrizione) setDescrizione(parsed.descrizione);
+        if(parsed.input_atteso) setInputAtteso(parsed.input_atteso);
+        if(parsed.output_atteso) setOutputAtteso(parsed.output_atteso);
+        if(parsed.normativa) setNormativa(parsed.normativa);
+      } else {
+        // Fallback: usa l'output come descrizione
+        setNome(idea.split(" ").slice(0,4).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" "));
+        setDescrizione(raw.slice(0,300));
+      }
+    } catch(e){
+      // Fallback silenzioso se l'AI non è disponibile
+      setNome(idea.split(" ").slice(0,4).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" "));
+      setDescrizione(`Skill che ${idea.toLowerCase()}.`);
+      setInputAtteso("Dati identificativi del cliente o del caso specifico.");
+      setOutputAtteso("Report strutturato con analisi e raccomandazioni operative.");
+    }
+    setElaborating(false);
+    setElaborated(true);
+    setStep(2);
   }
 
   async function aggiungiFile(files){
