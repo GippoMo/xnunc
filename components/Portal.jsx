@@ -2405,10 +2405,11 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
   }
 
   const stepStyle=(i)=>({
-    width:28,height:28,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",
-    background:i<step?C.viridis:i===step?C.aurum:"#eee",
-    color:i<=step?"#fff":"#bbb",fontSize:11,fontWeight:700,fontFamily:"Arial,sans-serif",flexShrink:0,
-    transition:"background .3s"
+    width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",
+    background:i<step?"#0A0B0F":i===step?"#0A0B0F":"transparent",
+    border:i<=step?"none":"1.5px solid #D8D4CE",
+    color:i<=step?"#F1EFE8":"#C8C4BE",fontSize:10,fontWeight:700,fontFamily:"Arial,sans-serif",flexShrink:0,
+    letterSpacing:"0.04em",transition:"all .2s"
   });
 
   if(published){
@@ -2438,12 +2439,15 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
           <button onClick={onClose} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer",transition:"color .2s"}}>×</button>
         </div>
 
-        {/* Step indicators */}
-        <div style={{padding:"16px 32px",background:"#FAF9F7",borderBottom:"1px solid #E8E4DC",display:"flex",alignItems:"center",gap:8}}>
+        {/* Step indicators — Carta */}
+        <div style={{padding:"14px 32px",background:"#FAF9F7",borderBottom:"1px solid #E8E4DC",display:"flex",alignItems:"center",gap:0}}>
           {WIZARD_STEPS.map((s,i)=>(
-            <div key={s} style={{display:"flex",alignItems:"center",gap:8}}>
-              <div style={stepStyle(i)}>{i<step?"✓":i+1}</div>
-              {i<WIZARD_STEPS.length-1&&<div style={{width:16,height:1,background:"#E8E4DC"}}/>}
+            <div key={s} style={{display:"flex",alignItems:"center",flex:i<WIZARD_STEPS.length-1?1:"auto"}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <div style={stepStyle(i)}>{i<step?"✓":i+1}</div>
+                <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"Arial,sans-serif",color:i===step?"#0A0B0F":i<step?"#888":"#C8C4BE",whiteSpace:"nowrap"}}>{s}</div>
+              </div>
+              {i<WIZARD_STEPS.length-1&&<div style={{flex:1,height:1,background:"#E8E4DC",margin:"0 10px"}}/>}
             </div>
           ))}
         </div>
@@ -2455,7 +2459,9 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
               <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:C.gray,marginBottom:16,lineHeight:1.6}}>Descrivi in italiano cosa vuoi che faccia la skill. Più sei specifico, migliore sarà il risultato dell'AI.</div>
               <textarea value={idea} onChange={e=>setIdea(e.target.value)}
                 placeholder="Es.: Analizza un contratto di locazione commerciale e verifica la conformità alle norme fiscali per il locatore, identificando le detrazioni applicabili e le scadenze di registrazione…"
-                rows={5} style={{width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
+                rows={6} style={{width:"100%",border:"1px solid #D8D4CE",padding:"14px",background:"#fff",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",lineHeight:1.7,resize:"vertical",outline:"none",boxSizing:"border-box",transition:"border-color .2s"}}
+                onFocus={e=>e.target.style.borderColor="#0A0B0F"}
+                onBlur={e=>e.target.style.borderColor="#D8D4CE"}/>
 
               {/* Documenti di contesto */}
               <div style={{marginTop:14,background:"#F5F3EF",borderLeft:"2px solid #D8D4CE",borderRadius:0,padding:"12px 14px",border:"none"}}>
@@ -2496,9 +2502,12 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
                 )}
               </div>
 
-              <div style={{marginTop:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif"}}>{idea.length} caratteri</div>
-                <button onClick={()=>setStep(1)} disabled={idea.trim().length<20} style={{padding:"9px 20px",borderRadius:8,border:"none",background:idea.trim().length>=20?C.aurum:"#eee",color:idea.trim().length>=20?"#fff":"#aaa",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Avanti →</button>
+              <div style={{marginTop:16,display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"1px solid #E8E4DC",paddingTop:16}}>
+                <div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif",letterSpacing:"0.06em"}}>{idea.length} caratteri{idea.trim().length>0&&idea.trim().length<10&&<span style={{color:"#C0392B",marginLeft:8}}>minimo 10</span>}</div>
+                <button onClick={()=>setStep(1)} disabled={idea.trim().length<10}
+                  style={{padding:"11px 24px",border:"none",background:idea.trim().length>=10?"#0A0B0F":"#E8E4DC",color:idea.trim().length>=10?"#F1EFE8":"#aaa",fontSize:11,fontWeight:700,cursor:idea.trim().length>=10?"pointer":"not-allowed",fontFamily:"Arial,sans-serif",letterSpacing:"0.12em",textTransform:"uppercase",transition:"background .2s"}}>
+                  Avanti
+                </button>
               </div>
             </div>
           )}
