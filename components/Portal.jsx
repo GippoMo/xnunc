@@ -523,7 +523,7 @@ function LoginModal({onClose,onLogin}){
   return(
     <>
     {legalModal&&<LegalModal tipo={legalModal} onClose={()=>setLegalModal(null)}/>}
-    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
+    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
       <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:400,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",overflow:"hidden"}}>
         {/* Header */}
         <div style={{background:"#FAF9F7",padding:"24px 32px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"2px solid #0A0B0F"}}>
