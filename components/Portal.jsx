@@ -3154,9 +3154,10 @@ export default function App(){
         const isAdm=u.email==="morales@bcand.it";
         setIsAdmin(isAdm);
         setLoginEmail(u.email);
-        // Carica profilo da DB
+        // Reset profilo a vuoto, poi carica da DB (evita residui localStorage)
+        setUserProfile({...DEFAULT_PROFILE,email:u.email});
         getProfile(u.id).then(p=>{
-          if(p) setUserProfile(prev=>({...prev,...p,email:p.email||u.email}));
+          if(p) setUserProfile({...DEFAULT_PROFILE,...p,email:p.email||u.email});
         }).catch(()=>{});
       }
     });
@@ -3169,11 +3170,17 @@ export default function App(){
         const isAdm=u.email==="morales@bcand.it";
         setIsAdmin(isAdm);
         setLoginEmail(u.email);
+        // Reset profilo a vuoto, poi carica da DB
+        setUserProfile({...DEFAULT_PROFILE,email:u.email});
+        getProfile(u.id).then(p=>{
+          if(p) setUserProfile({...DEFAULT_PROFILE,...p,email:p.email||u.email});
+        }).catch(()=>{});
       } else {
         setSupabaseUser(null);
         setIsLogged(false);
         setIsAdmin(false);
         setLoginEmail("");
+        setUserProfile(DEFAULT_PROFILE);
       }
     });
     return()=>subscription.unsubscribe();
