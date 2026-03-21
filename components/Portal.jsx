@@ -968,11 +968,14 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile,improvements,
                   <input ref={fileInputRef} type="file" multiple accept={FILE_ACCEPT} onChange={handleFiles} style={{display:"none"}}/>
                   <button onClick={()=>fileInputRef.current?.click()}
                     title="Allega un documento — il testo viene estratto nel browser, il file non lascia mai il tuo dispositivo (PDF, Word, Excel, CSV, TXT)"
-                    style={{display:"flex",alignItems:"center",gap:5,padding:"6px 12px",borderRadius:7,border:"1.5px dashed #ccc",background:"#fafaf8",color:"#888",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"all .15s"}}
-                    onMouseEnter={e=>{e.currentTarget.style.borderColor=ac;e.currentTarget.style.color=ac;}}
-                    onMouseLeave={e=>{e.currentTarget.style.borderColor="#ccc";e.currentTarget.style.color="#888";}}>
-                    <span style={{fontSize:15}}>📎</span> Allega documento
-                    {attachments.length>0&&<span style={{background:ac,color:"#fff",borderRadius:10,fontSize:10,padding:"0 5px",fontWeight:700}}>{attachments.length}</span>}
+                    style={{display:"flex",alignItems:"center",gap:7,padding:"7px 14px",border:"1px solid #D8D4CE",background:"transparent",color:"#888",fontSize:10,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",transition:"all .15s"}}
+                    onMouseEnter={e=>{e.currentTarget.style.borderColor="#0A0B0F";e.currentTarget.style.color="#0A0B0F";}}
+                    onMouseLeave={e=>{e.currentTarget.style.borderColor="#D8D4CE";e.currentTarget.style.color="#888";}}>
+                    <svg width="11" height="13" viewBox="0 0 11 13" fill="none" xmlns="http://www.w3.org/2000/svg" style={{flexShrink:0}}>
+                      <path d="M9.5 5.5L5 10C3.9 11.1 2.1 11.1 1 10C-0.1 8.9 -0.1 7.1 1 6L5.5 1.5C6.2 0.8 7.3 0.8 8 1.5C8.7 2.2 8.7 3.3 8 4L3.5 8.5C3.2 8.8 2.8 8.8 2.5 8.5C2.2 8.2 2.2 7.8 2.5 7.5L6.5 3.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Allega
+                    {attachments.length>0&&<span style={{background:"#0A0B0F",color:"#F1EFE8",fontSize:9,padding:"1px 6px",fontWeight:700,letterSpacing:"0.04em"}}>{attachments.length}</span>}
                   </button>
                   <span style={{fontSize:11,color:"#ccc",fontFamily:"Arial,sans-serif"}}>{input.length>0?`${input.length} car.`:""}</span>
                 </div>
