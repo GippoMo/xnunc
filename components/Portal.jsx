@@ -3348,37 +3348,37 @@ export default function App(){
           </div>
         </div>
 
-        {/* Search dropdown panel */}
+        {/* Search dropdown panel — stile Carta */}
         {navSearchOpen&&(
-          <div style={{borderTop:"1px solid #222",background:"#111214",padding:"16px 24px 20px"}}>
+          <div style={{borderTop:"2px solid #0A0B0F",background:"#FAF9F7",padding:"18px 24px 20px",boxShadow:"0 8px 24px rgba(0,0,0,0.10)"}}>
             <div style={{maxWidth:1100,margin:"0 auto"}}>
-              <div style={{position:"relative",marginBottom:14}}>
-                <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <div style={{position:"relative",marginBottom:16}}>
+                <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input ref={navSearchInputRef} value={search} onChange={e=>setSearch(e.target.value)}
-                  onKeyDown={e=>{if(e.key==="Escape"){setNavSearchOpen(false);}if(e.key==="Enter")setNavSearchOpen(false);}}
+                  onKeyDown={e=>{if(e.key==="Escape")setNavSearchOpen(false);if(e.key==="Enter")setNavSearchOpen(false);}}
                   placeholder="Cerca skill per nome, area, tag, normativa…"
-                  style={{width:"100%",padding:"9px 36px 9px 36px",border:`1px solid ${search.trim()?C.aurum:"#333"}`,borderRadius:2,fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",background:"#1a1c20",color:"#F1EFE8",boxSizing:"border-box",transition:"border-color .2s"}}/>
-                {search.trim()&&<button onClick={()=>setSearch("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#666",cursor:"pointer",fontSize:16,lineHeight:1}}>×</button>}
+                  style={{width:"100%",padding:"10px 36px",border:`1px solid ${search.trim()?C.aurum:"#D8D4CE"}`,borderRadius:2,fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",background:"#fff",color:"#0A0B0F",boxSizing:"border-box",transition:"border-color .2s"}}/>
+                {search.trim()&&<button onClick={()=>setSearch("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#bbb",cursor:"pointer",fontSize:18,lineHeight:1}}>×</button>}
               </div>
-              <div style={{display:"flex",flexWrap:"wrap",gap:14,alignItems:"flex-start"}}>
+              <div style={{display:"flex",flexWrap:"wrap",gap:16,alignItems:"flex-start"}}>
                 <div>
-                  <div style={{fontSize:9,fontWeight:700,color:"#555",letterSpacing:"0.14em",marginBottom:6}}>AREA FUNZIONALE</div>
-                  <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{areas.map(a=><button key={a} onClick={()=>setFilterArea(a)} style={{padding:"3px 10px",border:`1px solid ${filterArea===a?C.aurum:"#333"}`,borderRadius:2,background:filterArea===a?"#1a1204":"transparent",color:filterArea===a?C.aurum:"#888",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.06em",transition:"all .15s"}}>{a}</button>)}</div>
+                  <div style={{fontSize:9,fontWeight:700,color:"#C8C4BE",letterSpacing:"0.14em",marginBottom:7,fontFamily:"Arial"}}>AREA FUNZIONALE</div>
+                  <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{areas.map(a=><button key={a} onClick={()=>setFilterArea(a)} style={{padding:"3px 10px",border:`1px solid ${filterArea===a?C.aurum:"#D8D4CE"}`,borderRadius:2,background:filterArea===a?"#FAF3E8":"transparent",color:filterArea===a?C.aurum:"#666",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.06em",transition:"all .15s"}}>{a}</button>)}</div>
                 </div>
                 <div>
-                  <div style={{fontSize:9,fontWeight:700,color:"#555",letterSpacing:"0.14em",marginBottom:6}}>DIFFICOLTÀ</div>
-                  <div style={{display:"flex",gap:4}}>{["Tutte","alta","media","bassa"].map(c=><button key={c} onClick={()=>setFilterComp(c)} style={{padding:"3px 10px",border:`1px solid ${filterComp===c?C.aurum:"#333"}`,borderRadius:2,background:filterComp===c?"#1a1204":"transparent",color:filterComp===c?C.aurum:"#888",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.06em",transition:"all .15s"}}>{c}</button>)}</div>
+                  <div style={{fontSize:9,fontWeight:700,color:"#C8C4BE",letterSpacing:"0.14em",marginBottom:7,fontFamily:"Arial"}}>DIFFICOLTÀ</div>
+                  <div style={{display:"flex",gap:4}}>{["Tutte","alta","media","bassa"].map(c=><button key={c} onClick={()=>setFilterComp(c)} style={{padding:"3px 10px",border:`1px solid ${filterComp===c?C.aurum:"#D8D4CE"}`,borderRadius:2,background:filterComp===c?"#FAF3E8":"transparent",color:filterComp===c?C.aurum:"#666",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.06em",transition:"all .15s"}}>{c}</button>)}</div>
                 </div>
                 <div>
-                  <div style={{fontSize:9,fontWeight:700,color:"#555",letterSpacing:"0.14em",marginBottom:6}}>FREQUENZA</div>
-                  <div style={{display:"flex",gap:4}}>{["Tutte","ricorrente","occasionale"].map(f=><button key={f} onClick={()=>setFilterFreq(f)} style={{padding:"3px 10px",border:`1px solid ${filterFreq===f?C.aurum:"#333"}`,borderRadius:2,background:filterFreq===f?"#1a1204":"transparent",color:filterFreq===f?C.aurum:"#888",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.06em",transition:"all .15s"}}>{f}</button>)}</div>
+                  <div style={{fontSize:9,fontWeight:700,color:"#C8C4BE",letterSpacing:"0.14em",marginBottom:7,fontFamily:"Arial"}}>FREQUENZA</div>
+                  <div style={{display:"flex",gap:4}}>{["Tutte","ricorrente","occasionale"].map(f=><button key={f} onClick={()=>setFilterFreq(f)} style={{padding:"3px 10px",border:`1px solid ${filterFreq===f?C.aurum:"#D8D4CE"}`,borderRadius:2,background:filterFreq===f?"#FAF3E8":"transparent",color:filterFreq===f?C.aurum:"#666",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.06em",transition:"all .15s"}}>{f}</button>)}</div>
                 </div>
                 <div style={{marginLeft:"auto",display:"flex",alignItems:"flex-end",gap:12,paddingBottom:2}}>
                   {(filterArea!=="Tutte"||filterComp!=="Tutte"||filterFreq!=="Tutte"||search.trim())&&(
-                    <button onClick={()=>{setFilterArea("Tutte");setFilterComp("Tutte");setFilterFreq("Tutte");setSearch("");}} style={{background:"none",border:"none",color:"#555",fontFamily:"Arial",fontSize:11,cursor:"pointer",letterSpacing:"0.06em",textDecoration:"underline",padding:0}}>Rimuovi filtri</button>
+                    <button onClick={()=>{setFilterArea("Tutte");setFilterComp("Tutte");setFilterFreq("Tutte");setSearch("");}} style={{background:"none",border:"none",color:"#aaa",fontFamily:"Arial",fontSize:11,cursor:"pointer",letterSpacing:"0.06em",textDecoration:"underline",padding:0}}>Rimuovi filtri</button>
                   )}
-                  <span style={{fontSize:11,color:"#555",fontFamily:"Arial"}}>{filtered.length} skill</span>
-                  <button onClick={()=>setNavSearchOpen(false)} style={{background:"none",border:"1px solid #333",color:"#888",fontFamily:"Arial",fontSize:10,fontWeight:700,cursor:"pointer",padding:"4px 12px",borderRadius:2,letterSpacing:"0.08em"}}>CHIUDI ↑</button>
+                  <span style={{fontSize:11,color:"#aaa",fontFamily:"Arial"}}>{filtered.length} skill</span>
+                  <button onClick={()=>setNavSearchOpen(false)} style={{background:"#0A0B0F",border:"none",color:"#F1EFE8",fontFamily:"Arial",fontSize:10,fontWeight:700,cursor:"pointer",padding:"5px 14px",borderRadius:2,letterSpacing:"0.08em",textTransform:"uppercase"}}>Chiudi</button>
                 </div>
               </div>
             </div>
