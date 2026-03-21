@@ -284,10 +284,10 @@ function useStream(trigger,text,speed=18){
 }
 
 function Badge({label,color,bg,small}){
-  return<span style={{display:"inline-block",padding:small?"1px 7px":"2px 9px",borderRadius:12,fontSize:small?10:11,fontWeight:700,fontFamily:"Arial,sans-serif",color:color||"#555",background:bg||"#eee",letterSpacing:"0.04em",marginRight:4,marginBottom:4}}>{label}</span>;
+  return<span style={{display:"inline-block",padding:small?"1px 8px":"2px 10px",fontSize:small?9:10,fontWeight:700,fontFamily:"Arial,sans-serif",color:color||"#888",background:"transparent",border:`1px solid ${color||"#D8D4CE"}`,letterSpacing:"0.08em",textTransform:"uppercase",marginRight:4,marginBottom:4}}>{label}</span>;
 }
 function Pill({label,active,onClick,color}){
-  return<button onClick={onClick} style={{border:"none",borderRadius:20,padding:"4px 13px",fontSize:12,fontFamily:"Arial,sans-serif",cursor:"pointer",background:active?(color||C.nox):"#f0ede8",color:active?"#fff":"#555",fontWeight:active?700:400,transition:"all .15s"}}>{label}</button>;
+  return<button onClick={onClick} style={{border:`1px solid ${active?"#0A0B0F":"#D8D4CE"}`,padding:"5px 14px",fontSize:11,fontFamily:"Arial,sans-serif",cursor:"pointer",background:active?"#0A0B0F":"transparent",color:active?"#F1EFE8":"#888",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",transition:"all .15s"}}>{label}</button>;
 }
 
 // ─────────────────────────────────────────────────────
@@ -1100,56 +1100,55 @@ function SkillCard({skill,onClick,isLogged,favorites,setFavorites,compact,isAdmi
     setFavorites(prev=>isFav?prev.filter(id=>id!==skill.id):[...prev,skill.id]);
   }
   return(
-    <div onClick={onClick} className="xnunc-card" style={{cursor:"pointer",border:`1.5px solid ${isHidden?"#e8a80066":"#e8e4dc"}`,borderRadius:10,background:isHidden?"#fffbf0":"#fff",padding:"14px 16px 12px",marginBottom:8,boxShadow:"0 1px 4px #0001",position:"relative",opacity:isHidden?0.72:1}}>
-      {/* Controlli admin — visibili solo alla Redazione */}
+    <div onClick={onClick} className="xnunc-card"
+      style={{cursor:"pointer",borderTop:"1px solid #E8E4DC",borderRight:"1px solid #E8E4DC",borderBottom:"1px solid #E8E4DC",borderLeft:`3px solid ${isHidden?"#E8A800":ac}`,background:isHidden?"#FFFDF5":"#FAF9F7",padding:"16px 16px 14px 14px",marginBottom:6,position:"relative",opacity:isHidden?0.75:1,transition:"border-left-color .15s"}}>
+      {/* Controlli admin */}
       {isAdmin&&(
-        <div style={{position:"absolute",top:8,right:8,display:"flex",gap:4}} onClick={e=>e.stopPropagation()}>
+        <div style={{position:"absolute",top:10,right:10,display:"flex",gap:4}} onClick={e=>e.stopPropagation()}>
           {isHidden?(
             <>
-              <span style={{fontSize:9,color:"#e8a800",fontFamily:"Arial,sans-serif",fontWeight:700,alignSelf:"center",marginRight:2}}>⊘ OSCURATA</span>
-              <button onClick={onUnhide} title="Ripristina nel catalogo"
-                style={{padding:"2px 8px",borderRadius:5,border:"1px solid #1D9E75",background:"#e3f7f0",color:"#1D9E75",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
-                ↩ Ripristina
+              <span style={{fontSize:9,color:"#E8A800",fontFamily:"Arial,sans-serif",fontWeight:700,letterSpacing:"0.1em",alignSelf:"center",marginRight:4}}>OSCURATA</span>
+              <button onClick={onUnhide} title="Ripristina"
+                style={{padding:"2px 10px",border:"1px solid #1D9E75",background:"none",color:"#1D9E75",fontSize:9,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",letterSpacing:"0.08em",textTransform:"uppercase"}}>
+                Ripristina
               </button>
             </>
           ):(
-            <button onClick={onHide} title="Oscura skill (nascondila dal catalogo)"
-              style={{padding:"2px 8px",borderRadius:5,border:"1px solid #e8a800",background:"#fffbee",color:"#e8a800",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
-              ⊘ Oscura
+            <button onClick={onHide} title="Oscura"
+              style={{padding:"2px 10px",border:"1px solid #D8D4CE",background:"none",color:"#aaa",fontSize:9,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",letterSpacing:"0.08em",textTransform:"uppercase"}}>
+              Oscura
             </button>
           )}
-          <button onClick={onDelete} title="Elimina definitivamente"
-            style={{padding:"2px 8px",borderRadius:5,border:"1px solid #fcc",background:"#fff5f5",color:"#C0392B",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
-            🗑 Elimina
+          <button onClick={onDelete} title="Elimina"
+            style={{padding:"2px 10px",border:"1px solid #D8D4CE",background:"none",color:"#C0392B",fontSize:9,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",letterSpacing:"0.08em",textTransform:"uppercase"}}>
+            Elimina
           </button>
         </div>
       )}
       {!isAdmin&&isLogged&&setFavorites&&(
         <button onClick={toggleFav} title={isFav?"Rimuovi dai preferiti":"Aggiungi ai preferiti"}
-          style={{position:"absolute",top:9,right:10,background:"none",border:"none",cursor:"pointer",fontSize:15,color:isFav?C.aurum:"#ddd",lineHeight:1,padding:2,transition:"color .15s"}}>
+          style={{position:"absolute",top:12,right:12,background:"none",border:"none",cursor:"pointer",fontSize:14,color:isFav?C.aurum:"#D8D4CE",lineHeight:1,padding:2,transition:"color .15s"}}>
           {isFav?"★":"☆"}
         </button>
       )}
-      {!isLogged&&<div style={{position:"absolute",top:10,right:10,fontSize:13,color:C.gray}}>🔒</div>}
-      <div style={{display:"flex",justifyContent:"space-between",gap:8}}>
+      {!isLogged&&<div style={{position:"absolute",top:12,right:12,fontSize:11,color:"#D8D4CE",fontFamily:"Arial,sans-serif",fontWeight:700,letterSpacing:"0.06em"}}>—</div>}
+      {/* Area tag */}
+      <div style={{fontSize:8,fontWeight:700,color:ac,fontFamily:"Arial,sans-serif",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:8}}>{skill.area}</div>
+      <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"flex-start"}}>
         <div style={{flex:1}}>
-          <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:700,color:C.nox,marginBottom:4,lineHeight:1.3,paddingRight:26}}>{skill.nome}</div>
-          <div style={{fontSize:11,color:ac,fontFamily:"Arial,sans-serif",marginBottom:5,fontWeight:600}}>{skill.id} · {skill.sotto_area}</div>
-          {!compact&&<div style={{fontSize:12.5,color:"#444",fontFamily:"Arial,sans-serif",lineHeight:1.5}}>{truncate(skill.descrizione,110)}</div>}
-          <div style={{marginTop:7,display:"flex",flexWrap:"wrap",gap:2}}>
-            {(skill.tags||[]).slice(0,3).map(t=><span key={t} style={{fontSize:10,color:ac,background:abg,padding:"1px 7px",borderRadius:8,fontFamily:"Arial,sans-serif"}}>{t}</span>)}
-            {(skill.tags||[]).length>3&&<span style={{fontSize:10,color:C.gray,fontFamily:"Arial,sans-serif"}}>+{skill.tags.length-3}</span>}
-          </div>
+          <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:400,color:"#0A0B0F",marginBottom:4,lineHeight:1.35,paddingRight:24}}>{skill.nome}</div>
+          <div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif",marginBottom:6,letterSpacing:"0.04em"}}>{skill.sotto_area}</div>
+          {!compact&&<div style={{fontSize:12,color:"#666",fontFamily:"Arial,sans-serif",lineHeight:1.55}}>{truncate(skill.descrizione,110)}</div>}
+          {(skill.tags||[]).length>0&&(
+            <div style={{marginTop:10,display:"flex",flexWrap:"wrap",gap:4}}>
+              {(skill.tags||[]).slice(0,3).map(t=><span key={t} style={{fontSize:9,color:"#888",background:"transparent",border:"1px solid #E8E4DC",padding:"1px 7px",fontFamily:"Arial,sans-serif",fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase"}}>{t}</span>)}
+              {(skill.tags||[]).length>3&&<span style={{fontSize:9,color:"#bbb",fontFamily:"Arial,sans-serif"}}>+{skill.tags.length-3}</span>}
+            </div>
+          )}
         </div>
-        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:6,flexShrink:0}}>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontSize:9,color:C.gray,fontFamily:"Arial,sans-serif",fontWeight:600,marginBottom:2,letterSpacing:"0.06em"}}>DIFFICOLTÀ</div>
-            <Badge label={skill.complessita} color={COMP_COLOR[skill.complessita]} bg={COMP_COLOR[skill.complessita]+"22"} small/>
-          </div>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontSize:9,color:C.gray,fontFamily:"Arial,sans-serif",fontWeight:600,marginBottom:2,letterSpacing:"0.06em"}}>FREQUENZA</div>
-            <Badge label={skill.frequenza} color={FREQ_COLOR[skill.frequenza]} bg={FREQ_COLOR[skill.frequenza]+"22"} small/>
-          </div>
+        <div style={{display:"flex",flexDirection:"column",alignItems:"flex-end",gap:8,flexShrink:0,paddingTop:2}}>
+          <Badge label={skill.complessita} color={COMP_COLOR[skill.complessita]} small/>
+          <Badge label={skill.frequenza} color={FREQ_COLOR[skill.frequenza]} small/>
         </div>
       </div>
     </div>
@@ -2912,7 +2911,7 @@ export default function App(){
     if(!document.getElementById(id)){
       const s=document.createElement("style");
       s.id=id;
-      s.textContent=`.xnunc-card{transition:box-shadow .18s,border-color .18s;}.xnunc-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.10)!important;border-color:#BA7517!important;}`;
+      s.textContent=`.xnunc-card{transition:background .15s,border-left-width .15s;}.xnunc-card:hover{background:#F5F2EE!important;border-left-width:5px!important;}`;
       document.head.appendChild(s);
     }
   }
@@ -3125,13 +3124,13 @@ export default function App(){
           for(const s of filtered){if(!g[s.area])g[s.area]={};if(!g[s.area][s.sotto_area])g[s.area][s.sotto_area]=[];g[s.area][s.sotto_area].push(s);}
           return Object.entries(g).map(([area,sottoaree])=>(
             <div key={area} style={{marginBottom:28}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,padding:"10px 16px",borderRadius:10,background:AREA_BG[area]||"#f5f3ee",borderLeft:`4px solid ${AREA_COLOR[area]||C.gray}`}}>
-                <span style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:700,color:AREA_COLOR[area]||C.nox}}>{area}</span>
-                <span style={{fontSize:12,color:"#888",background:"#fff",padding:"2px 8px",borderRadius:10,fontFamily:"Arial,sans-serif"}}>{Object.values(sottoaree).reduce((a,b)=>a+b.length,0)} skill</span>
+              <div style={{display:"flex",alignItems:"baseline",gap:12,marginBottom:16,paddingBottom:10,borderBottom:`2px solid #0A0B0F`}}>
+                <span style={{fontFamily:"Georgia,serif",fontSize:18,fontWeight:400,color:"#0A0B0F"}}>{area}</span>
+                <span style={{fontSize:9,color:"#aaa",fontFamily:"Arial,sans-serif",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase"}}>{Object.values(sottoaree).reduce((a,b)=>a+b.length,0)} skill</span>
               </div>
               {Object.entries(sottoaree).map(([sa,skills])=>(
-                <div key={sa} style={{marginBottom:14}}>
-                  <div style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:6,paddingLeft:2,borderBottom:"1px solid #eae6de",paddingBottom:4}}>{sa} · {skills.length}</div>
+                <div key={sa} style={{marginBottom:16}}>
+                  <div style={{fontSize:9,fontWeight:700,color:"#aaa",letterSpacing:"0.14em",textTransform:"uppercase",marginBottom:8,fontFamily:"Arial,sans-serif"}}>{sa}</div>
                   {skills.map(s=><SkillCard key={s.id} skill={s} isLogged={isLogged} favorites={favorites} setFavorites={isLogged?setFavorites:null} isAdmin={isAdmin} isHidden={hiddenSkills.includes(s.id)} onHide={()=>setHiddenSkills(prev=>[...prev,s.id])} onUnhide={()=>setHiddenSkills(prev=>prev.filter(x=>x!==s.id))} onDelete={()=>setDeletedSkills(prev=>[...prev,s.id])} onClick={()=>{if(!isLogged){setShowLogin(true);}else{setActiveSkill(s);}}}/>)}
                 </div>
               ))}
