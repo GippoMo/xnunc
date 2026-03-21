@@ -1,6 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
-import { supabase, signIn, signUp, signOut, resetPassword, getProfile, upsertProfile, logAiCall } from "../lib/supabase";
+import { supabase, signIn, signUp, signOut, resetPassword, getProfile, upsertProfile, logAiCall, getThreads as dbGetThreads, saveThread as dbSaveThread, dbThreadToApp, appThreadToDb } from "../lib/supabase";
 
 // ─────────────────────────────────────────────────────
 // xNunc brand palette
@@ -2028,25 +2028,16 @@ function ProfileModal({onClose,userProfile,setUserProfile,onLogout,onDeleteAccou
 // 4. Copia Template ID e Public Key (tab Account → API Keys)
 // 5. Sostituisci i valori EMAILJS_* qui sotto
 // ─────────────────────────────────────────────────────
-const EMAILJS_SERVICE  = "YOUR_SERVICE_ID";   // es. "service_gmail"
-const EMAILJS_TEMPLATE = "YOUR_TEMPLATE_ID";  // es. "template_xnunc"
-const EMAILJS_KEY      = "YOUR_PUBLIC_KEY";   // tab Account → API Keys
-const ADMIN_EMAIL      = "morales@bcand.it";
+const ADMIN_EMAIL = "morales@bcand.it";
 
 async function notificaEmail({destinatario,oggetto,corpo}){
-  if(EMAILJS_SERVICE.startsWith("YOUR"))return; // non ancora configurato
   try{
-    await fetch("https://api.emailjs.com/api/v1.0/email/send",{
+    await fetch("/api/send-email",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        service_id:EMAILJS_SERVICE,
-        template_id:EMAILJS_TEMPLATE,
-        user_id:EMAILJS_KEY,
-        template_params:{to_email:destinatario,subject:oggetto,message:corpo}
-      })
+      body:JSON.stringify({to:destinatario,subject:oggetto,text:corpo})
     });
-  }catch(e){console.log("Email non inviata:",e);}
+  }catch(e){console.warn("[notificaEmail]",e.message);}
 }
 
 // ─────────────────────────────────────────────────────
@@ -2070,7 +2061,7 @@ const IMPROV_STATI={
 const STATO_LABEL={bozza:"🔧 Bozza",in_revisione:"⏳ In revisione",approvata:"✓ Approvata"};
 const STATO_COLOR={bozza:C.caelum,in_revisione:C.aurum,approvata:C.viridis};
 
-function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,onTestSkill,onOpenProfile,onCreateSkill,isAdmin,improvements,setImprovements,userPoints}){
+function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,supabaseUser,onTestSkill,onOpenProfile,onCreateSkill,isAdmin,improvements,setImprovements,userPoints}){
   const[tab,setTab]=useState(0);
   const[activeThread,setActiveThread]=useState(null);
   const[msgTesto,setMsgTesto]=useState("");
@@ -2108,19 +2099,25 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
       corpo:`L'utente ${nomeCompl} ha inviato la skill "${draft.nome}" (${draft.area}) per revisione.\n\nDescrizione: ${draft.descrizione}\n\nInput atteso: ${draft.inputAtteso}\nOutput atteso: ${draft.outputAtteso}\nNormativa: ${draft.normativa}`
     });
     // Aggiungi thread di notifica nella messaggistica
-    setThreads(prev=>[...prev,{
-      id:Date.now(),titolo:`Skill inviata: ${draft.nome}`,con:"Redazione",avatar:"R",avatarColor:C.aurum,
+    const notifThread={
+      id:crypto.randomUUID(),titolo:`Skill inviata: ${draft.nome}`,con:"Redazione",avatar:"R",avatarColor:C.aurum,
       messaggi:[{id:1,da:"Sistema",testo:`Hai inviato la skill "${draft.nome}" alla Redazione. Riceverai una risposta qui appena revisionata. Di solito entro 48 ore.`,data:new Date().toLocaleDateString("it-IT"),letto:true}],
       nonLetti:0
-    }]);
+    };
+    setThreads(prev=>[...prev,notifThread]);
+    if(supabaseUser) dbSaveThread(appThreadToDb(notifThread,supabaseUser.id));
     setTab(2); // vai alla tab messaggi
   }
 
   function inviaMsgThread(thread){
     if(!msgTesto.trim())return;
     const nuovoMsg={id:Date.now(),da:nomeCompl,testo:msgTesto,data:new Date().toLocaleDateString("it-IT"),letto:true};
-    setThreads(prev=>prev.map(t=>t.id===thread.id?{...t,messaggi:[...t.messaggi,nuovoMsg]}:t));
-    setActiveThread(prev=>prev?{...prev,messaggi:[...prev.messaggi,nuovoMsg]}:prev);
+    const updatedMsgs=[...thread.messaggi,nuovoMsg];
+    const updatedThread={...thread,messaggi:updatedMsgs};
+    setThreads(prev=>prev.map(t=>t.id===thread.id?updatedThread:t));
+    setActiveThread(prev=>prev?updatedThread:prev);
+    // Salva su Supabase
+    if(supabaseUser) dbSaveThread(appThreadToDb(updatedThread,supabaseUser.id));
     notificaEmail({
       destinatario:ADMIN_EMAIL,
       oggetto:`[xNunc Messaggi] Nuovo messaggio da ${nomeCompl}`,
@@ -2131,9 +2128,11 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
 
   function nuovoThread(){
     if(!newMsgOgg.trim()||!newMsgTesto.trim())return;
-    const thread={id:Date.now(),titolo:newMsgOgg,con:"Redazione",avatar:"R",avatarColor:C.aurum,
+    const thread={id:crypto.randomUUID(),titolo:newMsgOgg,con:"Redazione",avatar:"R",avatarColor:C.aurum,
       messaggi:[{id:1,da:nomeCompl,testo:newMsgTesto,data:new Date().toLocaleDateString("it-IT"),letto:true}],nonLetti:0};
     setThreads(prev=>[...prev,thread]);
+    // Salva su Supabase
+    if(supabaseUser) dbSaveThread(appThreadToDb(thread,supabaseUser.id));
     notificaEmail({
       destinatario:ADMIN_EMAIL,
       oggetto:`[xNunc] Nuovo messaggio da ${nomeCompl}: ${newMsgOgg}`,
@@ -3159,42 +3158,38 @@ export default function App(){
 
   // ── Supabase session init ───────────────────────────
   useEffect(()=>{
+    // Funzione helper — carica profilo + thread da Supabase dopo login
+    async function loadUserData(u){
+      setSupabaseUser(u);
+      setIsLogged(true);
+      setIsAdmin(u.email==="morales@bcand.it");
+      setLoginEmail(u.email);
+      // Profilo
+      setUserProfile({...DEFAULT_PROFILE,email:u.email});
+      getProfile(u.id).then(p=>{
+        if(p) setUserProfile({...DEFAULT_PROFILE,...p,email:p.email||u.email});
+      }).catch(()=>{});
+      // Thread da Supabase (sostituisce localStorage)
+      dbGetThreads(u.id).then(rows=>{
+        if(rows&&rows.length>0) setThreads(rows.map(dbThreadToApp));
+        // se nessun thread su DB, mantieni il messaggio di benvenuto già in stato
+      }).catch(()=>{});
+    }
     // Check existing session on mount
     supabase.auth.getSession().then(({data:{session}})=>{
-      if(session?.user){
-        const u=session.user;
-        setSupabaseUser(u);
-        setIsLogged(true);
-        const isAdm=u.email==="morales@bcand.it";
-        setIsAdmin(isAdm);
-        setLoginEmail(u.email);
-        // Reset profilo a vuoto, poi carica da DB (evita residui localStorage)
-        setUserProfile({...DEFAULT_PROFILE,email:u.email});
-        getProfile(u.id).then(p=>{
-          if(p) setUserProfile({...DEFAULT_PROFILE,...p,email:p.email||u.email});
-        }).catch(()=>{});
-      }
+      if(session?.user) loadUserData(session.user);
     });
     // Ascolta cambi di sessione (login/logout)
     const{data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
       if(session?.user){
-        const u=session.user;
-        setSupabaseUser(u);
-        setIsLogged(true);
-        const isAdm=u.email==="morales@bcand.it";
-        setIsAdmin(isAdm);
-        setLoginEmail(u.email);
-        // Reset profilo a vuoto, poi carica da DB
-        setUserProfile({...DEFAULT_PROFILE,email:u.email});
-        getProfile(u.id).then(p=>{
-          if(p) setUserProfile({...DEFAULT_PROFILE,...p,email:p.email||u.email});
-        }).catch(()=>{});
+        loadUserData(session.user);
       } else {
         setSupabaseUser(null);
         setIsLogged(false);
         setIsAdmin(false);
         setLoginEmail("");
         setUserProfile(DEFAULT_PROFILE);
+        setThreads(DEFAULT_THREADS);
       }
     });
     return()=>subscription.unsubscribe();
@@ -3521,7 +3516,7 @@ export default function App(){
         favorites={favorites} setFavorites={setFavorites}
         draftSkills={draftSkills} setDraftSkills={setDraftSkills}
         threads={threads} setThreads={setThreads}
-        userProfile={userProfile}
+        userProfile={userProfile} supabaseUser={supabaseUser}
         isAdmin={isAdmin}
         improvements={improvements} setImprovements={setImprovements}
         userPoints={userPoints}
