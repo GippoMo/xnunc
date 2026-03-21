@@ -1993,8 +1993,8 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
   ];
 
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"0"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",width:"100%",maxWidth:860,height:"100vh",display:"flex",flexDirection:"column",boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",marginLeft:0,marginRight:"auto"}}>
+    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 16px",overflowY:"auto"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",width:"100%",maxWidth:860,maxHeight:"90vh",display:"flex",flexDirection:"column",boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)"}}>
 
         {/* Header */}
         <div style={{background:"#FAF9F7",padding:"28px 32px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,borderBottom:"2px solid #0A0B0F"}}>
