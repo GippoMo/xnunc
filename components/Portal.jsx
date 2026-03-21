@@ -892,26 +892,29 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile,improvements,
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px",overflowY:"auto"}} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:1160,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",marginTop:16,marginBottom:16}}>
-        <div style={{background:"#FAF9F7",padding:"28px 32px 24px",borderBottom:"2px solid #0A0B0F"}}>
+        <div style={{background:"#FAF9F7",padding:"28px 32px 0"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
             <div>
               <div style={{fontSize:9,color:"#BA7517",fontWeight:700,letterSpacing:"0.2em",fontFamily:"Arial,sans-serif",marginBottom:6}}>{skill.area.toUpperCase()}</div>
               <div style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:400,color:"#0A0B0F",lineHeight:1.3}}>{skill.nome}</div>
-              <div style={{fontSize:12,color:"#888",fontFamily:"Arial,sans-serif",marginTop:4}}>{skill.sotto_area}</div>
+              <div style={{fontSize:12,color:"#aaa",fontFamily:"Arial,sans-serif",marginTop:4}}>{skill.sotto_area}</div>
             </div>
-            <button onClick={onClose} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer",padding:0,transition:"color .2s"}}>×</button>
+            <button onClick={onClose} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer",padding:0,transition:"color .2s"}} onMouseEnter={e=>e.currentTarget.style.color="#0A0B0F"} onMouseLeave={e=>e.currentTarget.style.color="#aaa"}>×</button>
           </div>
-          <div style={{marginBottom:12,display:"flex",gap:4,flexWrap:"wrap"}}>
+          <div style={{marginBottom:16,display:"flex",gap:4,flexWrap:"wrap"}}>
             <Badge label="v1.0" color="#aaa" bg="#E8E4DC"/>
             <Badge label={skill.complessita} color={COMP_COLOR[skill.complessita]} bg={COMP_COLOR[skill.complessita]+"22"}/>
             <Badge label={skill.frequenza} color={FREQ_COLOR[skill.frequenza]} bg={FREQ_COLOR[skill.frequenza]+"22"}/>
             {(skill.tags||[]).slice(0,3).map(t=><Badge key={t} label={t} color="#888" bg="#E8E4DC"/>)}
           </div>
-          <div style={{display:"flex",borderBottom:"2px solid #0A0B0F",padding:"0",gap:4,alignItems:"flex-end"}}>
+          <div style={{display:"flex",borderBottom:"2px solid #0A0B0F",gap:2,alignItems:"flex-end"}}>
             {tabs.map(t=>(
-              <button key={t} onClick={()=>setTab(t)} style={{padding:"8px 16px",border:"none",cursor:"pointer",background:tab===t?"#0A0B0F":"none",color:tab===t?"#F1EFE8":"#aaa",fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,letterSpacing:"0.14em",borderRadius:tab===t?"4px 4px 0 0":"4px 4px 0 0",marginBottom:tab===t?"-2px":0,display:"flex",alignItems:"center",gap:5,transition:"all .2s"}}>
+              <button key={t} onClick={()=>setTab(t)}
+                style={{padding:"9px 18px",border:"none",cursor:"pointer",background:tab===t?"#0A0B0F":"transparent",color:tab===t?"#F1EFE8":"#bbb",fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",borderRadius:"4px 4px 0 0",marginBottom:tab===t?"-2px":0,display:"flex",alignItems:"center",gap:6,transition:"all .2s"}}
+                onMouseEnter={e=>{if(tab!==t){e.currentTarget.style.color="#0A0B0F";}}}
+                onMouseLeave={e=>{if(tab!==t){e.currentTarget.style.color="#bbb";}}}>
                 {tl[t]}
-                {skill.tipo==="tool"&&t==="usa"&&<span style={{fontSize:8,background:"#1D9E75",color:"#fff",padding:"1px 5px",borderRadius:3,fontWeight:700,letterSpacing:"0.08em"}}>LIVE</span>}
+                {skill.tipo==="tool"&&t==="usa"&&<span style={{fontSize:8,background:"#1D9E75",color:"#fff",padding:"2px 5px",borderRadius:2,fontWeight:700,letterSpacing:"0.06em"}}>LIVE</span>}
               </button>
             ))}
           </div>
@@ -2503,27 +2506,42 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
           {/* Step 1: Agenti */}
           {step===1&&(
             <div>
-              <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:C.gray,marginBottom:16,lineHeight:1.6}}>Seleziona gli agenti AI che revisioneranno la skill prima della pubblicazione. Ogni agente aggiunge una prospettiva specialistica.</div>
-              <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:20}}>
-                {WIZARD_AGENTS.map(ag=>(
+              <div style={{marginBottom:6}}>
+                <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:400,color:"#0A0B0F",marginBottom:4}}>Team di revisione</div>
+                <div style={{fontFamily:"Arial,sans-serif",fontSize:11,color:"#aaa",lineHeight:1.6,letterSpacing:"0.02em"}}>Ogni agente aggiunge una prospettiva specialistica prima della pubblicazione.</div>
+              </div>
+              <div style={{borderTop:"1px solid #E8E4DC",marginBottom:4}}/>
+              <div style={{display:"flex",flexDirection:"column",marginBottom:20}}>
+                {WIZARD_AGENTS.map((ag,i)=>{
+                  const sel=agenti.includes(ag.id);
+                  return(
                   <div key={ag.id} onClick={()=>setAgenti(prev=>prev.includes(ag.id)?prev.filter(x=>x!==ag.id):[...prev,ag.id])}
-                    style={{display:"flex",alignItems:"center",gap:12,padding:"12px 14px",borderRadius:10,border:`1.5px solid ${agenti.includes(ag.id)?ag.color:"#e8e4dc"}`,background:agenti.includes(ag.id)?ag.color+"11":"#fafaf8",cursor:"pointer",transition:"all .15s"}}>
-                    <div style={{width:36,height:36,borderRadius:"50%",background:ag.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{ag.emoji}</div>
-                    <div style={{flex:1}}>
-                      <div style={{fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:700,color:C.nox}}>{ag.nome}</div>
-                      <div style={{fontSize:11,color:"#888",fontFamily:"Arial,sans-serif"}}>{ag.desc}</div>
+                    style={{display:"flex",alignItems:"center",gap:16,padding:"14px 0",borderBottom:"1px solid #F0EDE8",cursor:"pointer",borderLeft:sel?"3px solid #0A0B0F":"3px solid transparent",paddingLeft:sel?14:0,transition:"all .15s"}}>
+                    <div style={{width:28,height:28,borderRadius:"50%",background:sel?"#0A0B0F":"#E8E4DC",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"background .15s"}}>
+                      <span style={{color:sel?"#F1EFE8":"#aaa",fontSize:10,fontWeight:700,fontFamily:"Arial,sans-serif"}}>{ag.nome.substring(0,2).toUpperCase()}</span>
                     </div>
-                    <div style={{width:18,height:18,borderRadius:"50%",border:`2px solid ${agenti.includes(ag.id)?ag.color:"#ddd"}`,background:agenti.includes(ag.id)?ag.color:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                      {agenti.includes(ag.id)&&<span style={{color:"#fff",fontSize:9,fontWeight:700}}>✓</span>}
+                    <div style={{flex:1}}>
+                      <div style={{fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:700,color:sel?"#0A0B0F":"#555",letterSpacing:"0.04em",marginBottom:2}}>{ag.nome}</div>
+                      <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif",lineHeight:1.4}}>{ag.desc}</div>
+                    </div>
+                    <div style={{width:16,height:16,border:`1.5px solid ${sel?"#0A0B0F":"#D8D4CE"}`,background:sel?"#0A0B0F":"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s",flexShrink:0}}>
+                      {sel&&<span style={{color:"#F1EFE8",fontSize:9,fontWeight:700,lineHeight:1}}>✓</span>}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
-              <div style={{display:"flex",gap:10}}>
-                <button onClick={()=>setStep(0)} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>← Indietro</button>
+              {agenti.length>0&&(
+                <div style={{background:"#F5F3EF",borderLeft:"2px solid #D8D4CE",padding:"10px 14px",marginBottom:16,fontFamily:"Arial,sans-serif",fontSize:11,color:"#666"}}>
+                  <span style={{fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",fontSize:9,color:"#aaa",display:"block",marginBottom:4}}>Agenti selezionati</span>
+                  {WIZARD_AGENTS.filter(a=>agenti.includes(a.id)).map(a=>a.nome).join(" · ")}
+                </div>
+              )}
+              <div style={{display:"flex",gap:10,borderTop:"1px solid #E8E4DC",paddingTop:16}}>
+                <button onClick={()=>setStep(0)} style={{padding:"11px 20px",border:"1px solid #D8D4CE",background:"none",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#666",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase"}}>Indietro</button>
                 <button onClick={elaboraConAI} disabled={elaborating||agenti.length===0}
-                  style={{flex:1,padding:"9px",borderRadius:8,border:"none",background:elaborating?"#ddd":C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                  {elaborating?<><span style={{display:"inline-block",animation:"spin 1s linear infinite"}}>⟳</span>Gli agenti stanno elaborando…</>:"✨ Genera con AI →"}
+                  style={{flex:1,padding:"11px 20px",border:"none",background:elaborating||agenti.length===0?"#E8E4DC":"#0A0B0F",color:elaborating||agenti.length===0?"#aaa":"#F1EFE8",fontSize:11,fontWeight:700,cursor:agenti.length===0?"not-allowed":"pointer",fontFamily:"Arial,sans-serif",letterSpacing:"0.1em",textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"background .2s"}}>
+                  {elaborating?<><span style={{display:"inline-block",animation:"spin 1s linear infinite",fontSize:14}}>⟳</span>Elaborazione in corso…</>:"Genera con AI"}
                 </button>
               </div>
             </div>
