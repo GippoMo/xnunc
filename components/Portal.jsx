@@ -796,7 +796,8 @@ function getAgentsForSkill(skill){
 async function callAI({skill,userInput,attachments,profile}){
   const agents=getAgentsForSkill(skill);
   const agentCtx=agents.map(a=>`${a.nome} — ${a.ruolo}: ${a.desc}`).join("\n");
-  const basePrompt=`Sei un team di esperti per studi di Dottori Commercialisti italiani.\nTeam attivo:\n${agentCtx}\n\nSKILL: ${skill.nome}\nArea: ${skill.area} / ${skill.sotto_area}\nObiettivo: ${skill.output_atteso||skill.descrizione}\n\nRegole:\n- Output professionale, strutturato, pronto all'uso\n- Italiano corretto, tono da esperto\n- Non citare il provider AI né i nomi degli agenti nell'output\n- OBBLIGATORIO: ogni risposta deve terminare esattamente con questa riga:\n\n---\n*⚠️ Output elaborato con supporto AI — Verificare prima dell'utilizzo professionale. Non sostituisce la consulenza di un Dottore Commercialista abilitato.*`;
+  const docsCtx=skill.docsContesto?`\n\n---\nBASE DOCUMENTALE DELLA SKILL (documenti caricati dal creatore — usa come riferimento primario):\n${skill.docsContesto}`:"";
+  const basePrompt=`Sei un team di esperti per studi di Dottori Commercialisti italiani.\nTeam attivo:\n${agentCtx}\n\nSKILL: ${skill.nome}\nArea: ${skill.area} / ${skill.sotto_area}\nObiettivo: ${skill.output_atteso||skill.descrizione}${docsCtx}\n\nRegole:\n- Output professionale, strutturato, pronto all'uso\n- Italiano corretto, tono da esperto\n- Non citare il provider AI né i nomi degli agenti nell'output\n- Se sono presenti documenti di base documentale, usali come fonte autorevole preferenziale\n- OBBLIGATORIO: ogni risposta deve terminare esattamente con questa riga:\n\n---\n*⚠️ Output elaborato con supporto AI — Verificare prima dell'utilizzo professionale. Non sostituisce la consulenza di un Dottore Commercialista abilitato.*`;
   const attachText=(attachments||[]).filter(a=>a.content).map(a=>`[${a.name}]\n${a.content}`).join("\n\n");
   const userMsg=[userInput,attachText?`\n---\nDocumenti allegati:\n${attachText}`:""].filter(Boolean).join("");
   const keyMode=profile?.keyMode||"xnunc";
@@ -1277,6 +1278,7 @@ function MiglioramentiTab({skill,isLogged,onLoginRequest,ac,improvements,setImpr
   const[betaResult,setBetaResult]=useState(null);
   const[betaError,setBetaError]=useState("");
   const[activeImprovId,setActiveImprovId]=useState(null);
+  const[showDiscussione,setShowDiscussione]=useState(false);
 
   const skillImprovs=(improvements||[]).filter(im=>im.skillId===skill.id);
   const myImprovs=skillImprovs.filter(im=>im.contributorEmail===(profile?.email||"__none__"));
@@ -1331,6 +1333,51 @@ function MiglioramentiTab({skill,isLogged,onLoginRequest,ac,improvements,setImpr
 
   return(
     <div>
+      {/* Discussione generale — collassabile, in cima */}
+      <div style={{marginBottom:16,borderRadius:10,border:"1px solid #e8e4dc",overflow:"hidden"}}>
+        <button onClick={()=>setShowDiscussione(v=>!v)}
+          style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px",background:"#f9f8f5",border:"none",cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            <span style={{fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em"}}>💬 DISCUSSIONE GENERALE</span>
+            {posts.length>0&&<span style={{fontSize:10,background:"#e8e4dc",color:"#666",borderRadius:10,padding:"1px 7px",fontWeight:700}}>{posts.length}</span>}
+          </div>
+          <span style={{fontSize:13,color:"#aaa",transition:"transform .2s",display:"inline-block",transform:showDiscussione?"rotate(180deg)":"rotate(0deg)"}}>▾</span>
+        </button>
+        {showDiscussione&&(
+          <div style={{padding:"14px"}}>
+            <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:14}}>
+              {posts.map(p=>(
+                <div key={p.id} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
+                  <div style={{width:30,height:30,borderRadius:"50%",background:p.ruolo==="creator"?ac:"#7F77DD",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <span style={{color:"#fff",fontSize:11,fontWeight:700}}>{p.avatar}</span>
+                  </div>
+                  <div style={{flex:1,background:p.tipo==="nota"?"#f9f8f5":"#fff",borderRadius:10,padding:"10px 14px",border:`1px solid ${p.tipo==="proposta"?"#e8e4dc":"#f0ede8"}`}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
+                      <span style={{fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:700,color:p.ruolo==="creator"?ac:"#333"}}>{p.autore}{p.ruolo==="creator"&&<span style={{fontSize:9,background:ac+"22",color:ac,padding:"1px 6px",borderRadius:4,fontWeight:700,marginLeft:5}}>CREATOR</span>}</span>
+                      <span style={{fontSize:10,color:"#bbb",fontFamily:"Arial,sans-serif"}}>{p.data}</span>
+                    </div>
+                    <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:"#333",lineHeight:1.6}}>{p.testo}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {isLogged?(
+              <div style={{background:"#f9f8f5",borderRadius:8,padding:"12px",border:"1px solid #e8e4dc"}}>
+                <textarea value={testo} onChange={e=>setTesto(e.target.value)} placeholder="Scrivi un commento o una domanda sulla skill…" rows={2} style={{width:"100%",padding:"8px 10px",borderRadius:7,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
+                  <span style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif"}}>+2 punti per commento</span>
+                  <button onClick={invia} disabled={!testo.trim()} style={{padding:"6px 16px",borderRadius:7,border:"none",background:testo.trim()?ac:"#eee",color:testo.trim()?"#fff":"#aaa",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Invia →</button>
+                </div>
+              </div>
+            ):(
+              <div style={{textAlign:"center",padding:"12px",background:"#f9f8f5",borderRadius:8,border:"1.5px dashed #ddd"}}>
+                <button onClick={onLoginRequest} style={{padding:"6px 16px",borderRadius:7,border:`1px solid ${ac}`,background:"#fff",color:ac,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>🔒 Accedi per partecipare</button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Header progress */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
         <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:"#666"}}>
@@ -1411,38 +1458,6 @@ function MiglioramentiTab({skill,isLogged,onLoginRequest,ac,improvements,setImpr
             </div>
           )}
           <button onClick={()=>{setShowForm(false);setBetaResult(null);setForm({titolo:"",descrizione:"",cambiamenti:""}); }} style={{width:"100%",padding:"7px",borderRadius:7,border:"1px solid #ddd",background:"#fff",color:"#888",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Annulla</button>
-        </div>
-      )}
-
-      {/* Thread discussione */}
-      <div style={{fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em",fontFamily:"Arial,sans-serif",marginBottom:10}}>DISCUSSIONE GENERALE</div>
-      <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:20}}>
-        {posts.map(p=>(
-          <div key={p.id} style={{display:"flex",gap:10,alignItems:"flex-start"}}>
-            <div style={{width:30,height:30,borderRadius:"50%",background:p.ruolo==="creator"?ac:"#7F77DD",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-              <span style={{color:"#fff",fontSize:11,fontWeight:700}}>{p.avatar}</span>
-            </div>
-            <div style={{flex:1,background:p.tipo==="nota"?"#f9f8f5":"#fff",borderRadius:10,padding:"10px 14px",border:`1px solid ${p.tipo==="proposta"?"#e8e4dc":"#f0ede8"}`}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5}}>
-                <span style={{fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:700,color:p.ruolo==="creator"?ac:"#333"}}>{p.autore} {p.ruolo==="creator"&&<span style={{fontSize:9,background:ac+"22",color:ac,padding:"1px 6px",borderRadius:4,fontWeight:700}}>CREATOR</span>}</span>
-                <span style={{fontSize:10,color:"#bbb",fontFamily:"Arial,sans-serif"}}>{p.data}</span>
-              </div>
-              <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:"#333",lineHeight:1.6}}>{p.testo}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-      {isLogged?(
-        <div style={{background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1.5px solid #e8e4dc"}}>
-          <textarea value={testo} onChange={e=>setTesto(e.target.value)} placeholder="Scrivi un commento o una domanda sulla skill…" rows={3} style={{width:"100%",padding:"10px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
-            <span style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif"}}>+2 punti per commento</span>
-            <button onClick={invia} disabled={!testo.trim()} style={{padding:"7px 18px",borderRadius:8,border:"none",background:testo.trim()?ac:"#eee",color:testo.trim()?"#fff":"#aaa",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Invia →</button>
-          </div>
-        </div>
-      ):(
-        <div style={{textAlign:"center",padding:"20px",background:"#f9f8f5",borderRadius:10,border:"1.5px dashed #ddd"}}>
-          <button onClick={onLoginRequest} style={{padding:"8px 20px",borderRadius:8,border:`1px solid ${ac}`,background:"#fff",color:ac,fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>🔒 Accedi per partecipare</button>
         </div>
       )}
     </div>
@@ -2310,6 +2325,11 @@ const WIZARD_AGENTS=[
   {id:"ux",nome:"Alex — UX Specialist",emoji:"✨",color:C.aurum,desc:"Ottimizza chiarezza, struttura dell'output, usabilità"},
 ];
 
+const WIZARD_DOC_MAX_FILES=5;
+const WIZARD_DOC_MAX_FILE_MB=2;
+const WIZARD_DOC_MAX_TOTAL_MB=5;
+const WIZARD_DOC_MAX_CHARS=50000;
+
 function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
   const[step,setStep]=useState(0);
   const[idea,setIdea]=useState("");
@@ -2323,6 +2343,9 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
   const[elaborating,setElaborating]=useState(false);
   const[elaborated,setElaborated]=useState(false);
   const[published,setPublished]=useState(false);
+  // File context per la skill
+  const[wizardDocs,setWizardDocs]=useState([]); // [{name,size,chars,content,loading,error}]
+  const wizardFileRef=useRef();
 
   const areas=Object.keys(AREA_COLOR);
 
@@ -2343,7 +2366,29 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
     },2200);
   }
 
+  async function aggiungiFile(files){
+    const arr=Array.from(files);
+    const totFiles=wizardDocs.length+arr.length;
+    if(totFiles>WIZARD_DOC_MAX_FILES){alert(`Massimo ${WIZARD_DOC_MAX_FILES} file per skill.`);return;}
+    const totMB=(wizardDocs.reduce((s,d)=>s+d.size,0)+arr.reduce((s,f)=>s+f.size,0))/(1024*1024);
+    if(totMB>WIZARD_DOC_MAX_TOTAL_MB){alert(`Dimensione totale massima: ${WIZARD_DOC_MAX_TOTAL_MB} MB.`);return;}
+    for(const file of arr){
+      if(file.size>WIZARD_DOC_MAX_FILE_MB*1024*1024){alert(`"${file.name}" supera il limite di ${WIZARD_DOC_MAX_FILE_MB} MB per file.`);continue;}
+      const uid="wdoc_"+Date.now()+"_"+Math.random().toString(36).slice(2);
+      setWizardDocs(p=>[...p,{uid,name:file.name,size:file.size,chars:0,content:"",loading:true,error:""}]);
+      try{
+        const txt=await extractTextFromFile(file);
+        if(!txt){setWizardDocs(p=>p.map(d=>d.uid===uid?{...d,loading:false,error:"Formato non supportato"}:d));continue;}
+        const trunc=txt.slice(0,WIZARD_DOC_MAX_CHARS);
+        setWizardDocs(p=>p.map(d=>d.uid===uid?{...d,loading:false,chars:trunc.length,content:trunc}:d));
+      }catch(e){
+        setWizardDocs(p=>p.map(d=>d.uid===uid?{...d,loading:false,error:e.message||"Errore estrazione"}:d));
+      }
+    }
+  }
+
   function salvaNelleBoze(){
+    const docsContesto=wizardDocs.filter(d=>d.content&&!d.error).map(d=>`[${d.name}]\n${d.content}`).join("\n\n---\n\n");
     const draft={
       id:"DRAFT-"+Date.now(),
       nome,area,descrizione,inputAtteso,outputAtteso,normativa,
@@ -2354,7 +2399,9 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
       complessita:"media",frequenza:"occasionale",
       tags:[],sottoArea:area,stato:"bozza",testato:false,
       data:new Date().toLocaleDateString("it-IT"),
-      agenti
+      agenti,
+      docsContesto: docsContesto||"",
+      docsNomi: wizardDocs.filter(d=>d.content&&!d.error).map(d=>d.name),
     };
     if(onSaveDraft)onSaveDraft(draft);
     setPublished(true);
@@ -2414,6 +2461,46 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
               <textarea value={idea} onChange={e=>setIdea(e.target.value)}
                 placeholder="Es.: Analizza un contratto di locazione commerciale e verifica la conformità alle norme fiscali per il locatore, identificando le detrazioni applicabili e le scadenze di registrazione…"
                 rows={5} style={{width:"100%",padding:"11px",borderRadius:8,border:"1.5px solid #ddd",fontSize:13,fontFamily:"Arial,sans-serif",lineHeight:1.6,resize:"vertical",outline:"none",boxSizing:"border-box"}}/>
+
+              {/* Documenti di contesto */}
+              <div style={{marginTop:14,background:"#f9f8f5",borderRadius:10,padding:"14px",border:"1px solid #e8e4dc"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                  <div>
+                    <div style={{fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,color:C.gray,letterSpacing:"0.08em"}}>📎 DOCUMENTI DI CONTESTO <span style={{fontWeight:400,color:"#aaa"}}>(opzionale)</span></div>
+                    <div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif",marginTop:2}}>Carica fino a {WIZARD_DOC_MAX_FILES} file · max {WIZARD_DOC_MAX_FILE_MB} MB/file · {WIZARD_DOC_MAX_TOTAL_MB} MB totale · testo estratto usato dall'AI alla creazione e all'esecuzione</div>
+                  </div>
+                  {wizardDocs.length<WIZARD_DOC_MAX_FILES&&(
+                    <button onClick={()=>wizardFileRef.current?.click()} style={{padding:"6px 12px",borderRadius:7,border:`1px solid ${C.caelum}`,background:"#fff",color:C.caelum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",flexShrink:0}}>+ Aggiungi</button>
+                  )}
+                </div>
+                <input ref={wizardFileRef} type="file" multiple accept={FILE_ACCEPT} style={{display:"none"}} onChange={e=>{aggiungiFile(e.target.files);e.target.value="";}}/>
+                {wizardDocs.length>0&&(
+                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                    {wizardDocs.map(d=>(
+                      <div key={d.uid} style={{display:"flex",alignItems:"center",gap:8,background:"#fff",borderRadius:7,padding:"7px 10px",border:"1px solid #e8e4dc"}}>
+                        <span style={{fontSize:14,flexShrink:0}}>{d.loading?"⟳":d.error?"⚠️":"📄"}</span>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:600,color:C.nox,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.name}</div>
+                          <div style={{fontSize:10,color:d.error?"#C0392B":d.loading?"#aaa":C.viridis,fontFamily:"Arial,sans-serif"}}>
+                            {d.loading?"Estrazione in corso…":d.error?d.error:`${(d.size/1024).toFixed(0)} KB · ${d.chars.toLocaleString()} caratteri estratti${d.chars>=WIZARD_DOC_MAX_CHARS?" (troncato)":""}`}
+                          </div>
+                        </div>
+                        <button onClick={()=>setWizardDocs(p=>p.filter(x=>x.uid!==d.uid))} style={{background:"none",border:"none",color:"#bbb",fontSize:16,cursor:"pointer",lineHeight:1,padding:"0 2px"}}>×</button>
+                      </div>
+                    ))}
+                    <div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif",marginTop:2}}>
+                      Totale: {(wizardDocs.reduce((s,d)=>s+d.size,0)/1024/1024).toFixed(2)} MB · {wizardDocs.reduce((s,d)=>s+(d.chars||0),0).toLocaleString()} caratteri
+                    </div>
+                  </div>
+                )}
+                {wizardDocs.length===0&&(
+                  <div onClick={()=>wizardFileRef.current?.click()} style={{border:"1.5px dashed #ddd",borderRadius:8,padding:"14px",textAlign:"center",cursor:"pointer",background:"#fff"}}
+                    onDragOver={e=>{e.preventDefault();}} onDrop={e=>{e.preventDefault();aggiungiFile(e.dataTransfer.files);}}>
+                    <div style={{fontSize:11,color:"#bbb",fontFamily:"Arial,sans-serif"}}>Trascina qui o clicca per caricare · PDF, DOCX, XLSX, CSV, TXT, MD</div>
+                  </div>
+                )}
+              </div>
+
               <div style={{marginTop:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                 <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif"}}>{idea.length} caratteri</div>
                 <button onClick={()=>setStep(1)} disabled={idea.trim().length<20} style={{padding:"9px 20px",borderRadius:8,border:"none",background:idea.trim().length>=20?C.aurum:"#eee",color:idea.trim().length>=20?"#fff":"#aaa",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Avanti →</button>
@@ -2821,6 +2908,11 @@ export default function App(){
   useEffect(()=>{lsSet("xnunc_deleted",deletedSkills);},[deletedSkills]);
   const[improvements,setImprovements]=useState(()=>ls("xnunc_improvements",[]));
   useEffect(()=>{lsSet("xnunc_improvements",improvements);},[improvements]);
+  // loginEmail persiste per avatar fallback anche dopo refresh
+  const[loginEmail,setLoginEmail]=useState(()=>ls("xnunc_loginemail",""));
+  useEffect(()=>{lsSet("xnunc_loginemail",loginEmail);},[loginEmail]);
+  // logout confirm
+  const[showLogoutConfirm,setShowLogoutConfirm]=useState(false);
 
   const ADMIN_EMAIL_CHECK="morales@bcand.it";
 
@@ -2839,17 +2931,16 @@ export default function App(){
 
   // ── Logout ─────────────────────────────────────────
   function handleLogout(){
-    setIsLogged(false);
-    setIsAdmin(false);
-    setShowProfile(false);
-    setShowDashboard(false);
+    setIsLogged(false);setIsAdmin(false);
+    setLoginEmail("");
+    setShowProfile(false);setShowDashboard(false);setShowLogoutConfirm(false);
   }
 
   // ── Elimina account ────────────────────────────────
   function handleDeleteAccount(){
-    const KEYS=["xnunc_session","xnunc_profile","xnunc_favorites","xnunc_drafts","xnunc_threads","xnunc_hidden","xnunc_deleted","xnunc_improvements"];
+    const KEYS=["xnunc_session","xnunc_profile","xnunc_favorites","xnunc_drafts","xnunc_threads","xnunc_hidden","xnunc_deleted","xnunc_improvements","xnunc_loginemail"];
     KEYS.forEach(k=>{try{localStorage.removeItem(k);}catch(_){}});
-    setIsLogged(false);setIsAdmin(false);
+    setIsLogged(false);setIsAdmin(false);setLoginEmail("");
     setUserProfile(DEFAULT_PROFILE);
     setFavorites([]);setDraftSkills([]);setThreads(DEFAULT_THREADS);
     setHiddenSkills([]);setDeletedSkills([]);setImprovements([]);
@@ -2906,9 +2997,14 @@ export default function App(){
                 )}
                 {!isAdmin&&<button onClick={()=>setShowCreateSkill(true)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${C.aurum}`,background:"transparent",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>}
                 <div onClick={()=>setShowDashboard(true)} title="La tua dashboard" style={{position:"relative",width:32,height:32,borderRadius:"50%",background:isAdmin?"#b8860b":C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"0 2px 8px #BA751744"}}>
-                  <span style={{color:"#fff",fontSize:13,fontWeight:700}}>{userProfile.nome?userProfile.nome[0].toUpperCase():userProfile.email?userProfile.email[0].toUpperCase():"?"}</span>
+                  <span style={{color:"#fff",fontSize:13,fontWeight:700}}>{(userProfile.nome||userProfile.email||loginEmail||"?")[0].toUpperCase()}</span>
                   {nonLettiTot>0&&<div style={{position:"absolute",top:-4,right:-4,background:"#C0392B",color:"#fff",borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700}}>{nonLettiTot}</div>}
                 </div>
+                {/* Logout con conferma */}
+                <button onClick={()=>setShowLogoutConfirm(true)} title="Esci dall'account"
+                  style={{background:"none",border:"1px solid #333",color:"#666",borderRadius:6,padding:"5px 9px",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",lineHeight:1}}
+                  onMouseEnter={e=>{e.currentTarget.style.borderColor="#C0392B";e.currentTarget.style.color="#C0392B";}}
+                  onMouseLeave={e=>{e.currentTarget.style.borderColor="#333";e.currentTarget.style.color="#666";}}>⎋</button>
               </div>
             ):(
               <>
@@ -3019,7 +3115,7 @@ export default function App(){
         </div>
       </div>
 
-      {showLogin&&<LoginModal onClose={()=>setShowLogin(false)} onLogin={(loginEmail)=>{setIsLogged(true);setIsAdmin(loginEmail===ADMIN_EMAIL_CHECK);setShowLogin(false);if(loginEmail&&!loginEmail.includes("@social.com"))setUserProfile(p=>p.email?p:{...p,email:loginEmail});}}/>}
+      {showLogin&&<LoginModal onClose={()=>setShowLogin(false)} onLogin={(le)=>{setIsLogged(true);setIsAdmin(le===ADMIN_EMAIL_CHECK);setShowLogin(false);if(le&&!le.includes("@social.com")){setLoginEmail(le);setUserProfile(p=>({...p,email:p.email||le}));}}}/>}
       {showFAQ&&<FAQModal onClose={()=>setShowFAQ(false)}/>}
       {showManifesto&&<ManifestoModal onClose={()=>setShowManifesto(false)}/>}
       {showClassifica&&<ClassificaModal onClose={()=>setShowClassifica(false)}/>}
@@ -3051,6 +3147,20 @@ export default function App(){
         improvements={improvements} setImprovements={setImprovements}
         userProfile={userProfile}
       />}
+      {/* Logout confirm */}
+      {showLogoutConfirm&&(
+        <div style={{position:"fixed",inset:0,background:"#00000077",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}} onClick={()=>setShowLogoutConfirm(false)}>
+          <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,padding:"28px 28px 22px",maxWidth:340,width:"100%",boxShadow:"0 8px 40px #0005",textAlign:"center"}}>
+            <div style={{fontSize:32,marginBottom:10}}>⎋</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:700,color:C.nox,marginBottom:8}}>Esci dall'account?</div>
+            <div style={{fontSize:13,color:"#888",fontFamily:"Arial,sans-serif",marginBottom:22,lineHeight:1.6}}>I dati locali (preferiti, bozze) rimangono salvati sul dispositivo. Potrai rientrare in qualsiasi momento.</div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setShowLogoutConfirm(false)} style={{flex:1,padding:"10px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555",fontWeight:600}}>Annulla</button>
+              <button onClick={handleLogout} style={{flex:1,padding:"10px",borderRadius:8,border:"none",background:"#C0392B",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Sì, esci</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
