@@ -2479,10 +2479,10 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
 // ─────────────────────────────────────────────────────
 const WIZARD_STEPS=["Idea","Agenti","Struttura","Revisione","Pubblica"];
 const WIZARD_AGENTS=[
-  {id:"fiscale",nome:"Esperto Fiscale",emoji:"⚖️",color:C.viridis,desc:"Verifica aderenza alla normativa tributaria e contabile"},
-  {id:"legale",nome:"Consulente Legale",emoji:"📜",color:C.purpura,desc:"Controlla correttezza giuridica e riferimenti normativi"},
-  {id:"cfo",nome:"CFO Fractional",emoji:"📊",color:C.caelum,desc:"Valuta applicabilità pratica e impatto su processi"},
-  {id:"ux",nome:"Alex — UX Specialist",emoji:"✨",color:C.aurum,desc:"Ottimizza chiarezza, struttura dell'output, usabilità"},
+  {id:"fiscale",nome:"xLuca", emoji:"⚖️",color:C.viridis,desc:"Verifica aderenza alla normativa tributaria e contabile"},
+  {id:"legale", nome:"xAldo", emoji:"📜",color:C.purpura,desc:"Controlla correttezza giuridica e riferimenti normativi"},
+  {id:"cfo",    nome:"xGianni",emoji:"📊",color:C.caelum,desc:"Valuta applicabilità pratica e impatto su processi"},
+  {id:"ux",     nome:"xSara", emoji:"✨",color:C.aurum,desc:"Ottimizza chiarezza, struttura dell'output, usabilità"},
 ];
 
 // Suggerisce agenti in base alle keyword dell'idea
