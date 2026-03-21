@@ -2321,6 +2321,17 @@ const WIZARD_AGENTS=[
   {id:"ux",nome:"Alex — UX Specialist",emoji:"✨",color:C.aurum,desc:"Ottimizza chiarezza, struttura dell'output, usabilità"},
 ];
 
+// Suggerisce agenti in base alle keyword dell'idea
+function suggerisciAgenti(idea){
+  const t=idea.toLowerCase();
+  const sugg=[];
+  if(/fiscal|tribut|impost|iva|tass|reddito|irpef|ires|acconto|dichiaraz|f24|modello|unico|730/.test(t)) sugg.push("fiscale");
+  if(/contratt|legal|giuridic|normativ|societar|statuto|assembl|socio|cda|srl|spa|deliber/.test(t)) sugg.push("legale");
+  if(/bilancio|finanz|budget|cash|flusso|investiment|costo|ricavo|patrimoni|cfo|margine|ebitda|utile/.test(t)) sugg.push("cfo");
+  sugg.push("ux"); // Alex sempre utile per la qualità dell'output
+  return sugg.length>1?sugg:["fiscale","legale","cfo","ux"];
+}
+
 const WIZARD_DOC_MAX_FILES=5;
 const WIZARD_DOC_MAX_FILE_MB=2;
 const WIZARD_DOC_MAX_TOTAL_MB=5;
@@ -2347,6 +2358,8 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
 
   function elaboraConAI(){
     if(!idea.trim())return;
+    // Se nessun agente selezionato → usa tutti
+    if(agenti.length===0) setAgenti(WIZARD_AGENTS.map(a=>a.id));
     setElaborating(true);
     setTimeout(()=>{
       // Simula risposta AI che genera i campi della skill
@@ -2504,7 +2517,7 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
 
               <div style={{marginTop:16,display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:"1px solid #E8E4DC",paddingTop:16}}>
                 <div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif",letterSpacing:"0.06em"}}>{idea.length} caratteri{idea.trim().length>0&&idea.trim().length<10&&<span style={{color:"#C0392B",marginLeft:8}}>minimo 10</span>}</div>
-                <button onClick={()=>setStep(1)} disabled={idea.trim().length<10}
+                <button onClick={()=>{setAgenti(suggerisciAgenti(idea));setStep(1);}} disabled={idea.trim().length<10}
                   style={{padding:"11px 24px",border:"none",background:idea.trim().length>=10?"#0A0B0F":"#E8E4DC",color:idea.trim().length>=10?"#F1EFE8":"#aaa",fontSize:11,fontWeight:700,cursor:idea.trim().length>=10?"pointer":"not-allowed",fontFamily:"Arial,sans-serif",letterSpacing:"0.12em",textTransform:"uppercase",transition:"background .2s"}}>
                   Avanti
                 </button>
@@ -2515,41 +2528,49 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
           {/* Step 1: Agenti */}
           {step===1&&(
             <div>
-              <div style={{marginBottom:6}}>
+              <div style={{marginBottom:16}}>
                 <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:400,color:"#0A0B0F",marginBottom:4}}>Team di revisione</div>
-                <div style={{fontFamily:"Arial,sans-serif",fontSize:11,color:"#aaa",lineHeight:1.6,letterSpacing:"0.02em"}}>Ogni agente aggiunge una prospettiva specialistica prima della pubblicazione.</div>
+                <div style={{fontFamily:"Arial,sans-serif",fontSize:11,color:"#aaa",lineHeight:1.6}}>Ho selezionato gli agenti più adatti alla tua skill. Puoi modificare la selezione — se non selezioni nessuno verranno usati tutti.</div>
               </div>
-              <div style={{borderTop:"1px solid #E8E4DC",marginBottom:4}}/>
-              <div style={{display:"flex",flexDirection:"column",marginBottom:20}}>
-                {WIZARD_AGENTS.map((ag,i)=>{
+              <div style={{display:"flex",flexDirection:"column",marginBottom:16}}>
+                {WIZARD_AGENTS.map((ag)=>{
                   const sel=agenti.includes(ag.id);
                   return(
                   <div key={ag.id} onClick={()=>setAgenti(prev=>prev.includes(ag.id)?prev.filter(x=>x!==ag.id):[...prev,ag.id])}
-                    style={{display:"flex",alignItems:"center",gap:16,padding:"14px 0",borderBottom:"1px solid #F0EDE8",cursor:"pointer",borderLeft:sel?"3px solid #0A0B0F":"3px solid transparent",paddingLeft:sel?14:0,transition:"all .15s"}}>
+                    style={{display:"flex",alignItems:"center",gap:16,padding:"14px 0",borderBottom:"1px solid #F0EDE8",cursor:"pointer",borderLeft:sel?"3px solid #0A0B0F":"3px solid transparent",paddingLeft:sel?12:0,transition:"all .15s"}}>
+                    {/* Initials circle */}
                     <div style={{width:28,height:28,borderRadius:"50%",background:sel?"#0A0B0F":"#E8E4DC",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"background .15s"}}>
-                      <span style={{color:sel?"#F1EFE8":"#aaa",fontSize:10,fontWeight:700,fontFamily:"Arial,sans-serif"}}>{ag.nome.substring(0,2).toUpperCase()}</span>
+                      <span style={{color:sel?"#F1EFE8":"#aaa",fontSize:9,fontWeight:700,fontFamily:"Arial,sans-serif"}}>{ag.nome.replace("—","").trim().substring(0,2).toUpperCase()}</span>
                     </div>
-                    <div style={{flex:1}}>
-                      <div style={{fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:700,color:sel?"#0A0B0F":"#555",letterSpacing:"0.04em",marginBottom:2}}>{ag.nome}</div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
+                        <div style={{fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:700,color:sel?"#0A0B0F":"#666",letterSpacing:"0.04em"}}>{ag.nome}</div>
+                        {sel&&<span style={{fontSize:8,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:"#BA7517",fontFamily:"Arial,sans-serif"}}>Suggerito</span>}
+                      </div>
                       <div style={{fontSize:11,color:"#aaa",fontFamily:"Arial,sans-serif",lineHeight:1.4}}>{ag.desc}</div>
                     </div>
-                    <div style={{width:16,height:16,border:`1.5px solid ${sel?"#0A0B0F":"#D8D4CE"}`,background:sel?"#0A0B0F":"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s",flexShrink:0}}>
+                    <div style={{width:16,height:16,flexShrink:0,border:`1.5px solid ${sel?"#0A0B0F":"#D8D4CE"}`,background:sel?"#0A0B0F":"transparent",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s"}}>
                       {sel&&<span style={{color:"#F1EFE8",fontSize:9,fontWeight:700,lineHeight:1}}>✓</span>}
                     </div>
                   </div>
                   );
                 })}
               </div>
+              {agenti.length===0&&(
+                <div style={{background:"#F5F3EF",borderLeft:"2px solid #BA7517",padding:"10px 14px",marginBottom:16,fontFamily:"Arial,sans-serif",fontSize:11,color:"#888"}}>
+                  Nessun agente selezionato — verranno usati tutti e quattro.
+                </div>
+              )}
               {agenti.length>0&&(
                 <div style={{background:"#F5F3EF",borderLeft:"2px solid #D8D4CE",padding:"10px 14px",marginBottom:16,fontFamily:"Arial,sans-serif",fontSize:11,color:"#666"}}>
-                  <span style={{fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",fontSize:9,color:"#aaa",display:"block",marginBottom:4}}>Agenti selezionati</span>
+                  <span style={{fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",fontSize:9,color:"#aaa",display:"block",marginBottom:3}}>Agenti attivi</span>
                   {WIZARD_AGENTS.filter(a=>agenti.includes(a.id)).map(a=>a.nome).join(" · ")}
                 </div>
               )}
               <div style={{display:"flex",gap:10,borderTop:"1px solid #E8E4DC",paddingTop:16}}>
                 <button onClick={()=>setStep(0)} style={{padding:"11px 20px",border:"1px solid #D8D4CE",background:"none",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#666",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase"}}>Indietro</button>
-                <button onClick={elaboraConAI} disabled={elaborating||agenti.length===0}
-                  style={{flex:1,padding:"11px 20px",border:"none",background:elaborating||agenti.length===0?"#E8E4DC":"#0A0B0F",color:elaborating||agenti.length===0?"#aaa":"#F1EFE8",fontSize:11,fontWeight:700,cursor:agenti.length===0?"not-allowed":"pointer",fontFamily:"Arial,sans-serif",letterSpacing:"0.1em",textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"background .2s"}}>
+                <button onClick={elaboraConAI} disabled={elaborating}
+                  style={{flex:1,padding:"11px 20px",border:"none",background:elaborating?"#E8E4DC":"#0A0B0F",color:elaborating?"#aaa":"#F1EFE8",fontSize:11,fontWeight:700,cursor:elaborating?"not-allowed":"pointer",fontFamily:"Arial,sans-serif",letterSpacing:"0.1em",textTransform:"uppercase",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"background .2s"}}>
                   {elaborating?<><span style={{display:"inline-block",animation:"spin 1s linear infinite",fontSize:14}}>⟳</span>Elaborazione in corso…</>:"Genera con AI"}
                 </button>
               </div>
