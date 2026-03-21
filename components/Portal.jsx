@@ -1444,8 +1444,9 @@ function MiglioramentiTab({skill,isLogged,onLoginRequest,ac,improvements,setImpr
             </div>
           ))}
           {!betaResult&&(
-            <button onClick={generaBeta} disabled={generating||!form.titolo.trim()||!form.descrizione.trim()} style={{width:"100%",padding:"10px",borderRadius:8,border:"none",background:(generating||!form.titolo.trim()||!form.descrizione.trim())?"#eee":ac,color:(generating||!form.titolo.trim()||!form.descrizione.trim())?"#aaa":"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",marginBottom:8}}>
-              {generating?<><span style={{display:"inline-block",animation:"spin 1s linear infinite"}}>⟳</span> Generazione in corso…</>:"⚡ Genera versione beta con AI"}
+            <button onClick={generaBeta} disabled={generating||!form.titolo.trim()||!form.descrizione.trim()}
+              style={{width:"100%",padding:"11px",border:"none",background:(generating||!form.titolo.trim()||!form.descrizione.trim())?"#E8E4DC":"#0A0B0F",color:(generating||!form.titolo.trim()||!form.descrizione.trim())?"#aaa":"#F1EFE8",fontSize:11,fontWeight:700,cursor:(generating||!form.titolo.trim()||!form.descrizione.trim())?"not-allowed":"pointer",fontFamily:"Arial,sans-serif",letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:8,transition:"background .2s"}}>
+              {generating?<><span style={{display:"inline-block",animation:"spin 1s linear infinite",marginRight:6}}>⟳</span>Generazione in corso…</>:"Genera versione beta con AI"}
             </button>
           )}
           {betaError&&<div style={{color:"#C0392B",fontSize:12,fontFamily:"Arial,sans-serif",marginBottom:8}}>⚠️ {betaError}</div>}
@@ -2640,7 +2641,7 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
               </div>
               <div style={{display:"flex",gap:10}}>
                 <button onClick={()=>setStep(2)} style={{padding:"9px 18px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>← Modifica</button>
-                <button onClick={salvaNelleBoze} style={{flex:1,padding:"10px",borderRadius:8,border:"none",background:C.aurum,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>⚡ Genera versione beta →</button>
+                <button onClick={salvaNelleBoze} style={{flex:1,padding:"11px 20px",border:"none",background:"#0A0B0F",color:"#F1EFE8",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",letterSpacing:"0.1em",textTransform:"uppercase",transition:"background .2s"}} onMouseEnter={e=>e.currentTarget.style.background="#BA7517"} onMouseLeave={e=>e.currentTarget.style.background="#0A0B0F"}>Genera versione beta</button>
               </div>
             </div>
           )}
