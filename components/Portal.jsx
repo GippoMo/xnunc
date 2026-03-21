@@ -3290,59 +3290,38 @@ export default function App(){
       {toast&&<Toast message={toast.message} type={toast.type} onClose={()=>setToast(null)}/>}
 
       {/* Navbar */}
-      <div ref={navSearchRef} style={{background:C.nox,borderBottom:`2px solid ${C.aurum}`,position:"sticky",top:0,zIndex:500,transition:"box-shadow .2s",boxShadow:scrolled?"0 2px 16px rgba(0,0,0,0.32)":"none"}}>
-        <div style={{maxWidth:1100,margin:"0 auto",padding:"0 16px",height:scrolled?46:52,display:"flex",alignItems:"center",justifyContent:"space-between",transition:"height .2s"}}>
+      <div style={{background:C.nox,borderBottom:`2px solid ${C.aurum}`}}>
+        <div style={{maxWidth:1100,margin:"0 auto",padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
           {/* Left: logo + nav */}
           <div style={{display:"flex",alignItems:"center",gap:20}}>
-            <span onClick={()=>{setSearch("");setFilterArea("Tutte");setFilterComp("Tutte");setFilterFreq("Tutte");setNavSearchOpen(false);}} style={{fontFamily:"Georgia,serif",fontSize:scrolled?19:21,fontWeight:700,cursor:"pointer",transition:"font-size .2s"}}><span style={{color:C.aurum}}>x</span><span style={{color:"#fff"}}>Nunc</span></span>
-            {!scrolled&&<>
-              <span onClick={()=>document.getElementById("catalogo-section")?.scrollIntoView({behavior:"smooth"})} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Catalogo</span>
-              <span onClick={()=>setShowClassifica(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Classifica</span>
-              <span onClick={()=>setShowManifesto(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Manifesto</span>
-              <span onClick={()=>setShowFAQ(true)} style={{color:C.aurum,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>FAQ</span>
-            </>}
+            <span onClick={()=>{setSearch("");setFilterArea("Tutte");setFilterComp("Tutte");setFilterFreq("Tutte");setNavSearchOpen(false);}} style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:700,cursor:"pointer"}}><span style={{color:C.aurum}}>x</span><span style={{color:"#fff"}}>Nunc</span></span>
+            <span onClick={()=>document.getElementById("catalogo-section")?.scrollIntoView({behavior:"smooth"})} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Catalogo</span>
+            <span onClick={()=>setShowClassifica(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Classifica</span>
+            <span onClick={()=>setShowManifesto(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Manifesto</span>
+            <span onClick={()=>setShowFAQ(true)} style={{color:C.aurum,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>FAQ</span>
           </div>
-
-          {/* Center: search button (visible when scrolled) */}
-          {scrolled&&(
-            <button onClick={()=>setNavSearchOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 14px",border:`1px solid ${navSearchOpen?"#BA7517":"#333"}`,borderRadius:2,background:navSearchOpen?"#1a1204":"transparent",color:navSearchOpen?C.aurum:"#888",cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:11,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:700,transition:"all .2s"}}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              {search.trim()?`"${search.length>14?search.slice(0,14)+"…":search}"` : "Cerca"}
-              {(filterArea!=="Tutte"||filterComp!=="Tutte"||filterFreq!=="Tutte")&&<span style={{background:C.aurum,color:"#fff",borderRadius:"50%",width:14,height:14,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,flexShrink:0}}>{[filterArea!=="Tutte",filterComp!=="Tutte",filterFreq!=="Tutte"].filter(Boolean).length}</span>}
-            </button>
-          )}
 
           {/* Right: actions */}
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
-            {/* Search icon (always visible) */}
-            <button onClick={()=>setNavSearchOpen(o=>!o)} title="Cerca e filtra" style={{display:"flex",alignItems:"center",gap:6,padding:"5px 10px",border:`1px solid ${navSearchOpen?"#BA7517":"#333"}`,borderRadius:2,background:navSearchOpen?"#1a1204":"transparent",color:navSearchOpen?C.aurum:"#888",cursor:"pointer",transition:"all .2s",fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase"}}>
+            <button onClick={()=>setNavSearchOpen(o=>!o)} title="Cerca e filtra" style={{display:"flex",alignItems:"center",gap:6,padding:"5px 12px",border:`1px solid ${navSearchOpen?"#BA7517":"#333"}`,borderRadius:2,background:navSearchOpen?"#1a1204":"transparent",color:navSearchOpen?C.aurum:"#888",cursor:"pointer",transition:"all .2s",fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase"}}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              {!scrolled&&"Cerca"}
-              {(search.trim()||(filterArea!=="Tutte"||filterComp!=="Tutte"||filterFreq!=="Tutte"))&&<span style={{background:C.aurum,color:"#fff",borderRadius:"50%",width:14,height:14,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,flexShrink:0}}>{[!!search.trim(),filterArea!=="Tutte",filterComp!=="Tutte",filterFreq!=="Tutte"].filter(Boolean).length}</span>}
+              Cerca
+              {(search.trim()||filterArea!=="Tutte"||filterComp!=="Tutte"||filterFreq!=="Tutte")&&<span style={{background:C.aurum,color:"#fff",borderRadius:"50%",width:14,height:14,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,flexShrink:0}}>{[!!search.trim(),filterArea!=="Tutte",filterComp!=="Tutte",filterFreq!=="Tutte"].filter(Boolean).length}</span>}
             </button>
-
             {isLogged?(
               <div style={{display:"flex",alignItems:"center",gap:8}}>
-                {isAdmin&&(
-                  <button onClick={()=>setShowAdminPanel(true)} title="Pannello Redazione"
-                    style={{padding:"5px 12px",borderRadius:2,border:"1px solid #e8a800",background:"#fffbee",color:"#b8860b",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:4}}>
-                    ✦ {!scrolled&&"Redazione "}{hiddenSkills.length>0&&<span style={{background:"#e8a800",color:"#fff",borderRadius:8,fontSize:9,padding:"0 5px"}}>{hiddenSkills.length}</span>}
-                  </button>
-                )}
-                {!isAdmin&&!scrolled&&<button onClick={()=>setShowCreateSkill(true)} style={{padding:"5px 12px",borderRadius:2,border:`1px solid ${C.aurum}`,background:"transparent",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>}
-                <div onClick={()=>setShowDashboard(true)} title="La tua dashboard" style={{position:"relative",width:30,height:30,borderRadius:"50%",background:isAdmin?"#b8860b":C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                {isAdmin&&<button onClick={()=>setShowAdminPanel(true)} title="Redazione" style={{padding:"5px 12px",borderRadius:2,border:"1px solid #e8a800",background:"#fffbee",color:"#b8860b",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:4}}>✦ Redazione{hiddenSkills.length>0&&<span style={{background:"#e8a800",color:"#fff",borderRadius:8,fontSize:9,padding:"0 5px"}}>{hiddenSkills.length}</span>}</button>}
+                {!isAdmin&&<button onClick={()=>setShowCreateSkill(true)} style={{padding:"5px 12px",borderRadius:2,border:`1px solid ${C.aurum}`,background:"transparent",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>}
+                <div onClick={()=>setShowDashboard(true)} title="Dashboard" style={{position:"relative",width:30,height:30,borderRadius:"50%",background:isAdmin?"#b8860b":C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
                   <span style={{color:"#fff",fontSize:12,fontWeight:700}}>{(userProfile.nome||userProfile.email||loginEmail||"?")[0].toUpperCase()}</span>
                   {nonLettiTot>0&&<div style={{position:"absolute",top:-4,right:-4,background:"#C0392B",color:"#fff",borderRadius:"50%",width:15,height:15,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700}}>{nonLettiTot}</div>}
                 </div>
-                <button onClick={()=>setShowLogoutConfirm(true)} title="Esci"
-                  style={{background:"#1a1a1a",border:"1px solid #C0392B",color:"#C0392B",borderRadius:2,padding:"5px 10px",fontSize:13,cursor:"pointer",lineHeight:1,fontWeight:700,transition:"all .2s"}}
-                  onMouseEnter={e=>{e.currentTarget.style.background="#C0392B";e.currentTarget.style.color="#fff";}}
-                  onMouseLeave={e=>{e.currentTarget.style.background="#1a1a1a";e.currentTarget.style.color="#C0392B";}}>⎋</button>
+                <button onClick={()=>setShowLogoutConfirm(true)} title="Esci" style={{background:"#1a1a1a",border:"1px solid #C0392B",color:"#C0392B",borderRadius:2,padding:"5px 10px",fontSize:13,cursor:"pointer",lineHeight:1,fontWeight:700,transition:"all .2s"}} onMouseEnter={e=>{e.currentTarget.style.background="#C0392B";e.currentTarget.style.color="#fff";}} onMouseLeave={e=>{e.currentTarget.style.background="#1a1a1a";e.currentTarget.style.color="#C0392B";}}>⎋</button>
               </div>
             ):(
               <>
                 <button onClick={()=>setShowLogin(true)} style={{background:"none",border:"1px solid #555",color:"#aaa",borderRadius:2,padding:"5px 14px",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Accedi</button>
-                {!scrolled&&<button onClick={()=>setShowLogin(true)} style={{background:C.aurum,border:"none",color:"#fff",borderRadius:2,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Registrati gratis</button>}
+                <button onClick={()=>setShowLogin(true)} style={{background:C.aurum,border:"none",color:"#fff",borderRadius:2,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Registrati gratis</button>
               </>
             )}
           </div>
@@ -3385,6 +3364,42 @@ export default function App(){
           </div>
         )}
       </div>
+
+      {/* Floating pill — appare a dx quando si scrolla giù */}
+      {scrolled&&(
+        <div style={{position:"fixed",right:16,top:14,zIndex:700,display:"flex",gap:6,alignItems:"center",background:"rgba(10,11,15,0.92)",border:"1px solid #2a2b2f",borderRadius:24,padding:"5px 8px",backdropFilter:"blur(8px)",boxShadow:"0 4px 20px rgba(0,0,0,0.35)"}}>
+          {/* Cerca */}
+          <button
+            onClick={()=>{setNavSearchOpen(o=>!o);window.scrollTo({top:0,behavior:"smooth"});}}
+            title="Cerca e filtra"
+            style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",border:`1px solid ${(search.trim()||filterArea!=="Tutte"||filterComp!=="Tutte"||filterFreq!=="Tutte")?C.aurum:"transparent"}`,borderRadius:20,background:"transparent",color:(search.trim()||filterArea!=="Tutte"||filterComp!=="Tutte"||filterFreq!=="Tutte")?C.aurum:"#aaa",cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase",transition:"all .2s"}}
+            onMouseEnter={e=>{e.currentTarget.style.color="#fff";}}
+            onMouseLeave={e=>{e.currentTarget.style.color=(search.trim()||filterArea!=="Tutte"||filterComp!=="Tutte"||filterFreq!=="Tutte")?C.aurum:"#aaa";}}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Cerca
+            {(search.trim()||filterArea!=="Tutte"||filterComp!=="Tutte"||filterFreq!=="Tutte")&&<span style={{background:C.aurum,color:"#fff",borderRadius:"50%",width:13,height:13,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,flexShrink:0}}>{[!!search.trim(),filterArea!=="Tutte",filterComp!=="Tutte",filterFreq!=="Tutte"].filter(Boolean).length}</span>}
+          </button>
+          {/* Divider */}
+          <div style={{width:1,height:18,background:"#2a2b2f"}}/>
+          {/* Login/avatar */}
+          {isLogged?(
+            <div
+              onClick={()=>setShowDashboard(true)}
+              title="Dashboard"
+              style={{width:26,height:26,borderRadius:"50%",background:isAdmin?"#b8860b":C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",position:"relative",flexShrink:0}}
+            >
+              <span style={{color:"#fff",fontSize:11,fontWeight:700}}>{(userProfile.nome||userProfile.email||loginEmail||"?")[0].toUpperCase()}</span>
+              {nonLettiTot>0&&<div style={{position:"absolute",top:-3,right:-3,background:"#C0392B",color:"#fff",borderRadius:"50%",width:13,height:13,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700}}>{nonLettiTot}</div>}
+            </div>
+          ):(
+            <button
+              onClick={()=>setShowLogin(true)}
+              style={{padding:"4px 12px",border:"none",borderRadius:20,background:C.aurum,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",letterSpacing:"0.04em",whiteSpace:"nowrap"}}
+            >Accedi</button>
+          )}
+        </div>
+      )}
 
       <div style={{maxWidth:1100,margin:"0 auto",padding:"24px 16px"}}>
 
