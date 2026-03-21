@@ -3124,8 +3124,24 @@ export default function App(){
 
   const[isLogged,setIsLogged]=useState(()=>ls("xnunc_session",{isLogged:false,isAdmin:false}).isLogged);
   const[supabaseUser,setSupabaseUser]=useState(null);
-  const[toast,setToast]=useState(null); // {message, type: "success"|"error"|"info"}
+  const[toast,setToast]=useState(null);
   const showToast=useCallback((message,type="info")=>{setToast({message,type});},[]);
+  const[scrolled,setScrolled]=useState(false);
+  const[navSearchOpen,setNavSearchOpen]=useState(false);
+  const navSearchRef=useRef(null);
+  useEffect(()=>{
+    const onScroll=()=>setScrolled(window.scrollY>60);
+    window.addEventListener("scroll",onScroll,{passive:true});
+    return()=>window.removeEventListener("scroll",onScroll);
+  },[]);
+  useEffect(()=>{
+    if(!navSearchOpen)return;
+    const handler=(e)=>{if(navSearchRef.current&&!navSearchRef.current.contains(e.target))setNavSearchOpen(false);};
+    document.addEventListener("mousedown",handler);
+    return()=>document.removeEventListener("mousedown",handler);
+  },[navSearchOpen]);
+  const navSearchInputRef=useRef(null);
+  useEffect(()=>{if(navSearchOpen)setTimeout(()=>navSearchInputRef.current?.focus(),80);},[navSearchOpen]);
 
   // ── Supabase session init ───────────────────────────
   useEffect(()=>{
@@ -3274,44 +3290,100 @@ export default function App(){
       {toast&&<Toast message={toast.message} type={toast.type} onClose={()=>setToast(null)}/>}
 
       {/* Navbar */}
-      <div style={{background:C.nox,borderBottom:`2px solid ${C.aurum}`,position:"sticky",top:0,zIndex:500}}>
-        <div style={{maxWidth:1100,margin:"0 auto",padding:"0 16px",height:52,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+      <div ref={navSearchRef} style={{background:C.nox,borderBottom:`2px solid ${C.aurum}`,position:"sticky",top:0,zIndex:500,transition:"box-shadow .2s",boxShadow:scrolled?"0 2px 16px rgba(0,0,0,0.32)":"none"}}>
+        <div style={{maxWidth:1100,margin:"0 auto",padding:"0 16px",height:scrolled?46:52,display:"flex",alignItems:"center",justifyContent:"space-between",transition:"height .2s"}}>
+          {/* Left: logo + nav */}
           <div style={{display:"flex",alignItems:"center",gap:20}}>
-            <span onClick={()=>{setSearch("");setFilterArea("Tutte");setFilterComp("Tutte");setFilterFreq("Tutte");}} style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:700,cursor:"pointer"}}><span style={{color:C.aurum}}>x</span><span style={{color:"#fff"}}>Nunc</span></span>
-            <span onClick={()=>document.getElementById("catalogo-section")?.scrollIntoView({behavior:"smooth"})} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Catalogo</span>
-            <span onClick={()=>setShowClassifica(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Classifica</span>
-            <span onClick={()=>setShowManifesto(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Manifesto</span>
-            <span onClick={()=>setShowFAQ(true)} style={{color:C.aurum,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>FAQ</span>
+            <span onClick={()=>{setSearch("");setFilterArea("Tutte");setFilterComp("Tutte");setFilterFreq("Tutte");setNavSearchOpen(false);}} style={{fontFamily:"Georgia,serif",fontSize:scrolled?19:21,fontWeight:700,cursor:"pointer",transition:"font-size .2s"}}><span style={{color:C.aurum}}>x</span><span style={{color:"#fff"}}>Nunc</span></span>
+            {!scrolled&&<>
+              <span onClick={()=>document.getElementById("catalogo-section")?.scrollIntoView({behavior:"smooth"})} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Catalogo</span>
+              <span onClick={()=>setShowClassifica(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Classifica</span>
+              <span onClick={()=>setShowManifesto(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",transition:"color .2s"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Manifesto</span>
+              <span onClick={()=>setShowFAQ(true)} style={{color:C.aurum,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>FAQ</span>
+            </>}
           </div>
+
+          {/* Center: search button (visible when scrolled) */}
+          {scrolled&&(
+            <button onClick={()=>setNavSearchOpen(o=>!o)} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 14px",border:`1px solid ${navSearchOpen?"#BA7517":"#333"}`,borderRadius:2,background:navSearchOpen?"#1a1204":"transparent",color:navSearchOpen?C.aurum:"#888",cursor:"pointer",fontFamily:"Arial,sans-serif",fontSize:11,letterSpacing:"0.08em",textTransform:"uppercase",fontWeight:700,transition:"all .2s"}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              {search.trim()?`"${search.length>14?search.slice(0,14)+"…":search}"` : "Cerca"}
+              {(filterArea!=="Tutte"||filterComp!=="Tutte"||filterFreq!=="Tutte")&&<span style={{background:C.aurum,color:"#fff",borderRadius:"50%",width:14,height:14,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,flexShrink:0}}>{[filterArea!=="Tutte",filterComp!=="Tutte",filterFreq!=="Tutte"].filter(Boolean).length}</span>}
+            </button>
+          )}
+
+          {/* Right: actions */}
           <div style={{display:"flex",gap:8,alignItems:"center"}}>
+            {/* Search icon (always visible) */}
+            <button onClick={()=>setNavSearchOpen(o=>!o)} title="Cerca e filtra" style={{display:"flex",alignItems:"center",gap:6,padding:"5px 10px",border:`1px solid ${navSearchOpen?"#BA7517":"#333"}`,borderRadius:2,background:navSearchOpen?"#1a1204":"transparent",color:navSearchOpen?C.aurum:"#888",cursor:"pointer",transition:"all .2s",fontFamily:"Arial,sans-serif",fontSize:11,fontWeight:700,letterSpacing:"0.06em",textTransform:"uppercase"}}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              {!scrolled&&"Cerca"}
+              {(search.trim()||(filterArea!=="Tutte"||filterComp!=="Tutte"||filterFreq!=="Tutte"))&&<span style={{background:C.aurum,color:"#fff",borderRadius:"50%",width:14,height:14,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:700,flexShrink:0}}>{[!!search.trim(),filterArea!=="Tutte",filterComp!=="Tutte",filterFreq!=="Tutte"].filter(Boolean).length}</span>}
+            </button>
+
             {isLogged?(
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
                 {isAdmin&&(
-                  <button onClick={()=>setShowAdminPanel(true)}
-                    title="Pannello Redazione — gestisci skill"
-                    style={{padding:"5px 12px",borderRadius:6,border:"1px solid #e8a800",background:"#fffbee",color:"#b8860b",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:4}}>
-                    ✦ Redazione {hiddenSkills.length>0&&<span style={{background:"#e8a800",color:"#fff",borderRadius:8,fontSize:9,padding:"0 5px"}}>{hiddenSkills.length} oscurate</span>}
+                  <button onClick={()=>setShowAdminPanel(true)} title="Pannello Redazione"
+                    style={{padding:"5px 12px",borderRadius:2,border:"1px solid #e8a800",background:"#fffbee",color:"#b8860b",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:4}}>
+                    ✦ {!scrolled&&"Redazione "}{hiddenSkills.length>0&&<span style={{background:"#e8a800",color:"#fff",borderRadius:8,fontSize:9,padding:"0 5px"}}>{hiddenSkills.length}</span>}
                   </button>
                 )}
-                {!isAdmin&&<button onClick={()=>setShowCreateSkill(true)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${C.aurum}`,background:"transparent",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>}
-                <div onClick={()=>setShowDashboard(true)} title="La tua dashboard" style={{position:"relative",width:32,height:32,borderRadius:"50%",background:isAdmin?"#b8860b":C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"0 2px 8px #BA751744"}}>
-                  <span style={{color:"#fff",fontSize:13,fontWeight:700}}>{(userProfile.nome||userProfile.email||loginEmail||"?")[0].toUpperCase()}</span>
-                  {nonLettiTot>0&&<div style={{position:"absolute",top:-4,right:-4,background:"#C0392B",color:"#fff",borderRadius:"50%",width:16,height:16,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700}}>{nonLettiTot}</div>}
+                {!isAdmin&&!scrolled&&<button onClick={()=>setShowCreateSkill(true)} style={{padding:"5px 12px",borderRadius:2,border:`1px solid ${C.aurum}`,background:"transparent",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>}
+                <div onClick={()=>setShowDashboard(true)} title="La tua dashboard" style={{position:"relative",width:30,height:30,borderRadius:"50%",background:isAdmin?"#b8860b":C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
+                  <span style={{color:"#fff",fontSize:12,fontWeight:700}}>{(userProfile.nome||userProfile.email||loginEmail||"?")[0].toUpperCase()}</span>
+                  {nonLettiTot>0&&<div style={{position:"absolute",top:-4,right:-4,background:"#C0392B",color:"#fff",borderRadius:"50%",width:15,height:15,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700}}>{nonLettiTot}</div>}
                 </div>
-                {/* Logout con conferma */}
-                <button onClick={()=>setShowLogoutConfirm(true)} title="Esci dall'account"
-                  style={{background:"#1a1a1a",border:"1px solid #C0392B",color:"#C0392B",borderRadius:6,padding:"5px 10px",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",lineHeight:1,fontWeight:700,transition:"all .2s"}}
+                <button onClick={()=>setShowLogoutConfirm(true)} title="Esci"
+                  style={{background:"#1a1a1a",border:"1px solid #C0392B",color:"#C0392B",borderRadius:2,padding:"5px 10px",fontSize:13,cursor:"pointer",lineHeight:1,fontWeight:700,transition:"all .2s"}}
                   onMouseEnter={e=>{e.currentTarget.style.background="#C0392B";e.currentTarget.style.color="#fff";}}
                   onMouseLeave={e=>{e.currentTarget.style.background="#1a1a1a";e.currentTarget.style.color="#C0392B";}}>⎋</button>
               </div>
             ):(
               <>
-                <button onClick={()=>setShowLogin(true)} style={{background:"none",border:"1px solid #555",color:"#aaa",borderRadius:6,padding:"5px 14px",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Accedi</button>
-                <button onClick={()=>setShowLogin(true)} style={{background:C.aurum,border:"none",color:"#fff",borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Registrati gratis</button>
+                <button onClick={()=>setShowLogin(true)} style={{background:"none",border:"1px solid #555",color:"#aaa",borderRadius:2,padding:"5px 14px",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Accedi</button>
+                {!scrolled&&<button onClick={()=>setShowLogin(true)} style={{background:C.aurum,border:"none",color:"#fff",borderRadius:2,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Registrati gratis</button>}
               </>
             )}
           </div>
         </div>
+
+        {/* Search dropdown panel */}
+        {navSearchOpen&&(
+          <div style={{borderTop:"1px solid #222",background:"#111214",padding:"16px 24px 20px"}}>
+            <div style={{maxWidth:1100,margin:"0 auto"}}>
+              <div style={{position:"relative",marginBottom:14}}>
+                <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"}} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#666" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input ref={navSearchInputRef} value={search} onChange={e=>setSearch(e.target.value)}
+                  onKeyDown={e=>{if(e.key==="Escape"){setNavSearchOpen(false);}if(e.key==="Enter")setNavSearchOpen(false);}}
+                  placeholder="Cerca skill per nome, area, tag, normativa…"
+                  style={{width:"100%",padding:"9px 36px 9px 36px",border:`1px solid ${search.trim()?C.aurum:"#333"}`,borderRadius:2,fontSize:13,fontFamily:"Arial,sans-serif",outline:"none",background:"#1a1c20",color:"#F1EFE8",boxSizing:"border-box",transition:"border-color .2s"}}/>
+                {search.trim()&&<button onClick={()=>setSearch("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#666",cursor:"pointer",fontSize:16,lineHeight:1}}>×</button>}
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:14,alignItems:"flex-start"}}>
+                <div>
+                  <div style={{fontSize:9,fontWeight:700,color:"#555",letterSpacing:"0.14em",marginBottom:6}}>AREA FUNZIONALE</div>
+                  <div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{areas.map(a=><button key={a} onClick={()=>setFilterArea(a)} style={{padding:"3px 10px",border:`1px solid ${filterArea===a?C.aurum:"#333"}`,borderRadius:2,background:filterArea===a?"#1a1204":"transparent",color:filterArea===a?C.aurum:"#888",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.06em",transition:"all .15s"}}>{a}</button>)}</div>
+                </div>
+                <div>
+                  <div style={{fontSize:9,fontWeight:700,color:"#555",letterSpacing:"0.14em",marginBottom:6}}>DIFFICOLTÀ</div>
+                  <div style={{display:"flex",gap:4}}>{["Tutte","alta","media","bassa"].map(c=><button key={c} onClick={()=>setFilterComp(c)} style={{padding:"3px 10px",border:`1px solid ${filterComp===c?C.aurum:"#333"}`,borderRadius:2,background:filterComp===c?"#1a1204":"transparent",color:filterComp===c?C.aurum:"#888",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.06em",transition:"all .15s"}}>{c}</button>)}</div>
+                </div>
+                <div>
+                  <div style={{fontSize:9,fontWeight:700,color:"#555",letterSpacing:"0.14em",marginBottom:6}}>FREQUENZA</div>
+                  <div style={{display:"flex",gap:4}}>{["Tutte","ricorrente","occasionale"].map(f=><button key={f} onClick={()=>setFilterFreq(f)} style={{padding:"3px 10px",border:`1px solid ${filterFreq===f?C.aurum:"#333"}`,borderRadius:2,background:filterFreq===f?"#1a1204":"transparent",color:filterFreq===f?C.aurum:"#888",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.06em",transition:"all .15s"}}>{f}</button>)}</div>
+                </div>
+                <div style={{marginLeft:"auto",display:"flex",alignItems:"flex-end",gap:12,paddingBottom:2}}>
+                  {(filterArea!=="Tutte"||filterComp!=="Tutte"||filterFreq!=="Tutte"||search.trim())&&(
+                    <button onClick={()=>{setFilterArea("Tutte");setFilterComp("Tutte");setFilterFreq("Tutte");setSearch("");}} style={{background:"none",border:"none",color:"#555",fontFamily:"Arial",fontSize:11,cursor:"pointer",letterSpacing:"0.06em",textDecoration:"underline",padding:0}}>Rimuovi filtri</button>
+                  )}
+                  <span style={{fontSize:11,color:"#555",fontFamily:"Arial"}}>{filtered.length} skill</span>
+                  <button onClick={()=>setNavSearchOpen(false)} style={{background:"none",border:"1px solid #333",color:"#888",fontFamily:"Arial",fontSize:10,fontWeight:700,cursor:"pointer",padding:"4px 12px",borderRadius:2,letterSpacing:"0.08em"}}>CHIUDI ↑</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <div style={{maxWidth:1100,margin:"0 auto",padding:"24px 16px"}}>
