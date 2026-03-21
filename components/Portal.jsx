@@ -3496,7 +3496,7 @@ export default function App(){
       {showClassifica&&<ClassificaModal onClose={()=>setShowClassifica(false)}/>}
       {showProfile&&<ProfileModal onClose={()=>setShowProfile(false)} userProfile={userProfile} setUserProfile={setUserProfile} onLogout={handleLogout} onDeleteAccount={handleDeleteAccount} onExportData={handleExportData} userPoints={userPoints}/>}
       {showDashboard&&<DashboardModal
-        onClose={()=>setShowDashboard(false)}
+        onClose={()=>{setShowDashboard(false);setNavSearchOpen(true);window.scrollTo({top:0,behavior:"smooth"});}}
         favorites={favorites} setFavorites={setFavorites}
         draftSkills={draftSkills} setDraftSkills={setDraftSkills}
         threads={threads} setThreads={setThreads}
