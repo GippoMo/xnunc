@@ -3002,9 +3002,9 @@ export default function App(){
                 </div>
                 {/* Logout con conferma */}
                 <button onClick={()=>setShowLogoutConfirm(true)} title="Esci dall'account"
-                  style={{background:"none",border:"1px solid #333",color:"#666",borderRadius:6,padding:"5px 9px",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",lineHeight:1}}
-                  onMouseEnter={e=>{e.currentTarget.style.borderColor="#C0392B";e.currentTarget.style.color="#C0392B";}}
-                  onMouseLeave={e=>{e.currentTarget.style.borderColor="#333";e.currentTarget.style.color="#666";}}>⎋</button>
+                  style={{background:"#1a1a1a",border:"1px solid #C0392B",color:"#C0392B",borderRadius:6,padding:"5px 10px",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",lineHeight:1,fontWeight:700,transition:"all .2s"}}
+                  onMouseEnter={e=>{e.currentTarget.style.background="#C0392B";e.currentTarget.style.color="#fff";}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="#1a1a1a";e.currentTarget.style.color="#C0392B";}}>⎋</button>
               </div>
             ):(
               <>
