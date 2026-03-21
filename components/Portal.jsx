@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { supabase, signIn, signUp, signOut, getProfile, upsertProfile, logAiCall } from "../lib/supabase";
 
 // ─────────────────────────────────────────────────────
 // xNunc brand palette
@@ -443,6 +444,8 @@ function LoginModal({onClose,onLogin}){
   const[tab,setTab]=useState("login");
   const[email,setEmail]=useState("");
   const[pw,setPw]=useState("");
+  const[authError,setAuthError]=useState("");
+  const[authLoading,setAuthLoading]=useState(false);
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:400,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",overflow:"hidden"}}>
@@ -479,9 +482,10 @@ function LoginModal({onClose,onLogin}){
             <span style={{fontSize:9,color:"#C0BDB8",letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"Arial"}}>oppure</span>
             <div style={{flex:1,height:1,background:"#E8E4DC"}}/>
           </div>
-          <input value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email" type="email" style={{width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",outline:"none",boxSizing:"border-box"}}/>
-          <input value={pw} onChange={e=>setPw(e.target.value)} placeholder="Password" type="password" style={{width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",outline:"none",boxSizing:"border-box",marginBottom:4}}/>
-          <button onClick={()=>onLogin(email)} style={{width:"100%",padding:"11px 20px",borderRadius:4,border:"none",background:"#0A0B0F",color:"#F1EFE8",fontWeight:700,fontSize:11,cursor:"pointer",fontFamily:"Arial",letterSpacing:"0.1em",textTransform:"uppercase",transition:"background .2s",marginBottom:16,marginTop:8}}>{tab==="login"?"Accedi":"Crea account"}</button>
+          <input value={email} onChange={e=>{setEmail(e.target.value);setAuthError("");}} placeholder="Email" type="email" style={{width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",outline:"none",boxSizing:"border-box"}}/>
+          <input value={pw} onChange={e=>{setPw(e.target.value);setAuthError("");}} placeholder="Password" type="password" onKeyDown={e=>e.key==="Enter"&&onLogin(email,pw,tab)} style={{width:"100%",border:"none",borderBottom:"1px solid #D8D4CE",padding:"10px 0",background:"transparent",color:"#0A0B0F",fontSize:13,fontFamily:"Arial",outline:"none",boxSizing:"border-box",marginBottom:4}}/>
+          {authError&&<div style={{fontSize:11,color:"#C0392B",padding:"6px 10px",background:"#FEF0EF",border:"1px solid #F5C6C2",borderRadius:2}}>{authError}</div>}
+          <button onClick={async()=>{setAuthLoading(true);setAuthError("");try{await onLogin(email,pw,tab);}catch(e){setAuthError(e.message||"Errore di accesso");}finally{setAuthLoading(false);}}} disabled={authLoading||!email||!pw} style={{width:"100%",padding:"11px 20px",borderRadius:4,border:"none",background:authLoading||!email||!pw?"#ccc":"#0A0B0F",color:"#F1EFE8",fontWeight:700,fontSize:11,cursor:authLoading||!email||!pw?"not-allowed":"pointer",fontFamily:"Arial",letterSpacing:"0.1em",textTransform:"uppercase",transition:"background .2s",marginBottom:16,marginTop:8}}>{authLoading?"Attendere…":tab==="login"?"Accedi":"Crea account"}</button>
           <p style={{textAlign:"center",fontSize:11,color:"#888",marginTop:0}}>Accedendo accetti la Privacy Policy e i Termini di servizio.</p>
         </div>
       </div>
@@ -819,27 +823,38 @@ async function callAI({skill,userInput,attachments,profile,_overridePrompt}){
   const keyMode=profile?.keyMode||"xnunc";
   const provider=profile?.aiProvider||"anthropic";
   const byok=profile?.byokKey||"";
-  if(keyMode==="byok"&&byok){
-    if(provider==="anthropic"){
-      const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":byok,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:4096,system:basePrompt,messages:[{role:"user",content:userMsg}]})});
-      if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.message||"Errore API Anthropic ("+r.status+")");}
-      const d=await r.json();return d.content?.find(b=>b.type==="text")?.text||d.content?.[0]?.text||"";
+  const t0=Date.now();
+  let result=""; let success=true;
+  try{
+    if(keyMode==="byok"&&byok){
+      if(provider==="anthropic"){
+        const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"x-api-key":byok,"anthropic-version":"2023-06-01","content-type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:4096,system:basePrompt,messages:[{role:"user",content:userMsg}]})});
+        if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.message||"Errore API Anthropic ("+r.status+")");}
+        const d=await r.json();result=d.content?.find(b=>b.type==="text")?.text||d.content?.[0]?.text||"";
+      } else if(provider==="openai"){
+        const r=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${byok}`,"Content-Type":"application/json"},body:JSON.stringify({model:"gpt-4o",max_tokens:4096,messages:[{role:"system",content:basePrompt},{role:"user",content:userMsg}]})});
+        if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.message||"Errore API OpenAI ("+r.status+")");}
+        const d=await r.json();result=d.choices[0].message.content;
+      } else if(provider==="gemini"){
+        const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":byok},body:JSON.stringify({system_instruction:{parts:[{text:basePrompt}]},contents:[{parts:[{text:userMsg}]}]})});
+        if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.message||"Errore API Gemini ("+r.status+")");}
+        const d=await r.json();result=d.candidates[0].content.parts[0].text;
+      }
+    } else {
+      // xNunc key — via API route server-side
+      const r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:4096,system:basePrompt,messages:[{role:"user",content:userMsg}]})});
+      if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.error||e.message||"Errore API (HTTP "+r.status+")");}
+      const d=await r.json();result=d.content?.find(b=>b.type==="text")?.text||d.content?.[0]?.text||"";
     }
-    if(provider==="openai"){
-      const r=await fetch("https://api.openai.com/v1/chat/completions",{method:"POST",headers:{"Authorization":`Bearer ${byok}`,"Content-Type":"application/json"},body:JSON.stringify({model:"gpt-4o",max_tokens:4096,messages:[{role:"system",content:basePrompt},{role:"user",content:userMsg}]})});
-      if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.message||"Errore API OpenAI ("+r.status+")");}
-      const d=await r.json();return d.choices[0].message.content;
-    }
-    if(provider==="gemini"){
-      const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent",{method:"POST",headers:{"Content-Type":"application/json","x-goog-api-key":byok},body:JSON.stringify({system_instruction:{parts:[{text:basePrompt}]},contents:[{parts:[{text:userMsg}]}]})});
-      if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.message||"Errore API Gemini ("+r.status+")");}
-      const d=await r.json();return d.candidates[0].content.parts[0].text;
-    }
+  }catch(err){
+    success=false;
+    // Log anche gli errori, poi rilancia
+    logAiCall({userId:profile?.id,skillId:skill?.id||skill?.skill_id,provider:keyMode==="byok"?provider:"anthropic",model:keyMode==="byok"?(provider==="openai"?"gpt-4o":"claude-sonnet-4-6"):"claude-sonnet-4-6",inputChars:(basePrompt+userMsg).length,outputChars:0,durationMs:Date.now()-t0,success:false});
+    throw err;
   }
-  // xNunc key — via API route server-side
-  const r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:4096,system:basePrompt,messages:[{role:"user",content:userMsg}]})});
-  if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.error||e.message||"Errore API (HTTP "+r.status+")");}
-  const d=await r.json();return d.content?.find(b=>b.type==="text")?.text||d.content?.[0]?.text||"";
+  // Log chiamata riuscita (silenzioso)
+  logAiCall({userId:profile?.id,skillId:skill?.id||skill?.skill_id,provider:keyMode==="byok"?provider:"anthropic",model:keyMode==="byok"?(provider==="openai"?"gpt-4o":"claude-sonnet-4-6"):"claude-sonnet-4-6",inputChars:(basePrompt+userMsg).length,outputChars:result.length,durationMs:Date.now()-t0,success:true});
+  return result;
 }
 function fileExt(name){return(name.split(".").pop()||"").toLowerCase();}
 function fileSize(bytes){return bytes<1024*1024?`${(bytes/1024).toFixed(0)} KB`:`${(bytes/1024/1024).toFixed(1)} MB`;}
@@ -2981,6 +2996,43 @@ export default function App(){
   const DEFAULT_PROFILE={nome:"",cognome:"",studio:"",ruolo:"",email:"",cell:"",citta:"",albo:"",web:"",byokKey:"",keyMode:"xnunc",aiProvider:"anthropic"};
 
   const[isLogged,setIsLogged]=useState(()=>ls("xnunc_session",{isLogged:false,isAdmin:false}).isLogged);
+  const[supabaseUser,setSupabaseUser]=useState(null);
+
+  // ── Supabase session init ───────────────────────────
+  useEffect(()=>{
+    // Check existing session on mount
+    supabase.auth.getSession().then(({data:{session}})=>{
+      if(session?.user){
+        const u=session.user;
+        setSupabaseUser(u);
+        setIsLogged(true);
+        const isAdm=u.email==="morales@bcand.it";
+        setIsAdmin(isAdm);
+        setLoginEmail(u.email);
+        // Carica profilo da DB
+        getProfile(u.id).then(p=>{
+          if(p) setUserProfile(prev=>({...prev,...p,email:p.email||u.email}));
+        }).catch(()=>{});
+      }
+    });
+    // Ascolta cambi di sessione (login/logout)
+    const{data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
+      if(session?.user){
+        const u=session.user;
+        setSupabaseUser(u);
+        setIsLogged(true);
+        const isAdm=u.email==="morales@bcand.it";
+        setIsAdmin(isAdm);
+        setLoginEmail(u.email);
+      } else {
+        setSupabaseUser(null);
+        setIsLogged(false);
+        setIsAdmin(false);
+        setLoginEmail("");
+      }
+    });
+    return()=>subscription.unsubscribe();
+  },[]);
   // CSS globale per hover effects (inline style non supporta :hover)
   if(typeof document!=="undefined"){
     const id="xnunc-styles";
@@ -3045,8 +3097,9 @@ export default function App(){
   },[userProfile.email,draftSkills,improvements,threads]);
 
   // ── Logout ─────────────────────────────────────────
-  function handleLogout(){
-    setIsLogged(false);setIsAdmin(false);
+  async function handleLogout(){
+    try{ await signOut(); }catch(_){}
+    setIsLogged(false);setIsAdmin(false);setSupabaseUser(null);
     setLoginEmail("");
     setShowProfile(false);setShowDashboard(false);setShowLogoutConfirm(false);
   }
@@ -3230,7 +3283,26 @@ export default function App(){
         </div>
       </div>
 
-      {showLogin&&<LoginModal onClose={()=>setShowLogin(false)} onLogin={(le)=>{setIsLogged(true);setIsAdmin(le===ADMIN_EMAIL_CHECK);setShowLogin(false);if(le&&!le.includes("@social.com")){setLoginEmail(le);setUserProfile(p=>({...p,email:p.email||le}));}}}/>}
+      {showLogin&&<LoginModal onClose={()=>setShowLogin(false)} onLogin={async(email,pw,tab)=>{
+        if(tab==="registrati"){
+          const {user}=await signUp(email,pw);
+          // Profilo creato automaticamente dal trigger Supabase
+          // Mostra messaggio conferma email
+          setShowLogin(false);
+          alert("Registrazione completata! Controlla la tua email per confermare l'account.");
+        } else {
+          const {user}=await signIn(email,pw);
+          // La sessione viene gestita da onAuthStateChange
+          setShowLogin(false);
+          // Carica profilo aggiornato
+          if(user){
+            try{
+              const p=await getProfile(user.id);
+              if(p) setUserProfile(prev=>({...prev,...p,email:p.email||user.email}));
+            }catch(_){}
+          }
+        }
+      }}/>}
       {showFAQ&&<FAQModal onClose={()=>setShowFAQ(false)}/>}
       {showManifesto&&<ManifestoModal onClose={()=>setShowManifesto(false)}/>}
       {showClassifica&&<ClassificaModal onClose={()=>setShowClassifica(false)}/>}
