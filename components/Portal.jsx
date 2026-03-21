@@ -1759,6 +1759,7 @@ function ProfileModal({onClose,userProfile,setUserProfile,onLogout,onDeleteAccou
   const[showKey,setShowKey]=useState(false);
   const[saved,setSaved]=useState(false);
   const[errors,setErrors]=useState({});
+  const[emailEditable,setEmailEditable]=useState(false);
   // Password change
   const[pwAttuale,setPwAttuale]=useState("");
   const[pwNuova,setPwNuova]=useState("");
@@ -1830,14 +1831,27 @@ function ProfileModal({onClose,userProfile,setUserProfile,onLogout,onDeleteAccou
             <div style={{display:"flex",flexDirection:"column",gap:13}}>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
                 <ProfileField label="NOME">
-                  <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Giampiero" style={inputStyle()}/>
+                  <input value={nome} onChange={e=>setNome(e.target.value)} placeholder="Mario" style={inputStyle()}/>
                 </ProfileField>
                 <ProfileField label="COGNOME">
-                  <input value={cognome} onChange={e=>setCognome(e.target.value)} placeholder="Morales" style={inputStyle()}/>
+                  <input value={cognome} onChange={e=>setCognome(e.target.value)} placeholder="Rossi" style={inputStyle()}/>
                 </ProfileField>
               </div>
-              <ProfileField label="EMAIL" required>
-                <input value={email} onChange={e=>{setEmail(e.target.value);setErrors(p=>({...p,email:undefined}));}} placeholder="nome@studio.it" type="email" style={inputStyle(errors.email)}/>
+              <ProfileField label="EMAIL">
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <input
+                    value={email}
+                    onChange={e=>{if(emailEditable){setEmail(e.target.value);setErrors(p=>({...p,email:undefined}));}}}
+                    readOnly={!emailEditable}
+                    type="email"
+                    style={{...inputStyle(errors.email),flex:1,color:emailEditable?"#0A0B0F":"#555",background:"transparent",cursor:emailEditable?"text":"default"}}
+                  />
+                  {!emailEditable?(
+                    <button onClick={()=>setEmailEditable(true)} style={{flexShrink:0,background:"none",border:"none",color:"#BA7517",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",letterSpacing:"0.08em",padding:"0 2px",whiteSpace:"nowrap"}}>MODIFICA</button>
+                  ):(
+                    <button onClick={()=>{setEmailEditable(false);setEmail(userProfile.email||"");}} style={{flexShrink:0,background:"none",border:"none",color:"#aaa",fontSize:10,cursor:"pointer",fontFamily:"Arial,sans-serif",padding:"0 2px",whiteSpace:"nowrap"}}>✕</button>
+                  )}
+                </div>
                 {errors.email&&<div style={{fontSize:10,color:"#C0392B",fontFamily:"Arial,sans-serif",marginTop:3}}>{errors.email}</div>}
               </ProfileField>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
@@ -1856,7 +1870,7 @@ function ProfileModal({onClose,userProfile,setUserProfile,onLogout,onDeleteAccou
           {tab===1&&(
             <div style={{display:"flex",flexDirection:"column",gap:13}}>
               <ProfileField label="STUDIO / ENTE DI APPARTENENZA">
-                <input value={studio} onChange={e=>setStudio(e.target.value)} placeholder="Studio Morales — BC&" style={inputStyle()}/>
+                <input value={studio} onChange={e=>setStudio(e.target.value)} placeholder="Studio Rossi & Associati" style={inputStyle()}/>
               </ProfileField>
               <ProfileField label="QUALIFICA PROFESSIONALE">
                 <select value={ruolo} onChange={e=>setRuolo(e.target.value)} style={{...inputStyle(),background:"#fff",color:ruolo?"#111":"#aaa"}}>
