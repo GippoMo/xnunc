@@ -1276,7 +1276,7 @@ function SkillCard({skill,onClick,isLogged,favorites,setFavorites,compact,isAdmi
           </button>
         </div>
       )}
-      {!isAdmin&&isLogged&&setFavorites&&(
+      {isLogged&&setFavorites&&(
         <button onClick={toggleFav} title={isFav?"Rimuovi dai preferiti":"Aggiungi ai preferiti"}
           style={{position:"absolute",top:12,right:12,background:"none",border:"none",cursor:"pointer",fontSize:14,color:isFav?C.aurum:"#D8D4CE",lineHeight:1,padding:2,transition:"color .15s"}}>
           {isFav?"★":"☆"}
@@ -1328,6 +1328,15 @@ function ImprovementDetailView({improv,setImprovements,profile,onBack,ac}){
   }
   function approvaCreatore(){
     setImprovements(prev=>prev.map(im=>im.id===improv.id?{...im,stato:"in_redazione"}:im));
+    notificaEmail({
+      destinatario:ADMIN_EMAIL,
+      oggetto:`[xNunc] Miglioramento approvato dal creatore: ${improv.skillNome}`,
+      corpo:`Il creatore ha approvato il miglioramento "${improv.titolo}" per la skill "${improv.skillNome}".
+
+Contributor: ${improv.contributorNome} (${improv.contributorEmail})
+
+Gestiscilo su: ${APP_URL}`,
+    });
     onBack();
   }
   function rifiutaCreatore(){
@@ -1477,7 +1486,20 @@ function MiglioramentiTab({skill,isLogged,onLoginRequest,ac,improvements,setImpr
   }
 
   function inviaAlCreatore(improvId){
-    setImprovements(prev=>prev.map(im=>im.id===improvId?{...im,stato:"attesa_creatore"}:im));
+    const im=(improvements||[]).find(x=>x.id===improvId);
+    setImprovements(prev=>prev.map(x=>x.id===improvId?{...x,stato:"attesa_creatore"}:x));
+    if(im){
+      notificaEmail({
+        destinatario:ADMIN_EMAIL,
+        oggetto:`[xNunc] Miglioramento ricevuto: ${im.skillNome}`,
+        corpo:`L'utente ${im.contributorNome} (${im.contributorEmail}) ha proposto un miglioramento per la skill "${im.skillNome}".
+
+Titolo: ${im.titolo}
+Descrizione: ${im.descrizione}
+
+Revisiona e approva su: ${APP_URL}`,
+      });
+    }
   }
 
   // Vista dettaglio improvement
@@ -2046,19 +2068,19 @@ async function notificaEmail({destinatario,oggetto,corpo}){
 const IMPROV_STATI={
   bozza:              {label:"✏️ Bozza",              color:C.caelum},
   beta_generata:      {label:"⚡ Beta pronta",         color:C.aurum},
-  attesa_creatore:    {label:"⏳ Attesa creatore",     color:C.aurum},
-  approvata_creatore: {label:"✓ Approv. creatore",    color:C.viridis},
-  rifiutata_creatore: {label:"✗ Rif. creatore",       color:"#C0392B"},
-  in_redazione:       {label:"📋 In Redazione",        color:C.caelum},
+  attesa_creatore:    {label:"⏳ In gestione del creatore",  color:C.aurum},
+  approvata_creatore: {label:"✓ Approvata dal creatore",   color:C.viridis},
+  rifiutata_creatore: {label:"✗ Rifiutata dal creatore",   color:"#C0392B"},
+  in_redazione:       {label:"📋 In gestione alla redazione", color:C.caelum},
   approvata:          {label:"✅ Pubblicata",           color:C.viridis},
-  rifiutata_redazione:{label:"✗ Rif. Redazione",      color:"#C0392B"},
+  rifiutata_redazione:{label:"✗ Rifiutata dalla redazione", color:"#C0392B"},
 };
 
 // ─────────────────────────────────────────────────────
 // DashboardModal — area riservata utente
 // Tabs: ⭐ Preferiti | 🔧 In sviluppo | 💬 Messaggi
 // ─────────────────────────────────────────────────────
-const STATO_LABEL={bozza:"🔧 Bozza",in_revisione:"⏳ In revisione",approvata:"✓ Approvata"};
+const STATO_LABEL={bozza:"🔧 Bozza",in_revisione:"📋 In gestione alla redazione",approvata:"✓ Pubblicata"};
 const STATO_COLOR={bozza:C.caelum,in_revisione:C.aurum,approvata:C.viridis};
 
 function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,supabaseUser,onTestSkill,onOpenProfile,onCreateSkill,isAdmin,improvements,setImprovements,userPoints}){
@@ -2096,12 +2118,12 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
     notificaEmail({
       destinatario:ADMIN_EMAIL,
       oggetto:`[xNunc] Nuova skill in revisione: ${draft.nome}`,
-      corpo:`L'utente ${nomeCompl} ha inviato la skill "${draft.nome}" (${draft.area}) per revisione.\n\nDescrizione: ${draft.descrizione}\n\nInput atteso: ${draft.inputAtteso}\nOutput atteso: ${draft.outputAtteso}\nNormativa: ${draft.normativa}`
+      corpo:`L'utente ${nomeCompl} ha inviato la skill "${draft.nome}" (${draft.area}) per revisione.\n\nDescrizione: ${draft.descrizione}\n\nInput atteso: ${draft.inputAtteso}\nOutput atteso: ${draft.outputAtteso}\nNormativa: ${draft.normativa}\n\nRevisiona su: ${APP_URL}`,
     });
     // Aggiungi thread di notifica nella messaggistica
     const notifThread={
-      id:crypto.randomUUID(),titolo:`Skill inviata: ${draft.nome}`,con:"Redazione",avatar:"R",avatarColor:C.aurum,
-      messaggi:[{id:1,da:"Sistema",testo:`Hai inviato la skill "${draft.nome}" alla Redazione. Riceverai una risposta qui appena revisionata. Di solito entro 48 ore.`,data:new Date().toLocaleDateString("it-IT"),letto:true}],
+      id:crypto.randomUUID(),titolo:`Creazione: ${draft.nome}`,con:"Redazione",avatar:"R",avatarColor:C.aurum,
+      messaggi:[{id:1,da:"Sistema",testo:`Hai inviato la skill "${draft.nome}" alla Redazione per approvazione. Riceverai una risposta qui. Di solito entro 48 ore.`,data:new Date().toLocaleDateString("it-IT"),letto:true}],
       nonLetti:0
     };
     setThreads(prev=>[...prev,notifThread]);
@@ -2146,10 +2168,12 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
   const pendingMyApproval=(improvements||[]).filter(im=>im.stato==="attesa_creatore"&&(isAdmin||im.contributorEmail===userProfile.email));
   const[activeDashImprov,setActiveDashImprov]=useState(null);
 
+  const daApprovare=draftSkills.filter(d=>d.stato==="in_revisione");
   const tabBar=[
     {label:"⭐ Preferiti",count:favSkills.length+draftSkills.filter(d=>d.stato==="approvata").length},
-    {label:"🔧 In sviluppo",count:draftSkills.filter(d=>d.stato!=="approvata").length+(myImprovs.length)+(isAdmin?pendingMyApproval.length:0)},
+    {label:"🔧 In sviluppo",count:draftSkills.filter(d=>d.stato!=="approvata"&&d.stato!=="in_revisione").length+(myImprovs.length)+(isAdmin?pendingMyApproval.length:0)},
     {label:"💬 Messaggi",count:nonLettiTot},
+    ...(isAdmin?[{label:"✅ Da approvare",count:daApprovare.length}]:[]),
   ];
 
   return(
@@ -2467,6 +2491,82 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
               )}
             </div>
           )}
+
+          {/* TAB 3 — Da approvare (solo admin) */}
+          {tab===3&&isAdmin&&(
+            <div>
+              {daApprovare.length===0?(
+                <div style={{textAlign:"center",padding:"48px 0"}}>
+                  <div style={{fontSize:32,marginBottom:8}}>✅</div>
+                  <div style={{fontFamily:"Georgia,serif",fontSize:16,color:C.nox,marginBottom:6}}>Nessuna skill in attesa</div>
+                  <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif"}}>Quando un utente invierà una nuova skill, apparirà qui.</div>
+                </div>
+              ):(
+                daApprovare.map(d=>{
+                  const[nota,setNota]=useState("");
+                  const[showNota,setShowNota]=useState(false);
+                  function approva(){
+                    setDraftSkills(prev=>prev.map(x=>x.id===d.id?{...x,stato:"approvata"}:x));
+                    setFavorites(prev=>prev.includes(d.id)?prev:[...prev,d.id]);
+                    notificaEmail({
+                      destinatario:d.creatoreEmail||ADMIN_EMAIL,
+                      oggetto:`[xNunc] La tua skill è stata approvata: ${d.nome}`,
+                      corpo:`Ottimo lavoro! La tua skill "${d.nome}" (${d.area}) è stata approvata dalla Redazione ed è ora disponibile nel catalogo.
+
+La trovi anche tra i tuoi preferiti su: ${APP_URL}`,
+                    });
+                    const approvaThread={
+                      id:crypto.randomUUID(),titolo:`Approvazione: ${d.nome}`,con:"Redazione",avatar:"R",avatarColor:C.viridis,
+                      messaggi:[{id:1,da:"Redazione",testo:`La tua skill "${d.nome}" è stata approvata e pubblicata nel catalogo. Grazie per il contributo!`,data:new Date().toLocaleDateString("it-IT"),letto:false}],
+                      nonLetti:1
+                    };
+                    setThreads(prev=>[...prev,approvaThread]);
+                    if(supabaseUser) dbSaveThread(appThreadToDb(approvaThread,supabaseUser.id));
+                  }
+                  function rifiuta(){
+                    if(!nota.trim()){setShowNota(true);return;}
+                    setDraftSkills(prev=>prev.map(x=>x.id===d.id?{...x,stato:"bozza",noteRedazione:nota}:x));
+                    notificaEmail({
+                      destinatario:d.creatoreEmail||ADMIN_EMAIL,
+                      oggetto:`[xNunc] Revisione richiesta: ${d.nome}`,
+                      corpo:`La tua skill "${d.nome}" necessita di revisione prima di essere pubblicata.
+
+Note della Redazione: ${nota}
+
+Rivedi e rinvia su: ${APP_URL}`,
+                    });
+                    setShowNota(false);setNota("");
+                  }
+                  return(
+                    <div key={d.id} style={{border:"1.5px solid #e8e4dc",borderRadius:10,background:"#fff",padding:"16px",marginBottom:12}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
+                        <div>
+                          <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:700,color:C.nox}}>{d.nome}</div>
+                          <div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif",marginTop:3}}>{d.area} · Inviata da {d.creatoreNome||"Utente"} {d.creatoreEmail?`(${d.creatoreEmail})`:""}</div>
+                        </div>
+                        <div style={{display:"flex",gap:6}}>
+                          <button onClick={()=>onTestSkill(d)} style={{padding:"5px 12px",borderRadius:6,border:`1px solid ${C.caelum}`,background:"#EBF2FE",color:C.caelum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>▶ Testa</button>
+                          <button onClick={approva} style={{padding:"5px 12px",borderRadius:6,border:"none",background:C.viridis,color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Approva</button>
+                          <button onClick={rifiuta} style={{padding:"5px 12px",borderRadius:6,border:`1px solid #C0392B`,background:"#FEF0EF",color:"#C0392B",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✗ Rimanda</button>
+                        </div>
+                      </div>
+                      <div style={{fontSize:12,color:"#555",fontFamily:"Arial,sans-serif",lineHeight:1.6,marginBottom:8}}>{d.descrizione}</div>
+                      {showNota&&(
+                        <div style={{marginTop:8}}>
+                          <textarea value={nota} onChange={e=>setNota(e.target.value)} placeholder="Note per il creatore (obbligatorio per rimandare)…" rows={2}
+                            style={{width:"100%",padding:"8px 10px",borderRadius:6,border:`1.5px solid ${C.aurum}`,fontSize:12,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box",resize:"vertical"}}/>
+                          <div style={{display:"flex",gap:6,marginTop:6,justifyContent:"flex-end"}}>
+                            <button onClick={()=>{setShowNota(false);setNota("");}} style={{padding:"5px 12px",borderRadius:6,border:"1px solid #ddd",background:"#fff",color:"#555",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Annulla</button>
+                            <button onClick={rifiuta} disabled={!nota.trim()} style={{padding:"5px 12px",borderRadius:6,border:"none",background:nota.trim()?"#C0392B":"#eee",color:nota.trim()?"#fff":"#aaa",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Conferma rimando</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -2621,6 +2721,7 @@ Genera i campi della skill in formato JSON. Rispondi SOLO con il JSON, senza mar
       sotto_area:area,
       complessita:"media",frequenza:"occasionale",
       tags:[],sottoArea:area,stato:"bozza",testato:false,
+      creatoreEmail:userProfile?.email||"",creatoreNome:`${userProfile?.nome||""} ${userProfile?.cognome||""}`.trim()||"Utente",
       data:new Date().toLocaleDateString("it-IT"),
       agenti,
       docsContesto: docsContesto||"",
@@ -3236,6 +3337,13 @@ export default function App(){
   useEffect(()=>{lsSet("xnunc_deleted",deletedSkills);},[deletedSkills]);
   const[improvements,setImprovements]=useState(()=>ls("xnunc_improvements",[]));
   useEffect(()=>{lsSet("xnunc_improvements",improvements);},[improvements]);
+  // Auto-aggiungi ai preferiti le skill create dall'utente che vengono approvate
+  useEffect(()=>{
+    if(!isLogged)return;
+    const approvedIds=draftSkills.filter(d=>d.stato==="approvata").map(d=>d.id);
+    const missing=approvedIds.filter(id=>!favorites.includes(id));
+    if(missing.length>0)setFavorites(prev=>[...new Set([...prev,...missing])]);
+  },[draftSkills,isLogged]);
   // loginEmail persiste per avatar fallback anche dopo refresh
   const[loginEmail,setLoginEmail]=useState(()=>ls("xnunc_loginemail",""));
   useEffect(()=>{lsSet("xnunc_loginemail",loginEmail);},[loginEmail]);
