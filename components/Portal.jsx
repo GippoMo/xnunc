@@ -2486,6 +2486,8 @@ const WIZARD_DOC_MAX_TOTAL_MB=5;
 const WIZARD_DOC_MAX_CHARS=50000;
 
 function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
+  const[wizToast,setWizToast]=useState(null);
+  const showWizToast=(msg,type="error")=>{setWizToast({message:msg,type});setTimeout(()=>setWizToast(null),4000);};
   const[step,setStep]=useState(0);
   const[idea,setIdea]=useState("");
   const[agenti,setAgenti]=useState(["fiscale","ux"]);
@@ -2575,11 +2577,11 @@ Genera i campi della skill in formato JSON. Rispondi SOLO con il JSON, senza mar
   async function aggiungiFile(files){
     const arr=Array.from(files);
     const totFiles=wizardDocs.length+arr.length;
-    if(totFiles>WIZARD_DOC_MAX_FILES){alert(`Massimo ${WIZARD_DOC_MAX_FILES} file per skill.`);return;}
+    if(totFiles>WIZARD_DOC_MAX_FILES){showWizToast(`Massimo ${WIZARD_DOC_MAX_FILES} file per skill.`);return;}
     const totMB=(wizardDocs.reduce((s,d)=>s+d.size,0)+arr.reduce((s,f)=>s+f.size,0))/(1024*1024);
-    if(totMB>WIZARD_DOC_MAX_TOTAL_MB){alert(`Dimensione totale massima: ${WIZARD_DOC_MAX_TOTAL_MB} MB.`);return;}
+    if(totMB>WIZARD_DOC_MAX_TOTAL_MB){showWizToast(`Dimensione totale massima: ${WIZARD_DOC_MAX_TOTAL_MB} MB.`);return;}
     for(const file of arr){
-      if(file.size>WIZARD_DOC_MAX_FILE_MB*1024*1024){alert(`"${file.name}" supera il limite di ${WIZARD_DOC_MAX_FILE_MB} MB per file.`);continue;}
+      if(file.size>WIZARD_DOC_MAX_FILE_MB*1024*1024){showWizToast(`"${file.name}" supera il limite di ${WIZARD_DOC_MAX_FILE_MB} MB per file.`);continue;}
       const uid="wdoc_"+Date.now()+"_"+Math.random().toString(36).slice(2);
       setWizardDocs(p=>[...p,{uid,name:file.name,size:file.size,chars:0,content:"",loading:true,error:""}]);
       try{
@@ -2639,6 +2641,7 @@ Genera i campi della skill in formato JSON. Rispondi SOLO con il JSON, senza mar
 
   return(
     <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px",overflowY:"auto"}} onClick={onClose}>
+      {wizToast&&<Toast message={wizToast.message} type={wizToast.type} onClose={()=>setWizToast(null)}/>}
       <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:600,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",marginTop:16,marginBottom:16}}>
         {/* Header */}
         <div style={{background:"#FAF9F7",padding:"28px 32px 24px",borderBottom:"2px solid #0A0B0F",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -3093,6 +3096,21 @@ function lsSet(key,val){
   try{localStorage.setItem(key,JSON.stringify(val));}catch{}
 }
 
+function Toast({message,type="info",onClose}){
+  useEffect(()=>{const t=setTimeout(onClose,4500);return()=>clearTimeout(t);},[onClose]);
+  const bg=type==="success"?"#F0FAF5":type==="error"?"#FEF0EF":"#FAF9F7";
+  const border=type==="success"?"#1D9E75":type==="error"?"#C0392B":"#0A0B0F";
+  const color=type==="success"?"#1D9E75":type==="error"?"#C0392B":"#0A0B0F";
+  const icon=type==="success"?"✓":type==="error"?"✕":"i";
+  return(
+    <div style={{position:"fixed",top:24,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:bg,border:`1px solid ${border}`,borderLeft:`3px solid ${border}`,borderRadius:2,padding:"14px 20px",display:"flex",alignItems:"flex-start",gap:12,maxWidth:420,width:"calc(100% - 32px)",boxShadow:"0 4px 24px rgba(0,0,0,0.12)",fontFamily:"Arial,sans-serif"}}>
+      <span style={{color,fontWeight:700,fontSize:14,flexShrink:0,marginTop:1}}>{icon}</span>
+      <span style={{fontSize:13,color:"#333",lineHeight:1.5,flex:1}}>{message}</span>
+      <button onClick={onClose} style={{background:"none",border:"none",color:"#bbb",cursor:"pointer",fontSize:16,padding:0,flexShrink:0,lineHeight:1}}>×</button>
+    </div>
+  );
+}
+
 export default function App(){
   const _todayLabel=(()=>{const d=new Date();return d.toLocaleDateString("it-IT",{day:"numeric",month:"short",year:"numeric"});})();
   const DEFAULT_THREADS=[
@@ -3104,6 +3122,8 @@ export default function App(){
 
   const[isLogged,setIsLogged]=useState(()=>ls("xnunc_session",{isLogged:false,isAdmin:false}).isLogged);
   const[supabaseUser,setSupabaseUser]=useState(null);
+  const[toast,setToast]=useState(null); // {message, type: "success"|"error"|"info"}
+  const showToast=useCallback((message,type="info")=>{setToast({message,type});},[]);
 
   // ── Supabase session init ───────────────────────────
   useEffect(()=>{
@@ -3249,6 +3269,7 @@ export default function App(){
 
   return(
     <div style={{minHeight:"100vh",background:C.lux}}>
+      {toast&&<Toast message={toast.message} type={toast.type} onClose={()=>setToast(null)}/>}
 
       {/* Navbar */}
       <div style={{background:C.nox,borderBottom:`2px solid ${C.aurum}`,position:"sticky",top:0,zIndex:500}}>
@@ -3396,7 +3417,7 @@ export default function App(){
           // Profilo creato automaticamente dal trigger Supabase
           // Mostra messaggio conferma email
           setShowLogin(false);
-          alert("Registrazione completata! Controlla la tua email per confermare l'account.");
+          showToast("Registrazione completata! Controlla la tua email per confermare l'account.","success");
         } else {
           const {user}=await signIn(email,pw);
           // La sessione viene gestita da onAuthStateChange
