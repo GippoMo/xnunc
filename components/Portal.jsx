@@ -3516,6 +3516,8 @@ export default function App(){
         <span onClick={()=>{setShowClassifica(true);setNavMenuOpen(false);}} style={{color:"#aaa",fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif",padding:"8px 4px",display:"block"}}>Classifica</span>
         <span onClick={()=>{setShowManifesto(true);setNavMenuOpen(false);}} style={{color:"#aaa",fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif",padding:"8px 4px",display:"block"}}>Manifesto</span>
         <span onClick={()=>{setShowFAQ(true);setNavMenuOpen(false);}} style={{color:C.aurum,fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700,padding:"8px 4px",display:"block"}}>FAQ</span>
+        <a href="/chi-siamo" onClick={()=>setNavMenuOpen(false)} style={{color:"#aaa",fontSize:14,fontFamily:"Arial,sans-serif",padding:"8px 4px",display:"block",textDecoration:"none"}}>Chi siamo</a>
+        <a href="/blog" onClick={()=>setNavMenuOpen(false)} style={{color:"#aaa",fontSize:14,fontFamily:"Arial,sans-serif",padding:"8px 4px",display:"block",textDecoration:"none"}}>Blog</a>
         {!isLogged&&(
           <div style={{borderTop:"1px solid #1a1a1a",marginTop:6,paddingTop:10}}>
             <button onClick={()=>{setShowLogin(true);setNavMenuOpen(false);}} style={{width:"100%",background:C.aurum,border:"none",color:"#fff",borderRadius:2,padding:"10px 14px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Accedi / Registrati</button>
@@ -3629,11 +3631,14 @@ export default function App(){
             <span style={{fontFamily:"Georgia,serif"}}><span style={{color:C.aurum}}>x</span>Nunc.ai</span>
             {" "}· open source · AGPL v3 · ex nunc, da ora in poi
           </div>
-          <div style={{display:"flex",justifyContent:"center",gap:16,fontSize:12,color:"#bbb",marginBottom:8}}>
+          <div style={{display:"flex",justifyContent:"center",gap:16,fontSize:12,color:"#bbb",marginBottom:8,flexWrap:"wrap"}}>
             <span onClick={()=>setShowManifesto(true)} style={{cursor:"pointer",color:"#bbb"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#bbb"}>Manifesto</span>
             <span onClick={()=>setShowClassifica(true)} style={{cursor:"pointer",color:"#bbb"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#bbb"}>Classifica</span>
             {["Privacy Policy","Termini di servizio","Contatti"].map(l=><span key={l} style={{cursor:"pointer"}}>{l}</span>)}
             <span onClick={()=>setShowFAQ(true)} style={{cursor:"pointer",color:C.aurum,fontWeight:700}}>FAQ</span>
+            <a href="/chi-siamo" style={{color:"#bbb",textDecoration:"none"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#bbb"}>Chi siamo</a>
+            <a href="/blog" style={{color:"#bbb",textDecoration:"none"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#bbb"}>Blog</a>
+            <a href="/ai-commercialisti" style={{color:"#bbb",textDecoration:"none"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#bbb"}>AI per Commercialisti</a>
           </div>
           <div style={{fontSize:11,color:"#ccc"}}>Input mai salvati · Solo metadati anonimi · GDPR compliant · Platform-agnostic</div>
         </div>
