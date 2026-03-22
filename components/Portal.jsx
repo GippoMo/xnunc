@@ -2100,7 +2100,7 @@ const IMPROV_STATI={
 const STATO_LABEL={bozza:"🔧 Bozza",in_revisione:"📋 In gestione alla redazione",approvata:"✓ Pubblicata"};
 const STATO_COLOR={bozza:C.caelum,in_revisione:C.aurum,approvata:C.viridis};
 
-function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,supabaseUser,onTestSkill,onOpenProfile,onCreateSkill,isAdmin,improvements,setImprovements,userPoints}){
+function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkills,threads,setThreads,userProfile,supabaseUser,onTestSkill,onOpenProfile,onCreateSkill,isAdmin,isRedazione,improvements,setImprovements,userPoints}){
   const[tab,setTab]=useState(0);
   const[activeThread,setActiveThread]=useState(null);
   const[msgTesto,setMsgTesto]=useState("");
@@ -2182,7 +2182,7 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
   }
 
   const myImprovs=(improvements||[]).filter(im=>im.contributorEmail===userProfile.email&&im.stato!=="approvata"&&im.stato!=="rifiutata_redazione");
-  const pendingMyApproval=(improvements||[]).filter(im=>im.stato==="attesa_creatore"&&(isAdmin||im.contributorEmail===userProfile.email));
+  const pendingMyApproval=(improvements||[]).filter(im=>im.stato==="attesa_creatore"&&(isAdmin||isRedazione||im.contributorEmail===userProfile.email));
   const[activeDashImprov,setActiveDashImprov]=useState(null);
 
   const daApprovare=draftSkills.filter(d=>d.stato==="in_revisione");
@@ -3293,7 +3293,11 @@ export default function App(){
     async function loadUserData(u){
       setSupabaseUser(u);
       setIsLogged(true);
-      setIsAdmin(u.email==="morales@bcand.it");
+      // Leggi ruolo da app_metadata (impostato dal pannello Supabase)
+      const role=u.app_metadata?.role||"";
+      const adminByEmail=u.email==="morales@bcand.it";
+      setIsAdmin(role==="admin"||adminByEmail);
+      setIsRedazione(role==="redazione"||role==="admin"||adminByEmail);
       setLoginEmail(u.email);
       // Profilo
       setUserProfile({...DEFAULT_PROFILE,email:u.email});
@@ -3317,7 +3321,7 @@ export default function App(){
       } else {
         setSupabaseUser(null);
         setIsLogged(false);
-        setIsAdmin(false);
+        setIsAdmin(false);setIsRedazione(false);
         setLoginEmail("");
         setUserProfile(DEFAULT_PROFILE);
         setThreads(DEFAULT_THREADS);
@@ -3374,6 +3378,7 @@ export default function App(){
   const[userProfile,setUserProfile]=useState(()=>({...DEFAULT_PROFILE,...ls("xnunc_profile",{})}));
   const nonLettiTot=threads.reduce((n,t)=>n+(t.nonLetti||0),0);
   const[isAdmin,setIsAdmin]=useState(false); // ruolo caricato da Supabase al login
+  const[isRedazione,setIsRedazione]=useState(false);
   const[hiddenSkills,setHiddenSkills]=useState(()=>ls("xnunc_hidden",[])); // IDs oscurati (nascosti ma recuperabili)
   const[deletedSkills,setDeletedSkills]=useState(()=>ls("xnunc_deleted",[])); // IDs eliminati definitivamente
   const[showAdminPanel,setShowAdminPanel]=useState(false);
@@ -3419,7 +3424,7 @@ export default function App(){
   // ── Logout ─────────────────────────────────────────
   async function handleLogout(){
     try{ await signOut(); }catch(_){}
-    setIsLogged(false);setIsAdmin(false);setSupabaseUser(null);
+    setIsLogged(false);setIsAdmin(false);setIsRedazione(false);setSupabaseUser(null);
     setLoginEmail("");
     setShowProfile(false);setShowDashboard(false);setShowLogoutConfirm(false);
   }
@@ -3713,6 +3718,7 @@ export default function App(){
         threads={threads} setThreads={setThreads}
         userProfile={userProfile} supabaseUser={supabaseUser}
         isAdmin={isAdmin}
+        isRedazione={isRedazione}
         improvements={improvements} setImprovements={setImprovements}
         userPoints={userPoints}
         onTestSkill={s=>{setShowDashboard(false);setActiveSkill(s);}}
