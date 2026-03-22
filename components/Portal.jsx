@@ -3247,7 +3247,7 @@ export default function App(){
   ];
   const DEFAULT_PROFILE={nome:"",cognome:"",studio:"",ruolo:"",email:"",cell:"",citta:"",albo:"",web:"",byokKey:"",keyMode:"xnunc",aiProvider:"anthropic"};
 
-  const[isLogged,setIsLogged]=useState(()=>ls("xnunc_session",{isLogged:false,isAdmin:false}).isLogged);
+  const[isLogged,setIsLogged]=useState(false); // sessione gestita da Supabase (sessionStorage)
   const[supabaseUser,setSupabaseUser]=useState(null);
   const[toast,setToast]=useState(null);
   const showToast=useCallback((message,type="info")=>{setToast({message,type});},[]);
@@ -3308,6 +3308,27 @@ export default function App(){
     });
     return()=>subscription.unsubscribe();
   },[]);
+
+  // ── Logout per inattività (60 min) ──────────────────
+  const INACTIVITY_MS = 60 * 60 * 1000; // 60 minuti
+  const inactivityTimer = useRef(null);
+  const resetInactivityTimer = useCallback(()=>{
+    clearTimeout(inactivityTimer.current);
+    inactivityTimer.current = setTimeout(()=>{
+      handleLogout();
+    }, INACTIVITY_MS);
+  },[]);// eslint-disable-line
+  useEffect(()=>{
+    if(!isLogged){ clearTimeout(inactivityTimer.current); return; }
+    const events=["mousemove","mousedown","keydown","touchstart","scroll","click"];
+    events.forEach(e=>window.addEventListener(e,resetInactivityTimer,{passive:true}));
+    resetInactivityTimer();
+    return()=>{
+      events.forEach(e=>window.removeEventListener(e,resetInactivityTimer));
+      clearTimeout(inactivityTimer.current);
+    };
+  },[isLogged,resetInactivityTimer]);
+
   // CSS globale per hover effects (inline style non supporta :hover)
   if(typeof document!=="undefined"){
     const id="xnunc-styles";
@@ -3335,13 +3356,13 @@ export default function App(){
   const[threads,setThreads]=useState(()=>ls("xnunc_threads",DEFAULT_THREADS));
   const[userProfile,setUserProfile]=useState(()=>({...DEFAULT_PROFILE,...ls("xnunc_profile",{})}));
   const nonLettiTot=threads.reduce((n,t)=>n+(t.nonLetti||0),0);
-  const[isAdmin,setIsAdmin]=useState(()=>ls("xnunc_session",{isLogged:false,isAdmin:false}).isAdmin);
+  const[isAdmin,setIsAdmin]=useState(false); // ruolo caricato da Supabase al login
   const[hiddenSkills,setHiddenSkills]=useState(()=>ls("xnunc_hidden",[])); // IDs oscurati (nascosti ma recuperabili)
   const[deletedSkills,setDeletedSkills]=useState(()=>ls("xnunc_deleted",[])); // IDs eliminati definitivamente
   const[showAdminPanel,setShowAdminPanel]=useState(false);
 
   // ── Persist state to localStorage ──────────────────
-  useEffect(()=>{lsSet("xnunc_session",{isLogged,isAdmin});},[isLogged,isAdmin]);
+  // xnunc_session rimosso: la sessione è ora in sessionStorage tramite Supabase
   useEffect(()=>{lsSet("xnunc_profile",userProfile);},[userProfile]);
   useEffect(()=>{lsSet("xnunc_favorites",favorites);},[favorites]);
   useEffect(()=>{lsSet("xnunc_drafts",draftSkills);},[draftSkills]);
