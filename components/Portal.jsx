@@ -298,8 +298,8 @@ function FAQModal({onClose}){
   const[open,setOpen]=useState(null);
   const toggle=key=>setOpen(o=>o===key?null:key);
   return(
-    <div style={{position:"fixed",inset:0,background:"#00000088",zIndex:3000,display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflowY:"auto"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:14,width:"100%",maxWidth:760,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 8px 48px #0005"}}>
+    <div className="xnunc-modal-overlay" style={{position:"fixed",inset:0,background:"#00000088",zIndex:3000,display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflowY:"auto"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} className="xnunc-modal" style={{background:"#fff",borderRadius:14,width:"100%",maxWidth:760,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 8px 48px #0005"}}>
         <div style={{background:C.nox,padding:"20px 24px",borderRadius:"12px 12px 0 0",display:"flex",justifyContent:"space-between",alignItems:"center",position:"sticky",top:0,zIndex:10}}>
           <div>
             <div style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:700,color:"#fff"}}>Domande frequenti</div>
@@ -523,8 +523,8 @@ function LoginModal({onClose,onLogin}){
   return(
     <>
     {legalModal&&<LegalModal tipo={legalModal} onClose={()=>setLegalModal(null)}/>}
-    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:400,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",overflow:"hidden"}}>
+    <div className="xnunc-modal-overlay" style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+      <div onClick={e=>e.stopPropagation()} className="xnunc-modal" style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:400,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",overflow:"hidden"}}>
         {/* Header */}
         <div style={{background:"#FAF9F7",padding:"24px 32px 20px",display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"2px solid #0A0B0F"}}>
           <div>
@@ -1028,8 +1028,8 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile,improvements,
   const tl={usa:skill.tipo==="tool"?"Calcolatore":"Esegui skill",dettagli:"Dettagli",scarica:"Scarica",storia:"Storia",miglioramenti:"Miglioramenti"};
 
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px",overflowY:"auto"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:1160,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",marginTop:16,marginBottom:16}}>
+    <div className="xnunc-modal-overlay" style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px 12px",overflowY:"auto"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} className="xnunc-modal" style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:1160,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",marginTop:16,marginBottom:16}}>
         <div style={{background:"#FAF9F7",padding:"28px 32px 0"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}}>
             <div>
@@ -1045,7 +1045,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile,improvements,
             <Badge label={skill.frequenza} color={FREQ_COLOR[skill.frequenza]} bg={FREQ_COLOR[skill.frequenza]+"22"}/>
             {(skill.tags||[]).slice(0,3).map(t=><Badge key={t} label={t} color="#888" bg="#E8E4DC"/>)}
           </div>
-          <div style={{display:"flex",borderBottom:"2px solid #0A0B0F",gap:2,alignItems:"flex-end"}}>
+          <div className="xnunc-tabs" style={{display:"flex",borderBottom:"2px solid #0A0B0F",gap:2,alignItems:"flex-end"}}>
             {tabs.map(t=>(
               <button key={t} onClick={()=>setTab(t)}
                 style={{padding:"9px 18px",border:"none",cursor:"pointer",background:tab===t?"#0A0B0F":"transparent",color:tab===t?"#F1EFE8":"#bbb",fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,letterSpacing:"0.16em",textTransform:"uppercase",borderRadius:"4px 4px 0 0",marginBottom:tab===t?"-2px":0,display:"flex",alignItems:"center",gap:6,transition:"all .2s"}}
@@ -1822,7 +1822,7 @@ function ProfileModal({onClose,userProfile,setUserProfile,onLogout,onDeleteAccou
   const tabLabel=["👤 Personali","🏛 Studio","🔐 Sicurezza"];
 
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px",overflowY:"auto"}} onClick={onClose}>
+    <div className="xnunc-modal-overlay" style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"flex-start",justifyContent:"center",padding:"16px",overflowY:"auto"}} onClick={onClose}>
       <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",borderRadius:4,width:"100%",maxWidth:520,boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",marginTop:16,marginBottom:16,overflow:"hidden"}}>
 
         {/* Header */}
@@ -2177,8 +2177,8 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
   ];
 
   return(
-    <div style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 16px",overflowY:"auto"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} style={{background:"#FAF9F7",width:"100%",maxWidth:860,maxHeight:"90vh",display:"flex",flexDirection:"column",boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)"}}>
+    <div className="xnunc-modal-overlay" style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 16px",overflowY:"auto"}} onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()} className="xnunc-modal" style={{background:"#FAF9F7",width:"100%",maxWidth:860,maxHeight:"90vh",display:"flex",flexDirection:"column",boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)"}}>
 
         {/* Header */}
         <div style={{background:"#FAF9F7",padding:"28px 32px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,borderBottom:"2px solid #0A0B0F"}}>
@@ -2193,7 +2193,7 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
         </div>
 
         {/* Tab bar */}
-        <div style={{background:"#FAF9F7",borderBottom:"2px solid #0A0B0F",display:"flex",flexShrink:0,padding:"0 28px",gap:4,alignItems:"flex-end"}}>
+        <div className="xnunc-tabs" style={{background:"#FAF9F7",borderBottom:"2px solid #0A0B0F",display:"flex",flexShrink:0,padding:"0 28px",gap:4,alignItems:"flex-end"}}>
           {tabBar.map(({label,count},i)=>(
             <button key={i} onClick={()=>setTab(i)} style={{padding:"8px 16px",border:"none",cursor:"pointer",background:tab===i?"#0A0B0F":"none",color:tab===i?"#F1EFE8":"#aaa",fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,letterSpacing:"0.14em",borderRadius:tab===i?"4px 4px 0 0":"4px 4px 0 0",marginBottom:tab===i?"-2px":0,display:"flex",alignItems:"center",justifyContent:"center",gap:6,transition:"all .2s"}}>
               {label}
@@ -3227,6 +3227,17 @@ function Toast({message,type="info",onClose}){
   );
 }
 
+
+function useMobile(){
+  const[w,setW]=useState(typeof window!=="undefined"?window.innerWidth:1200);
+  useEffect(()=>{
+    const h=()=>setW(window.innerWidth);
+    window.addEventListener("resize",h,{passive:true});
+    return()=>window.removeEventListener("resize",h);
+  },[]);
+  return{isMobile:w<=600,isTablet:w<=1024,w};
+}
+
 export default function App(){
   const _todayLabel=(()=>{const d=new Date();return d.toLocaleDateString("it-IT",{day:"numeric",month:"short",year:"numeric"});})();
   const DEFAULT_THREADS=[
@@ -3241,6 +3252,8 @@ export default function App(){
   const[toast,setToast]=useState(null);
   const showToast=useCallback((message,type="info")=>{setToast({message,type});},[]);
   const[scrolled,setScrolled]=useState(false);
+  const{isMobile,isTablet}=useMobile();
+  const[navMenuOpen,setNavMenuOpen]=useState(false);
   const[navSearchOpen,setNavSearchOpen]=useState(false);
   const navSearchRef=useRef(null);
   useEffect(()=>{
@@ -3419,10 +3432,12 @@ export default function App(){
           {/* Left: logo + nav */}
           <div style={{display:"flex",alignItems:"center",gap:20}}>
             <span onClick={()=>{setSearch("");setFilterArea("Tutte");setFilterComp("Tutte");setFilterFreq("Tutte");setNavSearchOpen(false);}} style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:700,cursor:"pointer"}}><span style={{color:C.aurum}}>x</span><span style={{color:"#fff"}}>Nunc</span></span>
-            <span onClick={()=>document.getElementById("catalogo-section")?.scrollIntoView({behavior:"smooth"})} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Catalogo</span>
-            <span onClick={()=>setShowClassifica(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Classifica</span>
-            <span onClick={()=>setShowManifesto(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Manifesto</span>
-            <span onClick={()=>setShowFAQ(true)} style={{color:C.aurum,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>FAQ</span>
+            <div className="xnunc-nav-links">
+              <span onClick={()=>document.getElementById("catalogo-section")?.scrollIntoView({behavior:"smooth"})} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Catalogo</span>
+              <span onClick={()=>setShowClassifica(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Classifica</span>
+              <span onClick={()=>setShowManifesto(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Manifesto</span>
+              <span onClick={()=>setShowFAQ(true)} style={{color:C.aurum,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>FAQ</span>
+            </div>
           </div>
 
           {/* Right: actions */}
@@ -3434,20 +3449,26 @@ export default function App(){
             </button>
             {isLogged?(
               <div style={{display:"flex",alignItems:"center",gap:8}}>
-                {isAdmin&&<button onClick={()=>setShowAdminPanel(true)} title="Redazione" style={{padding:"5px 12px",borderRadius:2,border:"1px solid #e8a800",background:"#fffbee",color:"#b8860b",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:4}}>✦ Redazione{hiddenSkills.length>0&&<span style={{background:"#e8a800",color:"#fff",borderRadius:8,fontSize:9,padding:"0 5px"}}>{hiddenSkills.length}</span>}</button>}
-                {!isAdmin&&<button onClick={()=>setShowCreateSkill(true)} style={{padding:"5px 12px",borderRadius:2,border:`1px solid ${C.aurum}`,background:"transparent",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>}
+                {isAdmin&&<button className="xnunc-nav-desktop-only" onClick={()=>setShowAdminPanel(true)} title="Redazione" style={{padding:"5px 12px",borderRadius:2,border:"1px solid #e8a800",background:"#fffbee",color:"#b8860b",fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:4}}>✦ Redazione{hiddenSkills.length>0&&<span style={{background:"#e8a800",color:"#fff",borderRadius:8,fontSize:9,padding:"0 5px"}}>{hiddenSkills.length}</span>}</button>}
+                {!isAdmin&&<button className="xnunc-nav-desktop-only" onClick={()=>setShowCreateSkill(true)} style={{padding:"5px 12px",borderRadius:2,border:`1px solid ${C.aurum}`,background:"transparent",color:C.aurum,fontSize:11,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>}
                 <div onClick={()=>setShowDashboard(true)} title="Dashboard" style={{position:"relative",width:30,height:30,borderRadius:"50%",background:isAdmin?"#b8860b":C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
                   <span style={{color:"#fff",fontSize:12,fontWeight:700}}>{(userProfile.nome||userProfile.email||loginEmail||"?")[0].toUpperCase()}</span>
                   {nonLettiTot>0&&<div style={{position:"absolute",top:-4,right:-4,background:"#C0392B",color:"#fff",borderRadius:"50%",width:15,height:15,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700}}>{nonLettiTot}</div>}
                 </div>
-                <button onClick={()=>setShowLogoutConfirm(true)} title="Esci" style={{background:"#1a1a1a",border:"1px solid #C0392B",color:"#C0392B",borderRadius:2,padding:"5px 10px",fontSize:13,cursor:"pointer",lineHeight:1,fontWeight:700,transition:"all .2s"}} onMouseEnter={e=>{e.currentTarget.style.background="#C0392B";e.currentTarget.style.color="#fff";}} onMouseLeave={e=>{e.currentTarget.style.background="#1a1a1a";e.currentTarget.style.color="#C0392B";}}>⎋</button>
+                <button className="xnunc-nav-desktop-only" onClick={()=>setShowLogoutConfirm(true)} title="Esci" style={{background:"#1a1a1a",border:"1px solid #C0392B",color:"#C0392B",borderRadius:2,padding:"5px 10px",fontSize:13,cursor:"pointer",lineHeight:1,fontWeight:700,transition:"all .2s"}} onMouseEnter={e=>{e.currentTarget.style.background="#C0392B";e.currentTarget.style.color="#fff";}} onMouseLeave={e=>{e.currentTarget.style.background="#1a1a1a";e.currentTarget.style.color="#C0392B";}}>⎋</button>
               </div>
             ):(
               <>
-                <button onClick={()=>setShowLogin(true)} style={{background:"none",border:"1px solid #555",color:"#aaa",borderRadius:2,padding:"5px 14px",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Accedi</button>
-                <button onClick={()=>setShowLogin(true)} style={{background:C.aurum,border:"none",color:"#fff",borderRadius:2,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Registrati gratis</button>
+                <button className="xnunc-nav-desktop-only" onClick={()=>setShowLogin(true)} style={{background:"none",border:"1px solid #555",color:"#aaa",borderRadius:2,padding:"5px 14px",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Accedi</button>
+                <button className="xnunc-nav-desktop-only" onClick={()=>setShowLogin(true)} style={{background:C.aurum,border:"none",color:"#fff",borderRadius:2,padding:"6px 14px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Registrati gratis</button>
               </>
             )}
+            {/* Hamburger — only visible on mobile */}
+            <button className="xnunc-hamburger" style={{display:"none",flexDirection:"column",gap:4,padding:"6px 8px",background:"none",border:"none",cursor:"pointer"}} onClick={()=>setNavMenuOpen(o=>!o)} aria-label="Menu">
+              <div style={{width:18,height:2,background:"#aaa",borderRadius:1}}/>
+              <div style={{width:18,height:2,background:"#aaa",borderRadius:1}}/>
+              <div style={{width:18,height:2,background:"#aaa",borderRadius:1}}/>
+            </button>
           </div>
         </div>
 
@@ -3485,6 +3506,29 @@ export default function App(){
                 </div>
               </div>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile nav menu */}
+      <div className={"xnunc-nav-menu"+(navMenuOpen?" open":"")}>
+        <span onClick={()=>{document.getElementById("catalogo-section")?.scrollIntoView({behavior:"smooth"});setNavMenuOpen(false);}} style={{color:"#aaa",fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif",padding:"8px 4px",display:"block"}}>Catalogo</span>
+        <span onClick={()=>{setShowClassifica(true);setNavMenuOpen(false);}} style={{color:"#aaa",fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif",padding:"8px 4px",display:"block"}}>Classifica</span>
+        <span onClick={()=>{setShowManifesto(true);setNavMenuOpen(false);}} style={{color:"#aaa",fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif",padding:"8px 4px",display:"block"}}>Manifesto</span>
+        <span onClick={()=>{setShowFAQ(true);setNavMenuOpen(false);}} style={{color:C.aurum,fontSize:14,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700,padding:"8px 4px",display:"block"}}>FAQ</span>
+        {!isLogged&&(
+          <div style={{borderTop:"1px solid #1a1a1a",marginTop:6,paddingTop:10}}>
+            <button onClick={()=>{setShowLogin(true);setNavMenuOpen(false);}} style={{width:"100%",background:C.aurum,border:"none",color:"#fff",borderRadius:2,padding:"10px 14px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Accedi / Registrati</button>
+          </div>
+        )}
+        {isLogged&&(
+          <div style={{borderTop:"1px solid #1a1a1a",marginTop:6,paddingTop:10,display:"flex",gap:10,alignItems:"center"}}>
+            <div onClick={()=>{setShowDashboard(true);setNavMenuOpen(false);}} style={{width:32,height:32,borderRadius:"50%",background:isAdmin?"#b8860b":C.aurum,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0,position:"relative"}}>
+              <span style={{color:"#fff",fontSize:13,fontWeight:700}}>{(userProfile.nome||userProfile.email||loginEmail||"?")[0].toUpperCase()}</span>
+              {nonLettiTot>0&&<div style={{position:"absolute",top:-3,right:-3,background:"#C0392B",color:"#fff",borderRadius:"50%",width:14,height:14,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700}}>{nonLettiTot}</div>}
+            </div>
+            <span style={{color:"#aaa",fontSize:13,fontFamily:"Arial,sans-serif"}}>{userProfile.nome||loginEmail||"Profilo"}</span>
+            <button onClick={()=>{setShowLogoutConfirm(true);setNavMenuOpen(false);}} style={{marginLeft:"auto",background:"#1a1a1a",border:"1px solid #C0392B",color:"#C0392B",borderRadius:2,padding:"5px 14px",fontSize:12,cursor:"pointer",fontWeight:700}}>Esci</button>
           </div>
         )}
       </div>
@@ -3529,8 +3573,8 @@ export default function App(){
 
         {/* Hero */}
         {!isLogged&&(
-          <div style={{background:C.nox,borderRadius:14,padding:"28px 36px",marginBottom:24,border:"1px solid #1a1c24"}}>
-            <div style={{fontFamily:"Georgia,serif",fontSize:28,fontWeight:700,color:"#fff",marginBottom:10,lineHeight:1.3}}>Da adesso, lavori diversamente.</div>
+          <div className="xnunc-hero" style={{background:C.nox,borderRadius:14,padding:"28px 36px",marginBottom:24,border:"1px solid #1a1c24"}}>
+            <div className="xnunc-hero-title" style={{fontFamily:"Georgia,serif",fontSize:28,fontWeight:700,color:"#fff",marginBottom:10,lineHeight:1.3}}>Da adesso, lavori diversamente.</div>
             <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:400,color:C.aurum,marginBottom:6,fontStyle:"italic",letterSpacing:"0.01em"}}>Utilizza. Collabora. Crea.</div>
             <div style={{fontSize:14,color:"#aaa",fontFamily:"Arial,sans-serif",marginBottom:20,lineHeight:1.6}}>
               Skill che lavorano. Professionisti che crescono.<br/>

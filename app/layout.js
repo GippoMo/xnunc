@@ -110,7 +110,10 @@ const jsonLd = {
 export default function RootLayout({ children }) {
   return (
     <html lang="it">
-      <head><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} /></head>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      </head>
       <body>{children}</body>
     </html>
   );
