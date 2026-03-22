@@ -507,14 +507,31 @@ function LoginModal({onClose,onLogin}){
     if(resetMode){
       setAuthLoading(true);setAuthError("");
       try{await resetPassword(email);setResetSent(true);}
-      catch(e){setAuthError(e.message||"Errore invio email");}
+      catch(e){setAuthError("Errore nell'invio. Verifica che l'email sia corretta e riprova.");}
       finally{setAuthLoading(false);}
       return;
     }
     if(!canSubmit)return;
     setAuthLoading(true);setAuthError("");
     try{await onLogin(email,pw,tab);}
-    catch(e){setAuthError(e.message||"Errore di accesso");}
+    catch(e){
+      const msg=e.message||"";
+      // Traduci i messaggi Supabase in italiano
+      if(msg.includes("Invalid login credentials")||msg.includes("invalid_credentials"))
+        setAuthError("Email o password errata. Controlla i dati e riprova.");
+      else if(msg.includes("Email not confirmed"))
+        setAuthError("Email non ancora confermata. Controlla la tua casella (anche spam) e clicca il link di conferma.");
+      else if(msg.includes("User already registered"))
+        setAuthError("Questa email è già registrata. Usa 'Accedi' oppure recupera la password.");
+      else if(msg.includes("Password should be at least"))
+        setAuthError("La password deve avere almeno 8 caratteri.");
+      else if(msg.includes("Unable to validate email address"))
+        setAuthError("Indirizzo email non valido.");
+      else if(msg.includes("rate limit")||msg.includes("too many"))
+        setAuthError("Troppi tentativi. Attendi qualche minuto e riprova.");
+      else
+        setAuthError(msg||"Errore di accesso. Riprova.");
+    }
     finally{setAuthLoading(false);}
   }
 
