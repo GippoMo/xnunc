@@ -1,10 +1,8 @@
 // app/page.js — Server Component (nessun "use client")
-// StaticShell: HTML statico letto da Google Googlebot (SSR)
-// Portal: SPA interattiva caricata lato client dopo l'hydration
-import dynamic from "next/dynamic";
+// StaticShell: HTML statico letto da Googlebot (SSR)
+// PortalLoader: wrapper Client Component che carica il SPA senza SSR
 import StaticShell from "../components/StaticShell";
-
-const Portal = dynamic(() => import("../components/Portal"), { ssr: false });
+import PortalLoader from "../components/PortalLoader";
 
 export default function Page() {
   return (
@@ -12,7 +10,7 @@ export default function Page() {
       {/* Server-rendered SEO content: visibile a Google, nascosto agli utenti */}
       <StaticShell />
       {/* Applicazione interattiva client-side */}
-      <Portal />
+      <PortalLoader />
     </>
   );
 }
