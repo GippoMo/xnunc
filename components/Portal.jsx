@@ -2067,7 +2067,7 @@ function ProfileModal({onClose,userProfile,setUserProfile,onLogout,onDeleteAccou
 // 4. Copia Template ID e Public Key (tab Account → API Keys)
 // 5. Sostituisci i valori EMAILJS_* qui sotto
 // ─────────────────────────────────────────────────────
-const ADMIN_EMAIL = "morales@bcand.it";
+const ADMIN_EMAIL = "postmaster@xnunc.ai"; // account redazione/admin operativo
 
 async function notificaEmail({destinatario,oggetto,corpo}){
   try{
@@ -3295,9 +3295,8 @@ export default function App(){
       setIsLogged(true);
       // Leggi ruolo da app_metadata (impostato dal pannello Supabase)
       const role=u.app_metadata?.role||"";
-      const adminByEmail=u.email==="morales@bcand.it";
-      setIsAdmin(role==="admin"||adminByEmail);
-      setIsRedazione(role==="redazione"||role==="admin"||adminByEmail);
+      setIsAdmin(role==="admin");
+      setIsRedazione(role==="redazione"||role==="admin");
       setLoginEmail(u.email);
       // Profilo
       setUserProfile({...DEFAULT_PROFILE,email:u.email});
