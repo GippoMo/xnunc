@@ -3257,7 +3257,7 @@ export default function App(){
   const[navSearchOpen,setNavSearchOpen]=useState(false);
   const navSearchRef=useRef(null);
   useEffect(()=>{
-    const onScroll=()=>setScrolled(window.scrollY>60);
+    const onScroll=()=>{const y=window.scrollY>60;setScrolled(y);if(y)setNavSearchOpen(false);};
     window.addEventListener("scroll",onScroll,{passive:true});
     return()=>window.removeEventListener("scroll",onScroll);
   },[]);
