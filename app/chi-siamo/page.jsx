@@ -6,7 +6,7 @@
 export const metadata = {
   title: "Chi siamo — xNunc.ai: AI per Commercialisti",
   description:
-    "xNunc.ai è stato creato da Dott. Giampiero Morales, Dottore Commercialista e Revisore Legale. Scopri la storia, la visione e il team dietro la piattaforma AI per commercialisti italiani.",
+    "Scopri la storia, la visione e i valori di xNunc.ai — la piattaforma AI open source costruita da commercialisti per i commercialisti italiani.",
   alternates: {
     canonical: "https://www.xnunc.ai/chi-siamo",
   },
@@ -18,47 +18,6 @@ export const metadata = {
   },
 };
 
-// Schema Person (E-E-A-T fondamentale per siti YMYL fiscale/finanziario)
-const personSchema = {
-  "@context": "https://schema.org",
-  "@type": "Person",
-  name: "Giampiero Morales",
-  jobTitle: "Dottore Commercialista e Revisore Legale",
-  affiliation: {
-    "@type": "Organization",
-    name: "BC & Studio Prof.le Consulenza Societaria Tributaria",
-    url: "https://www.xnunc.ai/chi-siamo",
-  },
-  email: "morales@bcand.it",
-  url: "https://www.xnunc.ai/chi-siamo",
-  knowsAbout: [
-    "Fiscalità italiana",
-    "Diritto societario",
-    "Antiriciclaggio AML",
-    "Contenzioso tributario",
-    "Valutazione aziendale",
-    "Intelligenza artificiale applicata alla professione",
-  ],
-  hasCredential: [
-    {
-      "@type": "EducationalOccupationalCredential",
-      credentialCategory: "Iscrizione all'Ordine dei Dottori Commercialisti e degli Esperti Contabili",
-      recognizedBy: {
-        "@type": "Organization",
-        name: "ODCEC — Ordine dei Dottori Commercialisti e degli Esperti Contabili",
-      },
-    },
-    {
-      "@type": "EducationalOccupationalCredential",
-      credentialCategory: "Iscrizione nel Registro dei Revisori Legali",
-      recognizedBy: {
-        "@type": "Organization",
-        name: "MEF — Ministero dell'Economia e delle Finanze",
-      },
-    },
-  ],
-};
-
 const organizationSchema = {
   "@context": "https://schema.org",
   "@type": "Organization",
@@ -67,10 +26,6 @@ const organizationSchema = {
   foundingDate: "2025",
   description:
     "Piattaforma AI open-source per dottori commercialisti italiani. Skill professionali per fiscalità, societario, valutazione aziendale e antiriciclaggio.",
-  founder: {
-    "@type": "Person",
-    name: "Giampiero Morales",
-  },
   license: "https://www.gnu.org/licenses/agpl-3.0.html",
   knowsAbout: [
     "AI per commercialisti",
@@ -91,10 +46,6 @@ const breadcrumbSchema = {
 export default function ChiSiamoPage() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
-      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
@@ -134,62 +85,6 @@ export default function ChiSiamoPage() {
             professionale costruito da chi lo usa.
           </p>
         </div>
-
-        {/* Creator card */}
-        <section
-          style={{
-            background: "#0A0B0F",
-            borderRadius: 12,
-            padding: "32px 36px",
-            marginBottom: 48,
-            display: "flex",
-            gap: 32,
-            alignItems: "flex-start",
-            flexWrap: "wrap",
-          }}
-        >
-          {/* Avatar */}
-          <div
-            style={{
-              width: 72,
-              height: 72,
-              borderRadius: "50%",
-              background: "#BA7517",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-            }}
-          >
-            <span style={{ color: "#fff", fontSize: 28, fontWeight: 700, fontFamily: "Georgia, serif" }}>G</span>
-          </div>
-          <div style={{ flex: 1, minWidth: 240 }}>
-            <div style={{ fontFamily: "Georgia, serif", fontSize: 22, color: "#fff", marginBottom: 4 }}>
-              Giampiero Morales
-            </div>
-            <div style={{ fontSize: 13, color: "#BA7517", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 12 }}>
-              DOTTORE COMMERCIALISTA · REVISORE LEGALE
-            </div>
-            <p style={{ fontSize: 14, color: "#aaa", lineHeight: 1.7, margin: "0 0 12px" }}>
-              Iscritto all'Ordine dei Dottori Commercialisti e degli Esperti Contabili.
-              Revisore Legale iscritto nel Registro MEF.
-              Partner di BC & Studio Prof.le Consulenza Societaria Tributaria.
-            </p>
-            <p style={{ fontSize: 14, color: "#aaa", lineHeight: 1.7, margin: "0 0 16px" }}>
-              Specializzato in fiscalità d'impresa, diritto societario, valutazione aziendale
-              e antiriciclaggio AML. Da oltre vent'anni al fianco di PMI, startup e
-              professionisti nella gestione fiscale e societaria.
-            </p>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-              <a
-                href="mailto:morales@bcand.it"
-                style={{ fontSize: 12, color: "#888", textDecoration: "none", fontFamily: "Arial, sans-serif" }}
-              >
-                morales@bcand.it
-              </a>
-            </div>
-          </div>
-        </section>
 
         {/* Visione */}
         <section style={{ marginBottom: 48 }}>
