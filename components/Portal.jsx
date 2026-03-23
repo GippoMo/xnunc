@@ -3618,11 +3618,11 @@ export default function App(){
         {/* Hero */}
         {!isLogged&&(
           <div className="xnunc-hero" style={{background:C.nox,borderRadius:14,padding:"28px 36px",marginBottom:24,border:"1px solid #1a1c24"}}>
-            <div className="xnunc-hero-title" style={{fontFamily:"Georgia,serif",fontSize:28,fontWeight:700,color:"#fff",marginBottom:10,lineHeight:1.3}}>Da adesso, lavori diversamente.</div>
-            <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:400,color:C.aurum,marginBottom:6,fontStyle:"italic",letterSpacing:"0.01em"}}>Utilizza. Collabora. Crea.</div>
+            <div className="xnunc-hero-title" style={{fontFamily:"Georgia,serif",fontSize:28,fontWeight:700,color:"#fff",marginBottom:10,lineHeight:1.3}}>xNunc. Nuovi strumenti. Nuovo valore.</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:400,color:C.aurum,marginBottom:6,fontStyle:"italic",letterSpacing:"0.01em"}}>Usa. Collabora. Crea.</div>
             <div style={{fontSize:14,color:"#aaa",fontFamily:"Arial,sans-serif",marginBottom:20,lineHeight:1.6}}>
-              Skill che lavorano. Professionisti che crescono.<br/>
-              <span style={{color:"#999",fontSize:12}}>Open source · I tuoi dati non escono mai · Funziona su qualsiasi AI.</span>
+              Skill pensate per aiutare professionisti e team a lavorare meglio, insieme.<br/>
+              <span style={{color:"#999",fontSize:12}}>Open source, per trasformare la collaborazione in valore concreto.</span>
             </div>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}}>
               <button onClick={()=>setShowLogin(true)} style={{background:C.aurum,border:"none",color:"#fff",borderRadius:8,padding:"10px 22px",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>Accedi gratis</button>
