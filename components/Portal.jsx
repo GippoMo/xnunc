@@ -3621,7 +3621,7 @@ export default function App(){
             <div className="xnunc-hero-title" style={{fontFamily:"Georgia,serif",fontSize:28,fontWeight:700,color:"#fff",marginBottom:10,lineHeight:1.3}}>xNunc. Nuovi strumenti. Nuovo valore.</div>
             <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:400,color:C.aurum,marginBottom:6,fontStyle:"italic",letterSpacing:"0.01em"}}>Usa. Collabora. Crea.</div>
             <div style={{fontSize:14,color:"#aaa",fontFamily:"Arial,sans-serif",marginBottom:20,lineHeight:1.6}}>
-              Skill pensate per aiutare professionisti e team a lavorare meglio, insieme.<br/>
+              Skill create per aiutare professionisti e team a lavorare meglio, insieme.<br/>
               <span style={{color:"#999",fontSize:12}}>Open source, per trasformare la collaborazione in valore concreto.</span>
             </div>
             <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"center"}}>
