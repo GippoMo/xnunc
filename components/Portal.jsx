@@ -3475,7 +3475,6 @@ export default function App(){
           <div style={{display:"flex",alignItems:"center",gap:20}}>
             <span onClick={()=>{setSearch("");setFilterArea("Tutte");setFilterComp("Tutte");setFilterFreq("Tutte");setNavSearchOpen(false);}} style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:700,cursor:"pointer"}}><span style={{color:C.aurum}}>x</span><span style={{color:"#fff"}}>Nunc</span></span>
             <div className="xnunc-nav-links">
-              <span onClick={()=>document.getElementById("catalogo-section")?.scrollIntoView({behavior:"smooth"})} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Catalogo</span>
               <span onClick={()=>setShowClassifica(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Classifica</span>
               <span onClick={()=>setShowManifesto(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Manifesto</span>
               <span onClick={()=>setShowFAQ(true)} style={{color:C.aurum,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>FAQ</span>
