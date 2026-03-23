@@ -3479,6 +3479,7 @@ export default function App(){
               <span onClick={()=>setShowClassifica(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Classifica</span>
               <span onClick={()=>setShowManifesto(true)} style={{color:"#888",fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Manifesto</span>
               <span onClick={()=>setShowFAQ(true)} style={{color:C.aurum,fontSize:13,cursor:"pointer",fontFamily:"Arial,sans-serif",fontWeight:700}}>FAQ</span>
+              <a href="/novita" style={{color:"#888",fontSize:13,fontFamily:"Arial,sans-serif",textDecoration:"none"}} onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color="#888"}>Novità</a>
             </div>
           </div>
 
