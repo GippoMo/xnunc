@@ -25,12 +25,7 @@ const articleSchema = {
     "Come l'intelligenza artificiale sta trasformando il lavoro quotidiano negli studi commerciali italiani.",
   datePublished: "2025-03-01",
   dateModified: "2026-03-01",
-  author: {
-    "@type": "Person",
-    name: "Giampiero Morales",
-    jobTitle: "Dottore Commercialista e Revisore Legale",
-    url: "https://www.xnunc.ai/chi-siamo",
-  },
+  author: { "@type": "Organization", name: "xNunc.ai", url: "https://www.xnunc.ai" },
   publisher: {
     "@type": "Organization",
     name: "xNunc.ai",
@@ -137,7 +132,7 @@ export default function ArticleAICommercialisti() {
 
         {/* Meta */}
         <div style={S.meta}>
-          <span>Di <strong>Giampiero Morales</strong>, Dottore Commercialista</span>
+          <span>Redazione <strong>xNunc.ai</strong></span>
           <span>·</span>
           <span>1 marzo 2025</span>
           <span>·</span>
@@ -357,14 +352,14 @@ export default function ArticleAICommercialisti() {
         {/* Author box */}
         <div style={{ border: "1px solid #E8E4DC", borderRadius: 8, padding: "20px 24px", marginTop: 32, display: "flex", gap: 16, alignItems: "flex-start" }}>
           <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#BA7517", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ color: "#fff", fontSize: 20, fontWeight: 700 }}>G</span>
+            <span style={{ color: "#fff", fontSize: 20, fontWeight: 700, fontFamily: "Georgia,serif" }}>x</span>
           </div>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#0A0B0F", marginBottom: 2 }}>Giampiero Morales</div>
-            <div style={{ fontSize: 11, color: "#BA7517", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 6 }}>DOTTORE COMMERCIALISTA · REVISORE LEGALE</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#0A0B0F", marginBottom: 2 }}>Redazione xNunc.ai</div>
+            <div style={{ fontSize: 11, color: "#BA7517", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 6 }}>PIATTAFORMA AI PER COMMERCIALISTI</div>
             <div style={{ fontSize: 13, color: "#666", lineHeight: 1.6 }}>
-              Partner di BC & Studio Prof.le Consulenza Societaria Tributaria.
-              Creatore di xNunc.ai — la piattaforma AI open-source per commercialisti italiani.
+              xNunc.ai è la piattaforma AI open-source per dottori commercialisti italiani.
+              Skill professionali per fiscalità, societario, valutazione aziendale e antiriciclaggio.
             </div>
           </div>
         </div>

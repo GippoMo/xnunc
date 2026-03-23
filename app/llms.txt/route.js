@@ -11,7 +11,7 @@ export function GET() {
 > xNunc.ai è una piattaforma AI open-source per dottori commercialisti italiani.
 > Offre un catalogo di skill professionali — istruzioni strutturate per modelli linguistici —
 > che automatizzano attività fiscali, tributarie, societarie e di valutazione aziendale.
-> Creata da Giampiero Morales, Dottore Commercialista e Revisore Legale.
+> Creata da commercialisti per i commercialisti italiani.
 > Licenza: AGPL v3. Gratuita. Compatibile con Claude, ChatGPT, Copilot, Gemini.
 
 ## Informazioni principali
@@ -19,8 +19,7 @@ export function GET() {
 - **Nome**: xNunc.ai
 - **Tipo**: Piattaforma SaaS / Catalogo AI professionale
 - **Target**: Dottori commercialisti, studi commerciali, professionisti fiscali italiani
-- **Creatore**: Giampiero Morales — Dottore Commercialista, Revisore Legale
-- **Email**: morales@bcand.it
+- **Contatto**: postmaster@xnunc.ai
 - **Licenza**: AGPL v3 (open source)
 - **Lingua**: Italiano
 - **Normativa di riferimento**: Legislazione fiscale italiana (TUIR, Codice Civile, D.Lgs 231/2007)

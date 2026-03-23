@@ -93,7 +93,7 @@ const jsonLd = {
       "description": "Catalogo AI per commercialisti italiani con skill, formulari e tool professionali. WACC Calculator, formulari societari, contenzioso tributario, antiriciclaggio.",
       "inLanguage": "it-IT",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
-      "author": { "@type": "Person", "name": "Giampiero Morales", "jobTitle": "Dottore Commercialista" },
+      "author": { "@type": "Organization", "name": "xNunc.ai", "url": "https://www.xnunc.ai" },
       "license": "https://www.gnu.org/licenses/agpl-3.0.html",
       "keywords": "commercialista AI, WACC, formulari tributari, antiriciclaggio, contenzioso, fiscalita italiana"
     },
