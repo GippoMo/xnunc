@@ -1302,12 +1302,14 @@ function SkillCard({skill,onClick,isLogged,favorites,setFavorites,compact,isAdmi
       )}
       {!isLogged&&<div style={{position:"absolute",top:12,right:12,fontSize:11,color:"#D8D4CE",fontFamily:"Arial,sans-serif",fontWeight:700,letterSpacing:"0.06em"}}>—</div>}
       {/* Area tag */}
-      <div style={{fontSize:8,fontWeight:700,color:ac,fontFamily:"Arial,sans-serif",letterSpacing:"0.18em",textTransform:"uppercase",marginBottom:8}}>{skill.area}</div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+        <div style={{fontSize:8,fontWeight:700,color:ac,fontFamily:"Arial,sans-serif",letterSpacing:"0.18em",textTransform:"uppercase"}}>{skill.area}</div>
+        {skill.creatore&&<div style={{fontSize:8,color:"#BA7517",fontFamily:"Arial,sans-serif",fontWeight:700,letterSpacing:"0.08em"}}>· {skill.creatore}</div>}
+      </div>
       <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"flex-start"}}>
         <div style={{flex:1}}>
           <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:400,color:"#0A0B0F",marginBottom:4,lineHeight:1.35,paddingRight:24}}>{skill.nome}</div>
-          <div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif",marginBottom:4,letterSpacing:"0.04em"}}>{skill.sotto_area}</div>
-          {skill.creatore&&<div style={{fontSize:9,color:"#BA7517",fontFamily:"Arial,sans-serif",marginBottom:6,letterSpacing:"0.04em"}}>creato da {skill.creatore}</div>}
+          <div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif",marginBottom:6,letterSpacing:"0.04em"}}>{skill.sotto_area}</div>
           {!compact&&<div style={{fontSize:12,color:"#666",fontFamily:"Arial,sans-serif",lineHeight:1.55}}>{truncate(skill.descrizione,110)}</div>}
           {(skill.tags||[]).length>0&&(
             <div style={{marginTop:10,display:"flex",flexWrap:"wrap",gap:4}}>
