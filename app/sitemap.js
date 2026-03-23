@@ -29,7 +29,7 @@ export default function sitemap() {
       priority: 0.7,
     },
     {
-      url: `${BASE}/blog`,
+      url: `${BASE}/novita`,
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9,
