@@ -1053,7 +1053,7 @@ function SkillModal({skill,isLogged,onClose,onLoginRequest,profile,improvements,
               <div style={{fontSize:9,color:"#BA7517",fontWeight:700,letterSpacing:"0.2em",fontFamily:"Arial,sans-serif",marginBottom:6}}>{skill.area.toUpperCase()}</div>
               <div style={{fontFamily:"Georgia,serif",fontSize:21,fontWeight:400,color:"#0A0B0F",lineHeight:1.3}}>{skill.nome}</div>
               <div style={{fontSize:12,color:"#aaa",fontFamily:"Arial,sans-serif",marginTop:4}}>{skill.sotto_area}</div>
-              {skill.creatore&&<div style={{fontSize:11,color:"#BA7517",fontFamily:"Arial,sans-serif",marginTop:4,fontWeight:700,letterSpacing:"0.04em"}}>{skill.creatore}</div>}
+              {skill.creatore&&<div style={{fontSize:11,color:"#BA7517",fontFamily:"Arial,sans-serif",marginTop:4,letterSpacing:"0.04em"}}>creato da {skill.creatore}</div>}
             </div>
             <button onClick={onClose} style={{background:"none",border:"none",color:"#aaa",fontSize:20,cursor:"pointer",padding:0,transition:"color .2s"}} onMouseEnter={e=>e.currentTarget.style.color="#0A0B0F"} onMouseLeave={e=>e.currentTarget.style.color="#aaa"}>×</button>
           </div>
@@ -1307,7 +1307,7 @@ function SkillCard({skill,onClick,isLogged,favorites,setFavorites,compact,isAdmi
         <div style={{flex:1}}>
           <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:400,color:"#0A0B0F",marginBottom:4,lineHeight:1.35,paddingRight:24}}>{skill.nome}</div>
           <div style={{fontSize:10,color:"#aaa",fontFamily:"Arial,sans-serif",marginBottom:4,letterSpacing:"0.04em"}}>{skill.sotto_area}</div>
-          {skill.creatore&&<div style={{fontSize:9,color:"#bbb",fontFamily:"Arial,sans-serif",marginBottom:6,letterSpacing:"0.04em"}}>{skill.creatore}</div>}
+          {skill.creatore&&<div style={{fontSize:9,color:"#BA7517",fontFamily:"Arial,sans-serif",marginBottom:6,letterSpacing:"0.04em"}}>creato da {skill.creatore}</div>}
           {!compact&&<div style={{fontSize:12,color:"#666",fontFamily:"Arial,sans-serif",lineHeight:1.55}}>{truncate(skill.descrizione,110)}</div>}
           {(skill.tags||[]).length>0&&(
             <div style={{marginTop:10,display:"flex",flexWrap:"wrap",gap:4}}>
