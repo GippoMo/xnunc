@@ -2071,7 +2071,7 @@ function ProfileModal({onClose,userProfile,setUserProfile,onLogout,onDeleteAccou
 // 4. Copia Template ID e Public Key (tab Account → API Keys)
 // 5. Sostituisci i valori EMAILJS_* qui sotto
 // ─────────────────────────────────────────────────────
-const ADMIN_EMAIL = "morales@bcand.it"; // destinatario notifiche admin
+const ADMIN_EMAIL = "postmaster@xnunc.ai"; // destinatario notifiche admin
 
 async function notificaEmail({destinatario,oggetto,corpo}){
   try{
