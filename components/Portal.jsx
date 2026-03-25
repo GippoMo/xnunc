@@ -3241,7 +3241,7 @@ function Toast({message,type="info",onClose}){
   const color=type==="success"?"#1D9E75":type==="error"?"#C0392B":"#0A0B0F";
   const icon=type==="success"?"✓":type==="error"?"✕":"i";
   return(
-    <div style={{position:"fixed",top:24,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:bg,border:`1px solid ${border}`,borderLeft:`3px solid ${border}`,borderRadius:2,padding:"14px 20px",display:"flex",alignItems:"flex-start",gap:12,maxWidth:420,width:"calc(100% - 32px)",boxShadow:"0 4px 24px rgba(0,0,0,0.12)",fontFamily:"Arial,sans-serif"}}>
+    <div style={{position:"fixed",top:70,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:bg,border:`1px solid ${border}`,borderLeft:`3px solid ${border}`,borderRadius:2,padding:"14px 20px",display:"flex",alignItems:"flex-start",gap:12,maxWidth:420,width:"calc(100% - 32px)",boxShadow:"0 4px 24px rgba(0,0,0,0.12)",fontFamily:"Arial,sans-serif"}}>
       <span style={{color,fontWeight:700,fontSize:14,flexShrink:0,marginTop:1}}>{icon}</span>
       <span style={{fontSize:13,color:"#333",lineHeight:1.5,flex:1}}>{message}</span>
       <button onClick={onClose} style={{background:"none",border:"none",color:"#bbb",cursor:"pointer",fontSize:16,padding:0,flexShrink:0,lineHeight:1}}>×</button>
