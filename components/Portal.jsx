@@ -3235,7 +3235,7 @@ function lsSet(key,val){
 }
 
 function Toast({message,type="info",onClose}){
-  useEffect(()=>{const t=setTimeout(onClose,4500);return()=>clearTimeout(t);},[onClose]);
+  useEffect(()=>{const t=setTimeout(onClose,8000);return()=>clearTimeout(t);},[onClose]);
   const bg=type==="success"?"#F0FAF5":type==="error"?"#FEF0EF":"#FAF9F7";
   const border=type==="success"?"#1D9E75":type==="error"?"#C0392B":"#0A0B0F";
   const color=type==="success"?"#1D9E75":type==="error"?"#C0392B":"#0A0B0F";
@@ -3696,7 +3696,7 @@ export default function App(){
           // Profilo creato automaticamente dal trigger Supabase
           // Mostra messaggio conferma email
           setShowLogin(false);
-          showToast("Registrazione completata! Controlla la tua email per confermare l'account.","success");
+          showToast("Registrazione completata! Controlla la tua email per confermare l'account. Se non la trovi, verifica nello Spam.","success");
         } else {
           const {user}=await signIn(email,pw);
           // La sessione viene gestita da onAuthStateChange
