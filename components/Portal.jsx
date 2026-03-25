@@ -2071,7 +2071,7 @@ function ProfileModal({onClose,userProfile,setUserProfile,onLogout,onDeleteAccou
 // 4. Copia Template ID e Public Key (tab Account → API Keys)
 // 5. Sostituisci i valori EMAILJS_* qui sotto
 // ─────────────────────────────────────────────────────
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "adm-web@xnunc.ai"; // destinatario notifiche admin
+const ADMIN_EMAIL = "adm-web@xnunc.ai"; // destinatario notifiche admin (override via ADMIN_EMAIL su Vercel server-side)
 
 async function notificaEmail({destinatario,oggetto,corpo}){
   try{

@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL    = process.env.RESEND_FROM_EMAIL || 'xNunc <noreply@xnunc.ai>';
-const ADMIN_EMAIL   = 'morales@bcand.it';
+// Variabile privata server-side — non esposta al browser
+const ADMIN_EMAIL   = process.env.ADMIN_EMAIL || 'adm-web@xnunc.ai';
 
 export async function POST(req) {
   if (!RESEND_API_KEY) {
