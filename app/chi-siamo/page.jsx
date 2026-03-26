@@ -117,12 +117,10 @@ export default function ChiSiamoPage() {
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
             {[
-              { label: "Iscrizione ODCEC", desc: "Ordine dei Dottori Commercialisti e degli Esperti Contabili — iscrizione verificabile." },
-              { label: "Revisore Legale MEF", desc: "Iscritto nel Registro dei Revisori Legali tenuto dal Ministero dell'Economia e delle Finanze." },
               { label: "Open Source AGPL v3", desc: "Il codice sorgente è pubblico su GitHub. Nessun black box. Chiunque può verificare come funziona." },
               { label: "Zero data retention", desc: "I contenuti degli input non vengono mai salvati. Verificabile nel codice sorgente pubblico." },
               { label: "Server EU (Supabase)", desc: "Tutti i dati degli utenti sono ospitati su infrastruttura europea, conforme GDPR." },
-              { label: "Normativa italiana verificata", desc: "Ogni skill è costruita su riferimenti normativi italiani verificati: Codice Civile, TUIR, D.Lgs 231/2007." },
+              { label: "Normativa italiana", desc: "Ogni skill è costruita su riferimenti normativi italiani." },
             ].map((item, i) => (
               <div key={i} style={{ border: "1px solid #E8E4DC", borderRadius: 6, padding: "16px 18px", background: "#fff" }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#BA7517", letterSpacing: "0.08em", marginBottom: 6, textTransform: "uppercase" }}>
