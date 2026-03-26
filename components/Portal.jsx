@@ -1675,10 +1675,8 @@ function ManifestoModal({onClose}){
           <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer"}}>×</button>
         </div>
 
-        <div style={{marginBottom:28,paddingBottom:28,borderBottom:"1px solid #ffffff22"}}>
-          <div style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:700,color:C.aurum,marginBottom:10}}>Ex nunc — da ora in poi</div>
-          <div style={{fontFamily:"Arial,sans-serif",fontSize:13.5,color:"#ccc",lineHeight:1.85,marginBottom:10}}>È la locuzione latina che significa letteralmente "da ora" o "da ora in poi". Senza retroattività.</div>
-          <div style={{fontFamily:"Arial,sans-serif",fontSize:13.5,color:"#aaa",lineHeight:1.85}}>È la nostra promessa: non stiamo ripensando il passato dello studio professionale. Stiamo cambiando cosa succede da adesso in poi.</div>
+        <div style={{marginBottom:28,paddingBottom:28,borderBottom:"1px solid #ffffff22",fontFamily:"Georgia,serif",fontSize:13.5,color:"#aaa",lineHeight:1.85}}>
+          <span style={{fontStyle:"italic",color:"#fff"}}>Ex nunc</span>{", è la locuzione latina che significa letteralmente \"da ora\" o \"da ora in poi\". Senza retroattività."}<br/><br/>{"È la nostra promessa: non stiamo ripensando il passato dello studio professionale. Stiamo cambiando cosa succede da adesso in poi."}
         </div>
 
         {[
