@@ -1675,6 +1675,12 @@ function ManifestoModal({onClose}){
           <button onClick={onClose} style={{background:"none",border:"none",color:"#888",fontSize:22,cursor:"pointer"}}>×</button>
         </div>
 
+        <div style={{marginBottom:28,paddingBottom:28,borderBottom:"1px solid #ffffff22"}}>
+          <div style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:700,color:C.aurum,marginBottom:10}}>Ex nunc — da ora in poi</div>
+          <div style={{fontFamily:"Arial,sans-serif",fontSize:13.5,color:"#ccc",lineHeight:1.85,marginBottom:10}}>È la locuzione latina che significa letteralmente "da ora" o "da ora in poi". Senza retroattività.</div>
+          <div style={{fontFamily:"Arial,sans-serif",fontSize:13.5,color:"#aaa",lineHeight:1.85}}>È la nostra promessa: non stiamo ripensando il passato dello studio professionale. Stiamo cambiando cosa succede da adesso in poi.</div>
+        </div>
+
         {[
           {tag:"Need",tit:"Ci vuole un motivo.",righe:["Ogni studio professionale porta con sé un peso invisibile. Ore passate su procedure che non chiedono intelligenza — solo esecuzione. Ripetizione. Forma. Il professionista che sei è altrove, in attesa.","Questo è il bisogno. Non di un software. Di tempo. Di spazio. Di tornare a fare ciò che sai fare davvero."]},
           {tag:"Utility",tit:"L'utilità non è un valore secondario.",righe:["Uno strumento che non funziona non è uno strumento — è un ostacolo travestito. xNunc nasce per essere usato, non studiato. Le skill sono pezzi di conoscenza operativa: apri, leggi, applica. Il resto è tuo.","Automatizzare la procedura non è rinunciare al mestiere. È il contrario: è restituire al mestiere il suo senso."]},
