@@ -77,12 +77,10 @@ export default function ChiSiamoPage() {
             CHI SIAMO
           </div>
           <h1 style={{ fontFamily: "Georgia, serif", fontSize: 32, fontWeight: 400, color: "#0A0B0F", marginBottom: 16, lineHeight: 1.3 }}>
-            Costruito da un commercialista, per i commercialisti
+            Costruito da commercialisti, per i commercialisti
           </h1>
           <p style={{ fontSize: 15, color: "#555", lineHeight: 1.7, maxWidth: 640, margin: 0 }}>
-            xNunc.ai nasce dall'esperienza diretta di chi affronta ogni giorno le complessità
-            della fiscalità italiana. Non è un prodotto di una software house: è uno strumento
-            professionale costruito da chi lo usa.
+            xNunc.ai nasce dall'esperienza diretta di chi affronta ogni giorno le complessità della fiscalità. Non è un prodotto di una software house: è uno strumento professionale costruito da chi lo usa.
           </p>
         </div>
 
@@ -92,21 +90,13 @@ export default function ChiSiamoPage() {
             La visione di xNunc.ai
           </h2>
           <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 16 }}>
-            <strong>Il problema</strong>: I commercialisti italiani gestiscono una delle normative fiscali più
-            complesse al mondo. Ogni anno, nuovi adempimenti, circolari, risoluzioni e sentenze.
-            Il tempo per aggiornarsi si mangia il tempo per i clienti.
+            <strong>Il problema</strong>: i professionisti italiani gestiscono una delle normative fiscali più complesse al mondo. Ogni anno, nuovi adempimenti, circolari, risoluzioni e sentenze. Il tempo per aggiornarsi si mangia il tempo per i clienti.
           </p>
           <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 16 }}>
-            <strong>La soluzione</strong>: l'intelligenza artificiale può fare il lavoro di routine —
-            la ricerca normativa, la compilazione di form, la prima bozza di un'analisi —
-            liberando il professionista per il lavoro ad alto valore: la relazione con il cliente,
-            la strategia, il giudizio professionale.
+            <strong>La soluzione</strong>: l'intelligenza artificiale può aiutare il lavoro di routine — la ricerca normativa, la compilazione di form, la prima bozza di un'analisi — liberando il professionista per il lavoro ad alto valore: la relazione con il cliente, la strategia, il giudizio professionale.
           </p>
           <p style={{ fontSize: 14, color: "#444", lineHeight: 1.8, marginBottom: 0 }}>
-            <strong>La scelta open source</strong>: xNunc.ai è AGPL v3. Il codice è pubblico,
-            le skill sono scaricabili, la piattaforma è gratuita. La comunità dei commercialisti
-            italiani può costruire, migliorare e condividere strumenti senza dipendere da un
-            vendor. <em>Ex nunc</em> — da adesso, lavori diversamente.
+            <strong>La scelta open source</strong>: xNunc.ai è AGPL v3. Il codice è pubblico, le skill sono scaricabili, la piattaforma è gratuita. La comunità dei commercialisti italiani può costruire, migliorare e condividere strumenti senza dipendere da un vendor. <em>Ex nunc</em> — da adesso, lavori diversamente.
           </p>
         </section>
 
