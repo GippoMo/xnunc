@@ -173,8 +173,7 @@ const FAQ_SECTIONS = [
         a:"Dal tuo profilo (ruolo CONTRIBUTOR o superiore) puoi usare il pulsante 'Crea skill con AI': descrivi in italiano cosa vuole fare la skill, la piattaforma genera automaticamente tutti i campi. Poi rivedi, testa e pubblica. Se preferisci creare manualmente, usa il wizard in 5 step. Ogni skill pubblicata vale +10 punti."},
       { q:"Cosa sono i punti e la classifica?",
         a:"I punti tracciano il contributo alla community: +10 per ogni skill pubblicata, +5 per ogni miglioramento approvato, +2 per ogni partecipazione a un thread di discussione, bonus per skill molto usate o molto votate. La classifica è pubblica e mostra i top contributor per area tematica."},
-      { q:"Qual è la differenza tra piano Free e Pro?",
-        a:"Free: 20 esecuzioni/mese, solo lettura del catalogo, possibilità di proporre miglioramenti (2/mese). Pro (€19/mese): esecuzioni illimitate, BYOK, creazione di nuove skill, download output in Word/PDF, supporto email. Piano Studio (€79/mese): fino a 5 utenti, tutte le funzionalità Pro."},
+
     ]
   },
   {
