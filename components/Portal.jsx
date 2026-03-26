@@ -1676,17 +1676,17 @@ function ManifestoModal({onClose}){
         </div>
 
         {[
-          {num:"I",tit:"Ex nunc — da ora in poi",testo:"È la locuzione latina che significa letteralmente \"da ora\" o \"da ora in poi\". Senza retroattività. È la nostra promessa: non stiamo ripensando il passato dello studio professionale. Stiamo cambiando cosa succede da adesso in poi."},
-          {num:"II",tit:"Il tempo professionale non si spreca",testo:"Molti di noi passano ore su adempimenti meccanici ripetitivi, il cui valore percepito dal cliente è molto basso. E forse lo è. La tecnologia in questo negli ultimi anni ci ha aiutato molto e adesso lo farà sempre di più. Automatizzare e velocizzare le procedure di studio riduce spreco — di competenza, di energia, di valore. xNunc aiuta a sviluppare il valore."},
-          {num:"III",tit:"La conoscenza appartiene a chi la genera",testo:"I workflow che usiamo ogni giorno li costruiamo noi per noi — anni di pratica, errori, situazioni e clienti difficili. Non sempre sono compresi dai vendor. E per alcune situazioni siamo noi che ci adeguiamo a quello che i sistemi proprietari ci dicono di fare. Qui siamo noi che definiamo i parametri e tutto resta qui, per noi: aperti, utilizzabili, modificabili."},
-          {num:"IV",tit:"Open source non è ideologia — è garanzia",testo:"Se il codice è pubblico, puoi verificare cosa fa. Se il formato è aperto, puoi portare le tue skill altrove. Se la licenza è AGPL v3, nessuno può chiuderlo. La trasparenza non è un valore aggiunto: è la struttura portante."},
-          {num:"V",tit:"L'AI non sostituisce il commercialista",testo:"Sostituisce delle procedure. La parte complessa — interpretare, consigliare, decidere, l'empatia — quella di valore, rimane del professionista. Sempre. È lì che vale davvero il nostro lavoro."},
-          {num:"VI",tit:"La community è il prodotto",testo:"Il catalogo non lo costruiscono altri. Lo costruiamo noi, noi colleghi. Ogni skill è un pezzo di conoscenza condivisa. Ogni miglioramento proposto aumenta l'esecuzione e la produttività. Ogni punto guadagnato è un contributo reale alla professione."},
-        ].map(({num,tit,testo})=>(
-          <div key={num} style={{marginBottom:24,paddingBottom:24,borderBottom:"1px solid #ffffff11"}}>
-            <div style={{fontFamily:"Arial,sans-serif",fontSize:9,color:C.aurum,fontWeight:700,letterSpacing:"0.15em",marginBottom:6}}>{num}</div>
-            <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:700,marginBottom:8,color:"#fff"}}>{tit}</div>
-            <div style={{fontFamily:"Arial,sans-serif",fontSize:13.5,color:"#aaa",lineHeight:1.8}}>{testo}</div>
+          {tag:"Need",tit:"Ci vuole un motivo.",righe:["Ogni studio professionale porta con sé un peso invisibile. Ore passate su procedure che non chiedono intelligenza — solo esecuzione. Ripetizione. Forma. Il professionista che sei è altrove, in attesa.","Questo è il bisogno. Non di un software. Di tempo. Di spazio. Di tornare a fare ciò che sai fare davvero."]},
+          {tag:"Utility",tit:"L'utilità non è un valore secondario.",righe:["Uno strumento che non funziona non è uno strumento — è un ostacolo travestito. xNunc nasce per essere usato, non studiato. Le skill sono pezzi di conoscenza operativa: apri, leggi, applica. Il resto è tuo.","Automatizzare la procedura non è rinunciare al mestiere. È il contrario: è restituire al mestiere il suo senso."]},
+          {tag:"Nexgen",tit:"La prossima generazione lavora diversamente.",righe:["Non perché sia più brava. Perché ha strumenti diversi. L'intelligenza artificiale non è una promessa futura — è una realtà operativa adesso, per chi sceglie di usarla. Ex nunc. Da ora in poi.","Nessuno tornerà indietro. La domanda non è se adottare l'AI. È chi lo fa prima, e con quale consapevolezza."]},
+          {tag:"Community",tit:"Nessuno sa tutto da solo.",righe:["Il catalogo che trovi qui non è stato costruito in un ufficio. È fatto di casi reali, errori corretti, situazioni difficili risolte. È conoscenza condivisa — e cresce ogni volta che qualcuno decide di contribuire.","La community non è un'appendice della piattaforma. È la piattaforma. Ogni skill è un pezzo di te lasciato agli altri."]},
+        ].map(({tag,tit,righe})=>(
+          <div key={tag} style={{marginBottom:28,paddingBottom:28,borderBottom:"1px solid #ffffff11"}}>
+            <div style={{fontFamily:"Arial,sans-serif",fontSize:9,color:C.aurum,fontWeight:700,letterSpacing:"0.2em",marginBottom:8,textTransform:"uppercase"}}>{tag}</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:700,marginBottom:12,color:"#fff",fontStyle:"italic"}}>{tit}</div>
+            {righe.map((r,i)=>(
+              <div key={i} style={{fontFamily:"Arial,sans-serif",fontSize:13.5,color:"#aaa",lineHeight:1.85,marginBottom:i<righe.length-1?10:0}}>{r}</div>
+            ))}
           </div>
         ))}
 
