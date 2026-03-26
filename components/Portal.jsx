@@ -156,9 +156,7 @@ const FAQ_SECTIONS = [
         a:"Sì, è esattamente lo scopo dell'export. Il system prompt è puro testo e funziona su qualsiasi AI che accetta istruzioni di sistema. Il formato del file cambia (Markdown per Claude, JSON per OpenAI e Gemini, YAML per Copilot) ma il contenuto è lo stesso. Vedi la guida all'uso nel pannello di download per le istruzioni specifiche per ogni piattaforma."},
       { q:"Cosa contiene esattamente il file scaricato?",
         a:"Il file contiene: nome e descrizione della skill, istruzioni di sistema complete (system prompt), indicazione dell'input atteso, descrizione dell'output atteso, riferimenti normativi, tag, livello di complessità, frequenza d'uso, versione, data e fonte (xNunc.ai). Non contiene nessun dato dell'utente — è solo la definizione della skill."},
-      { q:"Posso scaricare tutte le skill di un'area insieme?",
-        a:"Sì — nel pannello di download puoi scegliere 'Tutta la raccolta' invece di 'Solo questa skill'. In questo modo scarichi in un unico file tutte le skill della stessa sotto-area (ad esempio tutte le skill 'Verbali CdA'). Il file è strutturato per essere importato direttamente nelle piattaforme che supportano multiple istruzioni o assistants."},
-      { q:"Posso usare le skill su modelli AI locali (Ollama, LM Studio)?",
+{ q:"Posso usare le skill su modelli AI locali (Ollama, LM Studio)?",
         a:"Sì. Il system prompt è testo standard compatibile con qualsiasi LLM. Per i modelli locali usa il formato Markdown (export Claude) — è il più leggibile e universale. Incolla il contenuto del campo 'Istruzioni di sistema' come system prompt nella tua interfaccia locale."},
     ]
   },
