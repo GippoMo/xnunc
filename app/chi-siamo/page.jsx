@@ -80,7 +80,7 @@ export default function ChiSiamoPage() {
             Costruito da commercialisti, per i commercialisti
           </h1>
           <p style={{ fontSize: 15, color: "#555", lineHeight: 1.7, maxWidth: 640, margin: 0 }}>
-            xNunc.ai nasce dall'esperienza diretta di chi affronta ogni giorno le complessità della fiscalità. Non è un prodotto di una software house: è uno strumento professionale costruito da chi lo usa.
+            xNunc.ai nasce dall'esperienza diretta di professionisti che affrontano ogni giorno le complessità della fiscalità italiana. Il catalogo iniziale di 100 skill è stato costruito su casi reali — non in aula, non in una demo, ma sul campo con clienti reali. Non è un prodotto di una software house: è uno strumento costruito da chi lo usa, e che cresce con chi decide di contribuire.
           </p>
         </div>
 
