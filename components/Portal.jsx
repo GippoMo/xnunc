@@ -1676,7 +1676,7 @@ function ManifestoModal({onClose}){
         </div>
 
         <div style={{marginBottom:28,paddingBottom:28,borderBottom:"1px solid #ffffff22",fontFamily:"Georgia,serif",fontSize:13.5,color:"#aaa",lineHeight:1.85}}>
-          <span style={{fontStyle:"italic"}}>Ex nunc</span>{", è la locuzione latina che significa letteralmente \"da ora\" o \"da ora in poi\". Senza retroattività."}<br/><br/>{"È la nostra promessa: non stiamo ripensando il passato dello studio professionale. Stiamo cambiando cosa succede da adesso in poi."}
+          <span style={{fontStyle:"italic",color:"#fff"}}>Ex nunc</span>{", è la locuzione latina che significa letteralmente \"da ora\" o \"da ora in poi\". Senza retroattività."}<br/><br/>{"È la nostra promessa: non stiamo ripensando il passato dello studio professionale. Stiamo cambiando cosa succede da adesso in poi."}
         </div>
 
         {[
@@ -1687,7 +1687,7 @@ function ManifestoModal({onClose}){
         ].map(({tag,tit,righe})=>(
           <div key={tag} style={{marginBottom:28,paddingBottom:28,borderBottom:"1px solid #ffffff11"}}>
             <div style={{fontFamily:"Arial,sans-serif",fontSize:9,color:C.aurum,fontWeight:700,letterSpacing:"0.2em",marginBottom:8,textTransform:"uppercase"}}>{tag}</div>
-            <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:700,marginBottom:12,color:"#fff",fontStyle:"italic"}}>{tit}</div>
+            <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:700,marginBottom:12,color:"#aaa",fontStyle:"italic"}}>{tit}</div>
             {righe.map((r,i)=>(
               <div key={i} style={{fontFamily:"Arial,sans-serif",fontSize:13.5,color:"#aaa",lineHeight:1.85,marginBottom:i<righe.length-1?10:0}}>{r}</div>
             ))}
