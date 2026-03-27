@@ -1684,10 +1684,9 @@ function ManifestoModal({onClose}){
           {tag:"Utility",tit:"L'utilità non è un valore secondario.",righe:["Non siamo noi ad adeguarci agli strumenti. Siamo noi che creiamo qualcosa per i nostri bisogni. Quello che costruiamo deve essere necessario e fruibile — aperto, usabile su qualsiasi piattaforma. Nessun vincolo. Nessuna dipendenza. Questa è la nostra forza."]},
           {tag:"Nexgen",tit:"La prossima generazione lavora diversamente.",righe:["Non solo le nuove generazioni. Anche nuove modalità di lavoro, orientate al futuro. Una nuova generazione di professionisti non è definita dall'età — è definita dalla scelta di lavorare in modo diverso, con gli strumenti giusti, adesso."]},
           {tag:"Community",tit:"Nessuno sa tutto da solo.",righe:["Si usa quello che hanno creato i colleghi. Si migliora insieme ai colleghi. Si crea per i colleghi. xNunc è una collezione viva di strumenti per migliorare il nostro modo di lavorare — nostro e di chi verrà dopo di noi."]},
-        ].map(({tag,tit,righe})=>(
+        ].map(({tag,righe})=>(
           <div key={tag} style={{marginBottom:28,paddingBottom:28,borderBottom:"1px solid #ffffff11"}}>
-            <div style={{fontFamily:"Arial,sans-serif",fontSize:9,color:C.aurum,fontWeight:700,letterSpacing:"0.2em",marginBottom:8,textTransform:"uppercase"}}>{tag}</div>
-            <div style={{fontFamily:"Georgia,serif",fontSize:17,fontWeight:700,marginBottom:12,color:"#fff",fontStyle:"italic"}}>{tit}</div>
+            <div style={{fontFamily:"Arial,sans-serif",fontSize:9,color:C.aurum,fontWeight:700,letterSpacing:"0.2em",marginBottom:10,textTransform:"uppercase"}}>{tag}</div>
             {righe.map((r,i)=>(
               <div key={i} style={{fontFamily:"Arial,sans-serif",fontSize:13.5,color:"#aaa",lineHeight:1.85,marginBottom:i<righe.length-1?10:0}}>{r}</div>
             ))}
