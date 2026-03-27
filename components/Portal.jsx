@@ -1676,7 +1676,7 @@ function ManifestoModal({onClose}){
         </div>
 
         <div style={{marginBottom:28,paddingBottom:28,borderBottom:"1px solid #ffffff22",fontFamily:"Georgia,serif",fontSize:13.5,color:"#aaa",lineHeight:1.85}}>
-          <span style={{fontStyle:"italic",color:"#fff"}}>Ex nunc</span>{", è la locuzione latina che significa letteralmente \"da ora\" o \"da ora in poi\". Senza retroattività."}<br/><br/><span style={{fontStyle:"italic",color:"#fff"}}>{"Ex nunc. Da ora. Senza retroattività."}</span><br/>{"Non stiamo ripensando il passato dello studio professionale."}<br/>{"Stiamo decidendo cosa succede da adesso in poi."}
+          <span style={{fontStyle:"italic",color:"#fff"}}>Ex nunc</span>{", è la locuzione latina che significa letteralmente \"da ora\" o \"da ora in poi\". Senza retroattività."}<br/><br/><span style={{fontStyle:"italic",color:"#fff"}}>{"xNunc. Da ora. Senza retroattività."}</span><br/>{"Non stiamo ripensando il passato dello studio professionale."}<br/>{"Stiamo decidendo cosa succede da adesso in poi."}
         </div>
 
         {[
