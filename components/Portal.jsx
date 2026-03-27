@@ -1680,10 +1680,10 @@ function ManifestoModal({onClose}){
         </div>
 
         {[
-          {tag:"Need",tit:"Ci vuole un motivo.",righe:["Tutto parte dai bisogni. Quando aiutiamo un cliente, la prima cosa che facciamo è capire la sua necessità reale — prima di proporre qualsiasi soluzione. xNunc nasce dalla stessa logica: dal bisogno di ogni professionista. Poter lavorare meglio non è più una scelta. È una necessità."]},
-          {tag:"Utility",tit:"L'utilità non è un valore secondario.",righe:["Non siamo noi ad adeguarci agli strumenti. Siamo noi che creiamo qualcosa per i nostri bisogni. Quello che costruiamo deve essere necessario e fruibile — aperto, usabile su qualsiasi piattaforma. Nessun vincolo. Nessuna dipendenza. Questa è la nostra forza."]},
-          {tag:"Nexgen",tit:"La prossima generazione lavora diversamente.",righe:["Ci saranno nuove generazioni di prodotti, di tecnologia, nuove modalità di lavoro, orientate sempre più al futuro. Una nuova generazione di professionisti non definita anagraficamente. Una nuova generazione che ha scelto di lavorare in modo diverso, con gli strumenti giusti, da adesso."]},
-          {tag:"Community",tit:"",righe:["In xNunc si trova qualcosa che ha costruito un collega. Lo ha affinato un altro. Lo ha migliorato qualcuno. Forse non ci si conosce nemmeno, ma facciamo tutti lo stesso lavoro e abbiamo le stesse necessità. Qualcuno che ha affrontato le nostre stesse necessità.","xNunc è questo: strumenti, pratiche, conoscenza condivisa. Nostra.","Si usa. Si migliora. Si crea. E ricomincia."]},
+          {tag:"Need",tit:"",righe:["Tutto parte dai bisogni reali. Non dalle soluzioni. Non dagli strumenti.","Prima comprendere. Poi costruire.","xNunc nasce dalla necessità concreta di lavorare meglio, oggi.","Migliorare il proprio modo di lavorare non è più una scelta. È una condizione."]},
+          {tag:"Utility",tit:"",righe:["Gli strumenti devono adattarsi a chi li usa. Non il contrario.","Costruiamo ciò che è necessario: semplice, accessibile, utilizzabile ovunque.","Aperto per natura. Senza vincoli. Senza dipendenze.","Se non è utile, non serve."]},
+          {tag:"Nexgen",tit:"",righe:["Non è una questione anagrafica. È un cambio di paradigma.","Nuove tecnologie. Nuovi processi. Nuove strutture.","Un nuovo modo di lavorare, per chi ha scelto di evolvere.","xNunc nasce per ciò che sta emergendo. Non per ciò che è già stato."]},
+          {tag:"Community",tit:"",righe:["Non è necessario partire da zero. Condividiamo lo stesso lavoro, le stesse sfide, lo stesso linguaggio.","Da qui nasce una collaborazione naturale, tra professionisti che si riconoscono.","Uno costruisce. Un altro migliora. Tutti contribuiscono.","xNunc è conoscenza condivisa. Strumenti condivisi. Valore condiviso."]},
         ].map(({tag,righe})=>(
           <div key={tag} style={{marginBottom:28,paddingBottom:28,borderBottom:"1px solid #ffffff11"}}>
             <div style={{fontFamily:"Arial,sans-serif",fontSize:9,color:C.aurum,fontWeight:700,letterSpacing:"0.2em",marginBottom:10,textTransform:"uppercase"}}>{tag}</div>
@@ -1694,7 +1694,9 @@ function ManifestoModal({onClose}){
         ))}
 
         <div style={{textAlign:"center",paddingTop:8}}>
-          <div style={{fontFamily:"Georgia,serif",fontSize:15,color:C.aurum,fontStyle:"italic"}}>Da adesso, lavoriamo diversamente.</div>
+          <div style={{fontFamily:"Georgia,serif",fontSize:15,color:C.aurum,fontWeight:700,marginBottom:8}}>xNunc</div>
+          <div style={{fontFamily:"Georgia,serif",fontSize:13.5,color:"#aaa",marginBottom:16}}>Si usa. Si migliora. Si costruisce. E si ricomincia.</div>
+          <div style={{fontFamily:"Georgia,serif",fontSize:15,color:C.aurum,fontStyle:"italic",marginBottom:8}}>Da adesso, lavoriamo diversamente.</div>
           <div style={{fontSize:11,color:"#555",fontFamily:"Arial,sans-serif",marginTop:8}}>AGPL v3 · Open source · ex nunc</div>
         </div>
       </div>
