@@ -2151,7 +2151,7 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
     };
     setThreads(prev=>[...prev,notifThread]);
     if(supabaseUser) dbSaveThread(appThreadToDb(notifThread,supabaseUser.id));
-    setTab(2); // vai alla tab messaggi
+    setTab(3); // vai alla tab messaggi
   }
 
   function inviaMsgThread(thread){
@@ -2193,7 +2193,8 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
 
   const daApprovare=draftSkills.filter(d=>d.stato==="in_revisione");
   const tabBar=[
-    {label:"⭐ Preferiti",count:favSkills.length+draftSkills.filter(d=>d.stato==="approvata").length},
+    {label:"⭐ Preferiti",count:favSkills.length},
+    {label:"🚀 Mie skill",count:draftSkills.filter(d=>d.stato==="approvata").length},
     {label:"🔧 In sviluppo",count:draftSkills.filter(d=>d.stato!=="approvata"&&d.stato!=="in_revisione").length+(myImprovs.length)+(isAdmin?pendingMyApproval.length:0)},
     {label:"💬 Messaggi",count:nonLettiTot},
     ...(isAdmin?[{label:"✅ Da approvare",count:daApprovare.length}]:[]),
@@ -2231,7 +2232,7 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
           {/* TAB 0 — Preferiti */}
           {tab===0&&(
             <div>
-              {favSkills.length===0&&draftSkills.filter(d=>d.stato==="approvata").length===0?(
+              {favSkills.length===0?(
                 <div style={{textAlign:"center",padding:"48px 0"}}>
                   <div style={{fontSize:32,marginBottom:8}}>☆</div>
                   <div style={{fontFamily:"Georgia,serif",fontSize:16,color:C.nox,marginBottom:6}}>Nessuna skill nei preferiti</div>
@@ -2239,50 +2240,60 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
                 </div>
               ):(
                 <>
-                  {favSkills.length>0&&(
-                    <>
-                      <div style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:10,fontFamily:"Arial,sans-serif"}}>DAL CATALOGO · {favSkills.length}</div>
-                      {favSkills.map(s=>(
-                        <SkillCard key={s.id} skill={s} isLogged favorites={favorites} setFavorites={setFavorites} onClick={()=>onTestSkill(s)} compact/>
-                      ))}
-                    </>
-                  )}
-                  {draftSkills.filter(d=>d.stato==="approvata").length>0&&(
-                    <>
-                      <div style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginTop:16,marginBottom:10,fontFamily:"Arial,sans-serif"}}>MIE SKILL PUBBLICATE · {draftSkills.filter(d=>d.stato==="approvata").length}</div>
-                      {draftSkills.filter(d=>d.stato==="approvata").map(d=>{
-                        const shareUrl=`https://www.xnunc.ai/?skill=${d.id}`;
-                        const shareText=`Ho creato questa Skill su xNunc.ai. Provala anche tu e miglioriamola insieme.`;
-                        const shareLinkedIn=`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
-                        const shareTwitter=`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
-                        const shareWhatsApp=`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText+"\n"+shareUrl)}`;
-                        function handleNativeShare(){
-                          if(navigator.share){navigator.share({title:d.nome,text:shareText,url:shareUrl}).catch(()=>{});}
-                          else{navigator.clipboard.writeText(shareText+"\n"+shareUrl);}
-                        }
-                        return(
-                        <div key={d.id} style={{border:"1.5px solid #e8e4dc",borderRadius:10,background:"#fff",padding:"12px 16px",marginBottom:8}}>
-                          <div style={{fontFamily:"Georgia,serif",fontSize:14,fontWeight:700,color:C.nox}}>{d.nome}</div>
-                          <div style={{fontSize:11,color:C.viridis,fontFamily:"Arial,sans-serif",marginTop:3,fontWeight:700,marginBottom:10}}>✓ Pubblicata nel catalogo</div>
-                          <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
-                            <div style={{fontSize:10,color:"#888",fontFamily:"Arial,sans-serif",marginRight:2}}>Condividi:</div>
-                            <a href={shareLinkedIn} target="_blank" rel="noopener noreferrer" style={{fontSize:10,background:"#0A66C2",color:"#fff",padding:"4px 8px",borderRadius:4,textDecoration:"none",fontFamily:"Arial,sans-serif",fontWeight:700}}>LinkedIn</a>
-                            <a href={shareTwitter} target="_blank" rel="noopener noreferrer" style={{fontSize:10,background:"#000",color:"#fff",padding:"4px 8px",borderRadius:4,textDecoration:"none",fontFamily:"Arial,sans-serif",fontWeight:700}}>𝕏</a>
-                            <a href={shareWhatsApp} target="_blank" rel="noopener noreferrer" style={{fontSize:10,background:"#25D366",color:"#fff",padding:"4px 8px",borderRadius:4,textDecoration:"none",fontFamily:"Arial,sans-serif",fontWeight:700}}>WhatsApp</a>
-                            <button onClick={handleNativeShare} style={{fontSize:10,background:"#f0ece4",color:"#333",padding:"4px 8px",borderRadius:4,border:"none",cursor:"pointer",fontFamily:"Arial,sans-serif"}}>📋 Copia link</button>
-                          </div>
-                        </div>
-                        );
-                      })}
-                    </>
-                  )}
+                  <div style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:10,fontFamily:"Arial,sans-serif"}}>DAL CATALOGO · {favSkills.length}</div>
+                  {favSkills.map(s=>(
+                    <SkillCard key={s.id} skill={s} isLogged favorites={favorites} setFavorites={setFavorites} onClick={()=>onTestSkill(s)} compact/>
+                  ))}
                 </>
               )}
             </div>
           )}
 
-          {/* TAB 1 — In sviluppo */}
+          {/* TAB 1 — Mie skill */}
           {tab===1&&(
+            <div>
+              {draftSkills.filter(d=>d.stato==="approvata").length===0?(
+                <div style={{textAlign:"center",padding:"48px 0"}}>
+                  <div style={{fontSize:32,marginBottom:8}}>🚀</div>
+                  <div style={{fontFamily:"Georgia,serif",fontSize:16,color:C.nox,marginBottom:6}}>Nessuna skill pubblicata ancora</div>
+                  <div style={{fontSize:13,color:C.gray,fontFamily:"Arial,sans-serif",marginBottom:16}}>Crea e pubblica la tua prima skill per vederla qui.</div>
+                  <button onClick={()=>{onClose();onCreateSkill&&onCreateSkill();}} style={{padding:"9px 20px",borderRadius:8,border:"none",background:C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>+ Crea skill</button>
+                </div>
+              ):(
+                <>
+                  <div style={{fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",marginBottom:10,fontFamily:"Arial,sans-serif"}}>PUBBLICATE NEL CATALOGO · {draftSkills.filter(d=>d.stato==="approvata").length}</div>
+                  {draftSkills.filter(d=>d.stato==="approvata").map(d=>{
+                    const shareUrl=`https://www.xnunc.ai/?skill=${d.id}`;
+                    const shareText=`Ho creato questa Skill su xNunc.ai. Provala anche tu e miglioriamola insieme.`;
+                    const shareLinkedIn=`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`;
+                    const shareTwitter=`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+                    const shareWhatsApp=`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText+"\n"+shareUrl)}`;
+                    function handleNativeShare(){
+                      if(navigator.share){navigator.share({title:d.nome,text:shareText,url:shareUrl}).catch(()=>{});}
+                      else{navigator.clipboard.writeText(shareText+"\n"+shareUrl);}
+                    }
+                    return(
+                      <div key={d.id} style={{border:"1.5px solid #e8e4dc",borderRadius:10,background:"#fff",padding:"16px",marginBottom:10}}>
+                        <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:700,color:C.nox,marginBottom:4}}>{d.nome}</div>
+                        <div style={{fontSize:11,color:C.viridis,fontFamily:"Arial,sans-serif",fontWeight:700,marginBottom:12}}>✓ Pubblicata nel catalogo</div>
+                        <div style={{fontSize:11,color:"#888",fontFamily:"Arial,sans-serif",marginBottom:8,fontStyle:"italic"}}>"{shareText}"</div>
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap",alignItems:"center"}}>
+                          <span style={{fontSize:10,color:"#888",fontFamily:"Arial,sans-serif",marginRight:2}}>Condividi:</span>
+                          <a href={shareLinkedIn} target="_blank" rel="noopener noreferrer" style={{fontSize:10,background:"#0A66C2",color:"#fff",padding:"5px 10px",borderRadius:4,textDecoration:"none",fontFamily:"Arial,sans-serif",fontWeight:700}}>LinkedIn</a>
+                          <a href={shareTwitter} target="_blank" rel="noopener noreferrer" style={{fontSize:10,background:"#000",color:"#fff",padding:"5px 10px",borderRadius:4,textDecoration:"none",fontFamily:"Arial,sans-serif",fontWeight:700}}>𝕏</a>
+                          <a href={shareWhatsApp} target="_blank" rel="noopener noreferrer" style={{fontSize:10,background:"#25D366",color:"#fff",padding:"5px 10px",borderRadius:4,textDecoration:"none",fontFamily:"Arial,sans-serif",fontWeight:700}}>WhatsApp</a>
+                          <button onClick={handleNativeShare} style={{fontSize:10,background:"#f0ece4",color:"#333",padding:"5px 10px",borderRadius:4,border:"none",cursor:"pointer",fontFamily:"Arial,sans-serif"}}>📋 Copia link</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* TAB 2 — In sviluppo */}
+          {tab===2&&(
             <><div>
               {draftSkills.filter(d=>d.stato!=="approvata").length===0?(
                 <div style={{textAlign:"center",padding:"48px 0"}}>
@@ -2443,8 +2454,8 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
             )}</>
           )}
 
-          {/* TAB 2 — Messaggi */}
-          {tab===2&&(
+          {/* TAB 3 — Messaggi */}
+          {tab===3&&(
             <div>
               {!activeThread?(
                 <>
@@ -2533,8 +2544,8 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
             </div>
           )}
 
-          {/* TAB 3 — Da approvare (solo admin) */}
-          {tab===3&&isAdmin&&(
+          {/* TAB 4 — Da approvare (solo admin) */}
+          {tab===4&&isAdmin&&(
             <div>
               {daApprovare.length===0?(
                 <div style={{textAlign:"center",padding:"48px 0"}}>
