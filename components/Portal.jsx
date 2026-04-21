@@ -2941,7 +2941,7 @@ Rispondi SOLO con JSON valido: {"simili": ["ID1","ID2"]} oppure {"simili": []} s
             <div>
               <div style={{marginBottom:16}}>
                 <div style={{fontFamily:"Georgia,serif",fontSize:15,fontWeight:400,color:"#0A0B0F",marginBottom:4}}>Team di revisione</div>
-                <div style={{fontFamily:"Arial,sans-serif",fontSize:11,color:"#aaa",lineHeight:1.6}}>Ho selezionato gli agenti più adatti alla tua skill. Puoi modificare la selezione — se non selezioni nessuno verranno usati tutti.</div>
+                <div style={{fontFamily:"Arial,sans-serif",fontSize:11,color:"#aaa",lineHeight:1.6}}>Ho selezionato gli AI Agent di xNunc più adatti alla tua skill. Puoi modificare la selezione — se non selezioni nessuno verranno usati tutti gli AI Agent di xNunc.</div>
               </div>
               <div style={{display:"flex",flexDirection:"column",marginBottom:16}}>
                 {WIZARD_AGENTS.map((ag)=>{
