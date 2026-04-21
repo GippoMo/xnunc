@@ -1489,6 +1489,7 @@ function MiglioramentiTab({skill,isLogged,onLoginRequest,ac,improvements,setImpr
   }
 
   function salvaBeta(){
+    const isCreatoreCorrente=skill.creatoreEmail&&profile?.email&&skill.creatoreEmail===profile.email;
     const improv={
       id:"improv_"+Date.now(),
       skillId:skill.id, skillNome:skill.nome, skillArea:skill.area, skillSottoArea:skill.sotto_area||"",
@@ -1496,7 +1497,9 @@ function MiglioramentiTab({skill,isLogged,onLoginRequest,ac,improvements,setImpr
       contributorNome:`${profile?.nome||""} ${profile?.cognome||""}`.trim()||"Utente",
       titolo:form.titolo, descrizione:form.descrizione, cambiamenti:form.cambiamenti,
       campiAggiornati:betaResult,
-      stato:"beta_generata", chat:[], noteCreatore:"", noteRedazione:"",
+      // se è il creatore, il miglioramento è già approvato direttamente
+      stato: isCreatoreCorrente ? "approvata" : "beta_generata",
+      chat:[], noteCreatore:"", noteRedazione:"",
       createdAt:new Date().toLocaleDateString("it-IT"),
     };
     setImprovements(prev=>[...prev,improv]);
@@ -1607,17 +1610,29 @@ Revisiona e approva su: ${APP_URL}`,
         </div>
       )}
 
-      {/* CTA nuovo miglioramento strutturato */}
+      {/* CTA — diverso per creatore vs altri */}
       {isLogged&&!showForm&&(
-        <button onClick={()=>setShowForm(true)} style={{width:"100%",padding:"10px",borderRadius:10,border:`1.5px dashed ${ac}`,background:ac+"0a",color:ac,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",marginBottom:16}}>
-          ⚡ Proponi un miglioramento strutturato
-        </button>
+        (skill.creatoreEmail&&profile?.email&&skill.creatoreEmail===profile.email)?(
+          <div style={{background:"#F0FAF5",border:"1.5px solid #1D9E75",borderRadius:10,padding:"12px 16px",marginBottom:16}}>
+            <div style={{fontSize:12,fontWeight:700,color:"#1D9E75",fontFamily:"Arial,sans-serif",marginBottom:4}}>✏️ Sei il creatore di questa skill</div>
+            <div style={{fontSize:12,color:"#555",fontFamily:"Arial,sans-serif",marginBottom:10,lineHeight:1.5}}>Puoi modificarla direttamente. I miglioramenti proposti dalla community li trovi nella tua Dashboard → In sviluppo.</div>
+            <button onClick={()=>setShowForm(true)} style={{padding:"8px 16px",borderRadius:8,border:"none",background:"#1D9E75",color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+              ✏️ Modifica questa skill
+            </button>
+          </div>
+        ):(
+          <button onClick={()=>setShowForm(true)} style={{width:"100%",padding:"10px",borderRadius:10,border:`1.5px dashed ${ac}`,background:ac+"0a",color:ac,fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",marginBottom:16}}>
+            ⚡ Proponi un miglioramento strutturato
+          </button>
+        )
       )}
 
-      {/* Form miglioramento */}
+      {/* Form miglioramento / modifica diretta */}
       {showForm&&(
         <div style={{background:"#f5f3ee",borderRadius:12,padding:"18px",border:`1.5px solid ${ac}44`,marginBottom:16}}>
-          <div style={{fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:700,color:C.nox,marginBottom:14}}>⚡ Nuovo miglioramento — genera beta</div>
+          <div style={{fontFamily:"Arial,sans-serif",fontSize:13,fontWeight:700,color:C.nox,marginBottom:14}}>
+            {(skill.creatoreEmail&&profile?.email&&skill.creatoreEmail===profile.email)?"✏️ Modifica diretta — genera nuova versione":"⚡ Nuovo miglioramento — genera beta"}
+          </div>
           {[
             {key:"titolo",label:"Titolo",ph:"Es.: Aggiornamento normativa 2024",rows:1},
             {key:"descrizione",label:"Descrizione del cambiamento",ph:"Cosa miglioreresti e perché?",rows:3},
@@ -2113,23 +2128,33 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
   const[newMsg,setNewMsg]=useState(false);
   const[newMsgOgg,setNewMsgOgg]=useState("");
   const[newMsgTesto,setNewMsgTesto]=useState("");
-  const[editingId,setEditingId]=useState(null); // id draft in modifica
-  const[editVals,setEditVals]=useState({}); // campi in editing
+  const[editingId,setEditingId]=useState(null);
+  const[editVals,setEditVals]=useState({});
+  const editValsRef=useRef({});  // ref anti-stale-closure
 
   function apriEdit(d){
+    const vals={nome:d.nome||"",descrizione:d.descrizione||"",inputAtteso:d.inputAtteso||d.input_atteso||"",outputAtteso:d.outputAtteso||d.output_atteso||"",normativa:d.normativa||""};
     setEditingId(d.id);
-    setEditVals({nome:d.nome||"",descrizione:d.descrizione||"",inputAtteso:d.inputAtteso||d.input_atteso||"",outputAtteso:d.outputAtteso||d.output_atteso||"",normativa:d.normativa||""});
+    setEditVals(vals);
+    editValsRef.current=vals;
   }
   function salvaEdit(id){
+    const vals=editValsRef.current;
+    if(!vals||!vals.nome){return;}
     setDraftSkills(prev=>prev.map(d=>d.id===id?{
-      ...d,...editVals,
-      // aggiorna anche snake_case per compatibilità SkillModal
-      input_atteso:editVals.inputAtteso,
-      output_atteso:editVals.outputAtteso,
-      // reset testato se i campi sono stati modificati
+      ...d,
+      nome:vals.nome,
+      descrizione:vals.descrizione,
+      inputAtteso:vals.inputAtteso,
+      outputAtteso:vals.outputAtteso,
+      normativa:vals.normativa,
+      input_atteso:vals.inputAtteso,
+      output_atteso:vals.outputAtteso,
       testato:false,
     }:d));
-    setEditingId(null);setEditVals({});
+    setEditingId(null);
+    setEditVals({});
+    editValsRef.current={};
   }
 
   const nomeCompl=`${userProfile.nome||""} ${userProfile.cognome||""}`.trim()||"Utente";
@@ -2311,10 +2336,10 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
                     <div style={{marginBottom:10}}>
                       <label style={{fontFamily:"Arial,sans-serif",fontSize:9,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"block",marginBottom:4}}>{label}</label>
                       {rows?(
-                        <textarea value={ev[key]||""} onChange={e=>setEditVals(p=>({...p,[key]:e.target.value}))} rows={rows}
+                        <textarea value={ev[key]||""} onChange={e=>{const v=e.target.value;setEditVals(p=>{const n={...p,[key]:v};editValsRef.current=n;return n;});}} rows={rows}
                           style={{width:"100%",padding:"8px 10px",borderRadius:7,border:"1.5px solid #ddd",fontSize:12,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box",resize:"vertical",lineHeight:1.5}}/>
                       ):(
-                        <input value={ev[key]||""} onChange={e=>setEditVals(p=>({...p,[key]:e.target.value}))}
+                        <input value={ev[key]||""} onChange={e=>{const v=e.target.value;setEditVals(p=>{const n={...p,[key]:v};editValsRef.current=n;return n;});}}
                           style={{width:"100%",padding:"8px 10px",borderRadius:7,border:"1.5px solid #ddd",fontSize:12,fontFamily:"Arial,sans-serif",outline:"none",boxSizing:"border-box"}}/>
                       )}
                     </div>
