@@ -2667,6 +2667,10 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
   const[elaborating,setElaborating]=useState(false);
   const[elaborated,setElaborated]=useState(false);
   const[published,setPublished]=useState(false);
+  const[skillSimili,setSkillSimili]=useState([]);
+  const[checkingSimili,setCheckingSimili]=useState(false);
+  const[similiDismissed,setSimiliDismissed]=useState(false);
+  const[similiPreview,setSimiliPreview]=useState(null);
   // File context per la skill
   const[wizardDocs,setWizardDocs]=useState([]); // [{name,size,chars,content,loading,error}]
   const wizardFileRef=useRef();
@@ -2739,6 +2743,44 @@ Genera i campi della skill in formato JSON. Rispondi SOLO con il JSON, senza mar
     setElaborating(false);
     setElaborated(true);
     setStep(2);
+    // Avvia controllo similarità in background
+    checkSimilarita(nome,descrizione);
+  }
+
+  async function checkSimilarita(nomeGenerato,descGenerata){
+    setSkillSimili([]);
+    setSimiliDismissed(false);
+    setSimiliPreview(null);
+    setCheckingSimili(true);
+    try{
+      const skillList=SKILLS.filter(s=>!s.oscurata).map(s=>`- [${s.id}] ${s.nome}: ${s.descrizione}`).join("\n");
+      const prompt=`Sei un assistente che aiuta a evitare duplicati in un catalogo di skill professionali per commercialisti italiani.
+
+La skill che l'utente vuole creare:
+Nome: "${nomeGenerato}"
+Descrizione: "${descGenerata}"
+
+Skill già presenti nel catalogo:
+${skillList}
+
+Identifica le skill già presenti che hanno un contenuto simile o sovrapposto a quella nuova. Considera simili quelle che coprono lo stesso processo, calcolo o documento professionale.
+
+Rispondi SOLO con JSON valido: {"simili": ["ID1","ID2"]} oppure {"simili": []} se non ce ne sono.`;
+      const raw=await callAI({
+        skill:{id:"CHECK",nome:"Check",area:"",sotto_area:"",descrizione:"",input_atteso:"",output_atteso:"",normativa:"",tags:[],prompt},
+        userInput:"Controlla similarità",
+        attachments:[],
+        profile:null,
+        _overridePrompt:prompt
+      });
+      const match=raw.match(/\{[\s\S]*?\}/);
+      if(match){
+        const parsed=JSON.parse(match[0]);
+        const trovate=(parsed.simili||[]).map(id=>SKILLS.find(s=>s.id===id)).filter(Boolean);
+        setSkillSimili(trovate);
+      }
+    }catch(e){/* silenzioso */}
+    setCheckingSimili(false);
   }
 
   async function aggiungiFile(files){
@@ -2949,6 +2991,41 @@ Genera i campi della skill in formato JSON. Rispondi SOLO con il JSON, senza mar
           {/* Step 2: Struttura */}
           {step===2&&(
             <div style={{display:"flex",flexDirection:"column",gap:14}}>
+
+              {/* Banner similarità */}
+              {!similiDismissed&&(checkingSimili||skillSimili.length>0)&&(
+                <div style={{background:"#FFF8EC",border:"1.5px solid #BA7517",borderRadius:10,padding:"14px 16px"}}>
+                  {checkingSimili?(
+                    <div style={{fontSize:12,color:"#BA7517",fontFamily:"Arial,sans-serif",display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{animation:"spin 1s linear infinite",display:"inline-block"}}>⟳</span>
+                      Verifico se esiste già qualcosa di simile…
+                    </div>
+                  ):(
+                    <>
+                      <div style={{fontSize:13,fontWeight:700,color:"#BA7517",fontFamily:"Arial,sans-serif",marginBottom:6}}>⚠ Esiste qualcosa di simile</div>
+                      <div style={{fontSize:12,color:"#555",fontFamily:"Arial,sans-serif",marginBottom:10,lineHeight:1.6}}>
+                        Vuoi prima vedere se {skillSimili.length===1?"questa skill esistente può esserti di aiuto":"queste skill esistenti possono esserti di aiuto"}?
+                      </div>
+                      <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:12}}>
+                        {skillSimili.map(s=>(
+                          <div key={s.id} onClick={()=>setSimiliPreview(similiPreview?.id===s.id?null:s)}
+                            style={{cursor:"pointer",background:"#fff",border:`1.5px solid ${similiPreview?.id===s.id?"#BA7517":"#e8e0d0"}`,borderRadius:8,padding:"10px 12px",transition:"border .15s"}}>
+                            <div style={{fontFamily:"Georgia,serif",fontSize:13,fontWeight:700,color:"#0A0B0F",marginBottom:2}}>{s.nome}</div>
+                            <div style={{fontSize:10,color:"#BA7517",fontFamily:"Arial,sans-serif",fontWeight:700,letterSpacing:"0.08em"}}>{s.area}</div>
+                            {similiPreview?.id===s.id&&(
+                              <div style={{fontSize:12,color:"#555",fontFamily:"Arial,sans-serif",marginTop:8,lineHeight:1.6,borderTop:"1px solid #f0e8d8",paddingTop:8}}>{s.descrizione}</div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{display:"flex",gap:8}}>
+                        <button onClick={()=>setSimiliDismissed(true)} style={{flex:1,padding:"8px",borderRadius:8,border:"1px solid #ddd",background:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>Continua comunque</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
               <div style={{fontFamily:"Arial,sans-serif",fontSize:13,color:C.gray,marginBottom:4,lineHeight:1.6}}>Rivedi e perfeziona i campi generati dall'AI.</div>
               <div>
                 <label style={{fontFamily:"Arial,sans-serif",fontSize:10,fontWeight:700,color:C.gray,letterSpacing:"0.1em",display:"block",marginBottom:5}}>NOME SKILL</label>
