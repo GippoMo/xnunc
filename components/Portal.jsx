@@ -2131,6 +2131,12 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
   const[editingId,setEditingId]=useState(null);
   const[editVals,setEditVals]=useState({});
   const editValsRef=useRef({});  // ref anti-stale-closure
+  // ── Regen flow ────────────────────────────────────────
+  const[regenId,setRegenId]=useState(null);
+  const[regenVals,setRegenVals]=useState(null);
+  const[regenStep,setRegenStep]=useState(null); // null | 'agents' | 'confirm' | 'generating'
+  const[regenAgents,setRegenAgents]=useState(WIZARD_AGENTS.map(a=>a.id));
+  const[regenError,setRegenError]=useState(null);
 
   function apriEdit(d){
     const vals={nome:d.nome||"",descrizione:d.descrizione||"",inputAtteso:d.inputAtteso||d.input_atteso||"",outputAtteso:d.outputAtteso||d.output_atteso||"",normativa:d.normativa||""};
@@ -2156,6 +2162,81 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
     setEditingId(null);
     setEditVals({});
     editValsRef.current={};
+  }
+
+  function avviaRegen(id,vals){
+    const v=vals||editValsRef.current;
+    if(!v||!v.nome?.trim())return;
+    setRegenId(id);
+    setRegenVals({...v});
+    setRegenAgents(WIZARD_AGENTS.map(a=>a.id));
+    setRegenError(null);
+    setEditingId(null);
+    setEditVals({});
+    editValsRef.current={};
+    setRegenStep('agents');
+  }
+  async function eseguiRegen(){
+    if(!regenId||!regenVals)return;
+    setRegenStep('generating');
+    setRegenError(null);
+    const agentiAttivi=regenAgents.length===0?WIZARD_AGENTS.map(a=>a.id):regenAgents;
+    const agentNomi=WIZARD_AGENTS.filter(a=>agentiAttivi.includes(a.id)).map(a=>a.nome).join(", ");
+    const prompt=`Sei un esperto di AI per studi di Dottori Commercialisti italiani. Team di revisione attivo: ${agentNomi}.
+
+Rigenera la seguente skill con i campi aggiornati dall'utente. Mantieni coerenza professionale e normativa italiana.
+
+CAMPI AGGIORNATI:
+Nome: "${regenVals.nome}"
+Descrizione: "${regenVals.descrizione}"
+Input atteso: "${regenVals.inputAtteso}"
+Output atteso: "${regenVals.outputAtteso}"
+Normativa: "${regenVals.normativa}"
+
+Rispondi SOLO con JSON valido:
+{
+  "nome": "...",
+  "descrizione": "...",
+  "input_atteso": "...",
+  "output_atteso": "...",
+  "normativa": "..."
+}`;
+    try{
+      const raw=await callAI({
+        skill:{id:"REGEN",nome:regenVals.nome,area:"",sotto_area:"",descrizione:regenVals.descrizione,input_atteso:"",output_atteso:"",normativa:"",tags:[],prompt},
+        userInput:"Rigenera skill",
+        attachments:[],
+        profile:userProfile,
+        _overridePrompt:prompt
+      });
+      const match=raw.match(/\{[\s\S]*\}/);
+      let updated={...regenVals};
+      if(match){
+        const parsed=JSON.parse(match[0]);
+        if(parsed.nome) updated.nome=parsed.nome;
+        if(parsed.descrizione) updated.descrizione=parsed.descrizione;
+        if(parsed.input_atteso) updated.inputAtteso=parsed.input_atteso;
+        if(parsed.output_atteso) updated.outputAtteso=parsed.output_atteso;
+        if(parsed.normativa) updated.normativa=parsed.normativa;
+      }
+      setDraftSkills(prev=>prev.map(d=>d.id===regenId?{
+        ...d,
+        nome:updated.nome,
+        descrizione:updated.descrizione,
+        inputAtteso:updated.inputAtteso,
+        outputAtteso:updated.outputAtteso,
+        normativa:updated.normativa,
+        input_atteso:updated.inputAtteso,
+        output_atteso:updated.outputAtteso,
+        testato:false,
+      }:d));
+      setRegenStep(null);
+      setRegenId(null);
+      setRegenVals(null);
+    }catch(e){
+      setRegenError(e.message||"Errore nella rigenerazione");
+      setRegenStep('agents');
+    }
   }
 
   const nomeCompl=`${userProfile.nome||""} ${userProfile.cognome||""}`.trim()||"Utente";
@@ -2228,7 +2309,7 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
 
   return(
     <div className="xnunc-modal-overlay" style={{position:"fixed",inset:0,background:"rgba(10,11,15,0.72)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"24px 16px",overflowY:"auto"}} onClick={onClose}>
-      <div onClick={e=>e.stopPropagation()} className="xnunc-modal" style={{background:"#FAF9F7",width:"100%",maxWidth:860,maxHeight:"90vh",display:"flex",flexDirection:"column",boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)"}}>
+      <div onClick={e=>e.stopPropagation()} className="xnunc-modal" style={{position:"relative",background:"#FAF9F7",width:"100%",maxWidth:860,maxHeight:"90vh",display:"flex",flexDirection:"column",boxShadow:"0 2px 4px rgba(0,0,0,0.06), 0 20px 60px rgba(0,0,0,0.18)",overflow:"hidden"}}>
 
         {/* Header */}
         <div style={{background:"#FAF9F7",padding:"28px 32px 24px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,borderBottom:"2px solid #0A0B0F"}}>
@@ -2380,9 +2461,9 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
                           {fld("NORMATIVA",     "normativa",   1)}
                           <div style={{display:"flex",gap:8,marginTop:4}}>
                             <button onClick={()=>setEditingId(null)} style={{padding:"7px 14px",borderRadius:7,border:"1px solid #ddd",background:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>Annulla</button>
-                            <button onClick={()=>salvaEdit(d.id,editVals)} style={{flex:1,padding:"7px",borderRadius:7,border:"none",background:C.aurum,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Salva modifiche</button>
+                            <button onClick={()=>avviaRegen(d.id,editVals)} style={{flex:1,padding:"7px",borderRadius:7,border:"none",background:C.aurum,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",letterSpacing:"0.04em"}}>AVANTI →</button>
                           </div>
-                          <div style={{fontSize:10,color:"#bbb",fontFamily:"Arial,sans-serif",marginTop:8}}>💡 Dopo aver salvato le modifiche dovrai testare di nuovo la skill prima di inviarla.</div>
+                          <div style={{fontSize:10,color:"#bbb",fontFamily:"Arial,sans-serif",marginTop:8}}>💡 Andando avanti la skill verrà rigenerata con AI usando i campi modificati.</div>
                         </div>
                       )}
 
@@ -2647,6 +2728,88 @@ Rivedi e rinvia su: ${APP_URL}`,
           )}
         </div>
       </div>
+
+      {/* ── Regen overlay ─────────────────────────────── */}
+      {regenStep&&(
+        <div style={{position:"absolute",inset:0,background:"#FAF9F7",zIndex:10,display:"flex",flexDirection:"column",overflowY:"auto",borderRadius:"inherit"}}>
+          {/* Header overlay */}
+          <div style={{background:"#FAF9F7",padding:"24px 32px 20px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0,borderBottom:"2px solid #0A0B0F"}}>
+            <div>
+              <div style={{fontSize:9,fontWeight:700,color:C.aurum,letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:6}}>MODIFICA SKILL</div>
+              <div style={{fontFamily:"Georgia,serif",fontSize:20,fontWeight:400,color:"#0A0B0F",lineHeight:1.2}}>{regenVals?.nome||"Skill"}</div>
+            </div>
+            <button onClick={()=>{setRegenStep(null);setRegenId(null);setRegenVals(null);}} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#aaa",padding:"4px 8px",lineHeight:1}}>✕</button>
+          </div>
+
+          {/* Body */}
+          <div style={{padding:"28px 32px",flex:1}}>
+            {regenStep==='agents'&&(
+              <>
+                <div style={{fontFamily:"Georgia,serif",fontSize:17,color:"#0A0B0F",marginBottom:4}}>Team di revisione</div>
+                <div style={{fontSize:13,color:"#777",fontFamily:"Arial,sans-serif",marginBottom:20,lineHeight:1.5}}>
+                  Ho selezionato gli AI Agent di xNunc più adatti alla tua skill. Puoi modificare la selezione — se non selezioni nessuno verranno usati tutti gli AI Agent di xNunc.
+                </div>
+                {regenError&&<div style={{background:"#FEF0EE",border:"1px solid #f5c6bc",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#C0392B",fontFamily:"Arial,sans-serif",marginBottom:14}}>{regenError}</div>}
+                <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:24}}>
+                  {WIZARD_AGENTS.map(ag=>{
+                    const sel=regenAgents.includes(ag.id);
+                    return(
+                      <div key={ag.id} onClick={()=>setRegenAgents(p=>sel?p.filter(x=>x!==ag.id):[...p,ag.id])}
+                        style={{display:"flex",alignItems:"center",gap:14,padding:"14px 16px",borderRadius:4,border:`2px solid ${sel?C.aurum:"#E8E4DC"}`,background:sel?"#FFFBF0":"#fff",cursor:"pointer",transition:"all .15s"}}>
+                        <div style={{width:38,height:38,borderRadius:"50%",background:C.aurum,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          <span style={{color:"#fff",fontSize:11,fontWeight:700,fontFamily:"Arial,sans-serif"}}>{ag.nome.replace("x","").slice(0,2).toUpperCase()}</span>
+                        </div>
+                        <div style={{flex:1}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
+                            <span style={{fontFamily:"Arial,sans-serif",fontSize:14,fontWeight:700,color:"#0A0B0F"}}>{ag.nome}</span>
+                            {sel&&<span style={{fontSize:9,fontWeight:700,color:C.aurum,letterSpacing:"0.1em",textTransform:"uppercase",border:`1px solid ${C.aurum}`,borderRadius:3,padding:"1px 5px"}}>SUGGERITO</span>}
+                          </div>
+                          <div style={{fontSize:12,color:"#777",fontFamily:"Arial,sans-serif"}}>{ag.desc}</div>
+                        </div>
+                        <div style={{width:22,height:22,borderRadius:4,border:`2px solid ${sel?C.aurum:"#ccc"}`,background:sel?C.aurum:"#fff",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .15s"}}>
+                          {sel&&<span style={{color:"#fff",fontSize:13,fontWeight:700}}>✓</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{background:"#f5f3ef",borderRadius:8,padding:"10px 14px",fontSize:12,color:"#777",fontFamily:"Arial,sans-serif",marginBottom:20}}>
+                  <span style={{fontWeight:700,color:"#0A0B0F"}}>AGENTI ATTIVI</span>
+                  <span style={{marginLeft:8}}>{(regenAgents.length===0?WIZARD_AGENTS:WIZARD_AGENTS.filter(a=>regenAgents.includes(a.id))).map(a=>a.nome).join(" · ")}</span>
+                </div>
+                <div style={{display:"flex",gap:10}}>
+                  <button onClick={()=>{setRegenStep(null);setRegenId(null);setRegenVals(null);}} style={{padding:"10px 20px",borderRadius:4,border:"1px solid #ddd",background:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555",letterSpacing:"0.06em"}}>INDIETRO</button>
+                  <button onClick={()=>setRegenStep('confirm')} style={{flex:1,padding:"12px 20px",borderRadius:4,border:"none",background:C.aurum,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",letterSpacing:"0.08em",textTransform:"uppercase",transition:"background .2s"}} onMouseEnter={e=>e.currentTarget.style.background="#a06410"} onMouseLeave={e=>e.currentTarget.style.background=C.aurum}>GENERA CON AI</button>
+                </div>
+              </>
+            )}
+
+            {regenStep==='confirm'&&(
+              <div style={{textAlign:"center",paddingTop:24}}>
+                <div style={{fontSize:40,marginBottom:16}}>⚠️</div>
+                <div style={{fontFamily:"Georgia,serif",fontSize:20,color:"#0A0B0F",marginBottom:10}}>Vuoi rigenerare la skill?</div>
+                <div style={{fontSize:14,color:"#666",fontFamily:"Arial,sans-serif",lineHeight:1.7,marginBottom:24,maxWidth:480,margin:"0 auto 24px"}}>
+                  L'AI rielaborerà la skill con i campi che hai modificato.<br/>
+                  <strong>La versione attuale verrà sostituita</strong> e dovrà essere testata di nuovo prima di inviarla alla Redazione.
+                </div>
+                <div style={{display:"flex",gap:10,justifyContent:"center",maxWidth:400,margin:"0 auto"}}>
+                  <button onClick={()=>setRegenStep('agents')} style={{flex:1,padding:"11px",borderRadius:4,border:"1px solid #ddd",background:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>← Torna indietro</button>
+                  <button onClick={eseguiRegen} style={{flex:1,padding:"11px",borderRadius:4,border:"none",background:C.aurum,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif",letterSpacing:"0.06em",textTransform:"uppercase"}}>SÌ, RIGENERA</button>
+                </div>
+              </div>
+            )}
+
+            {regenStep==='generating'&&(
+              <div style={{textAlign:"center",paddingTop:48}}>
+                <div style={{width:48,height:48,border:`3px solid ${C.aurum}`,borderTopColor:"transparent",borderRadius:"50%",animation:"spin 1s linear infinite",margin:"0 auto 20px"}}/>
+                <div style={{fontFamily:"Georgia,serif",fontSize:18,color:"#0A0B0F",marginBottom:8}}>Rigenerazione in corso…</div>
+                <div style={{fontSize:13,color:"#888",fontFamily:"Arial,sans-serif"}}>Gli AI Agent di xNunc stanno elaborando la skill con i tuoi aggiornamenti.</div>
+                <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
