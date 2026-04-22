@@ -2138,18 +2138,19 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
     setEditVals(vals);
     editValsRef.current=vals;
   }
-  function salvaEdit(id){
-    const vals=editValsRef.current;
-    if(!vals||!vals.nome){return;}
+  function salvaEdit(id, vals){
+    // vals viene passato direttamente dal click — evita qualsiasi problema di stale closure o ref
+    const v=vals||editValsRef.current;
+    if(!v||!v.nome?.trim())return;
     setDraftSkills(prev=>prev.map(d=>d.id===id?{
       ...d,
-      nome:vals.nome,
-      descrizione:vals.descrizione,
-      inputAtteso:vals.inputAtteso,
-      outputAtteso:vals.outputAtteso,
-      normativa:vals.normativa,
-      input_atteso:vals.inputAtteso,
-      output_atteso:vals.outputAtteso,
+      nome:v.nome.trim(),
+      descrizione:v.descrizione||d.descrizione,
+      inputAtteso:v.inputAtteso||d.inputAtteso,
+      outputAtteso:v.outputAtteso||d.outputAtteso,
+      normativa:v.normativa||d.normativa,
+      input_atteso:v.inputAtteso||d.inputAtteso||d.input_atteso,
+      output_atteso:v.outputAtteso||d.outputAtteso||d.output_atteso,
       testato:false,
     }:d));
     setEditingId(null);
@@ -2379,7 +2380,7 @@ function DashboardModal({onClose,favorites,setFavorites,draftSkills,setDraftSkil
                           {fld("NORMATIVA",     "normativa",   1)}
                           <div style={{display:"flex",gap:8,marginTop:4}}>
                             <button onClick={()=>setEditingId(null)} style={{padding:"7px 14px",borderRadius:7,border:"1px solid #ddd",background:"#fff",fontSize:12,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#555"}}>Annulla</button>
-                            <button onClick={()=>salvaEdit(d.id)} style={{flex:1,padding:"7px",borderRadius:7,border:"none",background:C.aurum,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Salva modifiche</button>
+                            <button onClick={()=>salvaEdit(d.id,editVals)} style={{flex:1,padding:"7px",borderRadius:7,border:"none",background:C.aurum,color:"#fff",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>✓ Salva modifiche</button>
                           </div>
                           <div style={{fontSize:10,color:"#bbb",fontFamily:"Arial,sans-serif",marginTop:8}}>💡 Dopo aver salvato le modifiche dovrai testare di nuovo la skill prima di inviarla.</div>
                         </div>
