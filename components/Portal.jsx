@@ -941,7 +941,13 @@ async function callAI({skill,userInput,attachments,profile,_overridePrompt}){
   const agentCtx=agents.map(a=>`${a.nome} — ${a.ruolo}: ${a.desc}`).join("\n");
   const docsCtx=skill.docsContesto?`\n\n---\nBASE DOCUMENTALE DELLA SKILL (documenti caricati dal creatore — usa come riferimento primario):\n${skill.docsContesto}`:"";
   const today=new Date().toLocaleDateString("it-IT");
-  const skillProcedura=skill.prompt?`\n\n══════════════════════════════════\nPROCEDURA SPECIFICA DELLA SKILL\n══════════════════════════════════\n${skill.prompt}\n`:""
+  const skillProcedura=skill.prompt?`\n\n══════════════════════════════════\nPROCEDURA SPECIFICA DELLA SKILL\n══════════════════════════════════\n${skill.prompt}\n`:"";
+  const wsMode=skill.webSearchMode||"statica";
+  const wsNote=wsMode==="live"
+    ?`MODALITÀ NORMATIVA: LIVE — verifica fonti aggiornate (${today}). Cita riferimenti con data precisa. Segnala se un dato normativo potrebbe essere cambiato di recente.`
+    :wsMode==="periodica"
+    ?`MODALITÀ NORMATIVA: PERIODICA — aggiornamento ogni ${skill.webSearchInterval||30} giorni.${skill.webSearchLastUpdate?` Ultimo aggiornamento fonti: ${new Date(skill.webSearchLastUpdate).toLocaleDateString("it-IT")}.`:""} Cita riferimenti con data e segnala se potrebbe esserci normativa più recente.`
+    :`MODALITÀ NORMATIVA: STATICA — usa knowledge base AI (aggiornata a data di training). Cita le fonti disponibili. Segnala esplicitamente quando una norma potrebbe essere stata aggiornata dopo il tuo training.`;
   const basePrompt=_overridePrompt||`Sei un SISTEMA OPERATIVO FISCALE AI di alto livello per studi di Dottori Commercialisti italiani — non un chatbot, ma una procedura professionale automatizzata.
 
 TEAM ATTIVO:
@@ -954,6 +960,8 @@ Obiettivo: ${skill.output_atteso||skill.descrizione}${docsCtx}${skillProcedura}
 ══════════════════════════════════
 REGOLE OPERATIVE OBBLIGATORIE
 ══════════════════════════════════
+
+${wsNote}
 
 TRIAGE INIZIALE
 Se i dati forniti non sono sufficienti, segnalalo subito in "DATI MANCANTI". Verifica sempre: soggetto coinvolto, regime fiscale, anno/periodo d'imposta, urgenze o scadenze.
@@ -1034,7 +1042,10 @@ FORMATO
       }
     } else {
       // xNunc key — via API route server-side
-      const r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:4096,system:basePrompt,messages:[{role:"user",content:userMsg}]})});
+      const useWebSearch=wsMode==="live"||(wsMode==="periodica"&&skill.webSearchCache==="");
+      const body={model:"claude-sonnet-4-6",max_tokens:4096,system:basePrompt,messages:[{role:"user",content:userMsg}]};
+      if(useWebSearch) body.tools=[{type:"web_search_20250305",name:"web_search",max_uses:5}];
+      const r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
       if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||e.error||e.message||"Errore API (HTTP "+r.status+")");}
       const d=await r.json();result=d.content?.find(b=>b.type==="text")?.text||d.content?.[0]?.text||"";
     }
@@ -2916,6 +2927,8 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
   const[step,setStep]=useState(0);
   const[idea,setIdea]=useState("");
   const[agenti,setAgenti]=useState(["fiscale","ux"]);
+  const[webSearchMode,setWebSearchMode]=useState("statica"); // "statica"|"live"|"periodica"
+  const[webSearchInterval,setWebSearchInterval]=useState(30); // giorni tra aggiornamenti (se periodica)
   const[area,setArea]=useState("Fiscale");
   const[nome,setNome]=useState("");
   const[descrizione,setDescrizione]=useState("");
@@ -3089,6 +3102,11 @@ Rispondi SOLO con JSON valido: {"simili": ["ID1","ID2"]} oppure {"simili": []} s
       docsNomi: wizardDocs.filter(d=>d.content&&!d.error).map(d=>d.name),
       // Procedura professionale generata dall'AI — usata da callAI come skill.prompt
       prompt: promptProcedura||"",
+      // Web search config
+      webSearchMode,                             // "statica"|"live"|"periodica"
+      webSearchInterval: webSearchMode==="periodica"?webSearchInterval:null,
+      webSearchLastUpdate: null,                 // timestamp ultimo aggiornamento fonti
+      webSearchCache: "",                        // cache risultati ricerca
     };
     if(onSaveDraft)onSaveDraft(draft);
     setPublished(true);
@@ -3246,6 +3264,47 @@ Rispondi SOLO con JSON valido: {"simili": ["ID1","ID2"]} oppure {"simili": []} s
                   {WIZARD_AGENTS.filter(a=>agenti.includes(a.id)).map(a=>a.nome).join(" · ")}
                 </div>
               )}
+              {/* ── Web Search Mode ── */}
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:9,fontWeight:700,color:"#aaa",letterSpacing:"0.12em",textTransform:"uppercase",fontFamily:"Arial,sans-serif",marginBottom:10}}>Aggiornamento normativa</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                  {[
+                    {id:"statica",  icon:"📚", label:"Statica",   sub:"Usa la knowledge base AI. Veloce, nessun costo aggiuntivo. Ideale per procedure standard e calcoli."},
+                    {id:"live",     icon:"🔍", label:"Live",      sub:"Verifica le fonti normative online ad ogni esecuzione tramite web search. Sempre aggiornata. Leggermente più lenta."},
+                    {id:"periodica",icon:"📅", label:"Periodica", sub:"Aggiorna le fonti ogni tot settimane. Usa la cache tra un aggiornamento e l'altro."},
+                  ].map(opt=>{
+                    const sel=webSearchMode===opt.id;
+                    return(
+                      <div key={opt.id} onClick={()=>setWebSearchMode(opt.id)}
+                        style={{display:"flex",alignItems:"flex-start",gap:12,padding:"12px 14px",border:`1.5px solid ${sel?"#BA7517":"#E8E4DC"}`,borderRadius:4,background:sel?"#FFFBF0":"#fff",cursor:"pointer",transition:"all .15s"}}>
+                        <span style={{fontSize:18,flexShrink:0,marginTop:1}}>{opt.icon}</span>
+                        <div style={{flex:1}}>
+                          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:2}}>
+                            <span style={{fontFamily:"Arial,sans-serif",fontSize:12,fontWeight:700,color:"#0A0B0F"}}>{opt.label}</span>
+                            {opt.id==="live"&&<span style={{fontSize:8,fontWeight:700,color:"#378ADD",border:"1px solid #378ADD",borderRadius:3,padding:"1px 5px",letterSpacing:"0.08em"}}>LIVE</span>}
+                          </div>
+                          <div style={{fontSize:11,color:"#888",fontFamily:"Arial,sans-serif",lineHeight:1.5}}>{opt.sub}</div>
+                          {sel&&opt.id==="periodica"&&(
+                            <div style={{marginTop:8,display:"flex",alignItems:"center",gap:8}} onClick={e=>e.stopPropagation()}>
+                              <span style={{fontSize:11,color:"#666",fontFamily:"Arial,sans-serif"}}>Ogni</span>
+                              {[7,14,30,90,180].map(d=>(
+                                <button key={d} onClick={()=>setWebSearchInterval(d)}
+                                  style={{padding:"3px 8px",borderRadius:3,border:`1px solid ${webSearchInterval===d?"#BA7517":"#ddd"}`,background:webSearchInterval===d?"#BA7517":"#fff",color:webSearchInterval===d?"#fff":"#666",fontSize:10,fontWeight:700,cursor:"pointer",fontFamily:"Arial,sans-serif"}}>
+                                  {d===7?"1 sett.":d===14?"2 sett.":d===30?"1 mese":d===90?"3 mesi":"6 mesi"}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div style={{width:16,height:16,borderRadius:"50%",border:`2px solid ${sel?"#BA7517":"#ccc"}`,background:sel?"#BA7517":"#fff",flexShrink:0,marginTop:2,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          {sel&&<div style={{width:6,height:6,borderRadius:"50%",background:"#fff"}}/>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div style={{display:"flex",gap:10,borderTop:"1px solid #E8E4DC",paddingTop:16}}>
                 <button onClick={()=>setStep(0)} style={{padding:"11px 20px",border:"1px solid #D8D4CE",background:"none",fontSize:11,cursor:"pointer",fontFamily:"Arial,sans-serif",color:"#666",fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase"}}>Indietro</button>
                 <button onClick={elaboraConAI} disabled={elaborating}
