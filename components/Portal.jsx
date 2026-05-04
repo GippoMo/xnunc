@@ -940,7 +940,76 @@ async function callAI({skill,userInput,attachments,profile,_overridePrompt}){
   const agents=getAgentsForSkill(skill);
   const agentCtx=agents.map(a=>`${a.nome} — ${a.ruolo}: ${a.desc}`).join("\n");
   const docsCtx=skill.docsContesto?`\n\n---\nBASE DOCUMENTALE DELLA SKILL (documenti caricati dal creatore — usa come riferimento primario):\n${skill.docsContesto}`:"";
-  const basePrompt=_overridePrompt||`Sei un team di esperti per studi di Dottori Commercialisti italiani.\nTeam attivo:\n${agentCtx}\n\nSKILL: ${skill.nome}\nArea: ${skill.area} / ${skill.sotto_area}\nObiettivo: ${skill.output_atteso||skill.descrizione}${docsCtx}\n\nRegole:\n- Output professionale, strutturato, pronto all'uso\n- Italiano corretto, tono da esperto\n- Non citare il provider AI né i nomi degli agenti nell'output\n- Se sono presenti documenti di base documentale, usali come fonte autorevole preferenziale\n- OBBLIGATORIO: ogni risposta deve terminare esattamente con questa riga:\n\n---\n*⚠️ Output elaborato con supporto AI — Verificare prima dell'utilizzo professionale. Non sostituisce la consulenza di un Dottore Commercialista abilitato.*`;
+  const today=new Date().toLocaleDateString("it-IT");
+  const skillProcedura=skill.prompt?`\n\n══════════════════════════════════\nPROCEDURA SPECIFICA DELLA SKILL\n══════════════════════════════════\n${skill.prompt}\n`:""
+  const basePrompt=_overridePrompt||`Sei un SISTEMA OPERATIVO FISCALE AI di alto livello per studi di Dottori Commercialisti italiani — non un chatbot, ma una procedura professionale automatizzata.
+
+TEAM ATTIVO:
+${agentCtx}
+
+SKILL: ${skill.nome}
+Area: ${skill.area}${skill.sotto_area?" / "+skill.sotto_area:""}
+Obiettivo: ${skill.output_atteso||skill.descrizione}${docsCtx}${skillProcedura}
+
+══════════════════════════════════
+REGOLE OPERATIVE OBBLIGATORIE
+══════════════════════════════════
+
+TRIAGE INIZIALE
+Se i dati forniti non sono sufficienti, segnalalo subito in "DATI MANCANTI". Verifica sempre: soggetto coinvolto, regime fiscale, anno/periodo d'imposta, urgenze o scadenze.
+
+FONTI NORMATIVE
+Cita riferimenti normativi precisi (DPR, D.Lgs, Circolari AdE, OIC, INPS, ecc.).
+Distingui tra norma certa e interpretazione. Indica: data elaborazione ${today}.
+Fonti prioritarie: Agenzia delle Entrate, Normattiva, Gazzetta Ufficiale, MEF, INPS, INAIL, CNDCEC, Fondazione Nazionale Commercialisti, Cassazione se rilevante.
+
+DIVIETI ASSOLUTI
+— Non inventare norme, aliquote, scadenze o riferimenti normativi.
+— Non dare risposte definitive senza dati sufficienti.
+— Non fornire consulenze elusive o aggressive.
+— Non usare la memoria AI come unica fonte per dati normativi recenti.
+— Se la materia è delicata: suggerisci sempre l'intervento di un professionista umano.
+
+══════════════════════════════════
+STRUTTURA OUTPUT OBBLIGATORIA
+══════════════════════════════════
+Segui SEMPRE questo ordine. Mai muri di testo. Usa intestazioni, elenchi, tabelle.
+
+## 1. RISULTATO FINALE
+Risposta diretta, chiara, professionale. Compare SEMPRE prima della spiegazione tecnica.
+
+## 2. AZIONI CONSIGLIATE
+Checklist operativa con priorità, scadenze, documenti necessari.
+
+## 3. DATI UTILIZZATI
+Elenco dei dati forniti e come sono stati usati nell'elaborazione.
+
+## 4. DATI MANCANTI
+Dati non forniti che potrebbero cambiare la risposta. Se completo: "Nessun dato mancante rilevante."
+
+## 5. SPIEGAZIONE TECNICA
+Analisi tecnica dettagliata per il professionista. Normativa applicata con ragionamento.
+
+## 6. FONTI NORMATIVE AGGIORNATE
+Riferimenti normativi citati. Data elaborazione: ${today}.
+Nota: verifica sempre su fonti ufficiali prima dell'uso professionale.
+
+## 7. RISCHI E CAUTELE
+Rischi fiscali, incompletezze, affermazioni incerte, margini di interpretazione.
+
+## 8. QUANDO SERVE IL PROFESSIONISTA
+Situazioni specifiche in cui è indispensabile l'intervento umano qualificato.
+
+══════════════════════════════════
+FORMATO
+══════════════════════════════════
+- Output elegante, leggibile, professionale
+- Comprensibile anche a clienti non tecnici
+- Non citare il provider AI né i nomi degli agenti
+- Se presenti documenti in base documentale: usarli come fonte autorevole preferenziale
+
+---
+*⚠️ Output elaborato con supporto AI — Verificare prima dell'utilizzo professionale. Non sostituisce la consulenza di un Dottore Commercialista abilitato.*`;
   const attachText=(attachments||[]).filter(a=>a.content).map(a=>`[${a.name}]\n${a.content}`).join("\n\n");
   const userMsg=[userInput,attachText?`\n---\nDocumenti allegati:\n${attachText}`:""].filter(Boolean).join("");
   const keyMode=profile?.keyMode||"xnunc";
@@ -2862,6 +2931,7 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
   const[similiPreview,setSimiliPreview]=useState(null);
   // File context per la skill
   const[wizardDocs,setWizardDocs]=useState([]); // [{name,size,chars,content,loading,error}]
+  const[promptProcedura,setPromptProcedura]=useState(""); // procedura professionale generata dall'AI
   const wizardFileRef=useRef();
 
   const areas=Object.keys(AREA_COLOR);
@@ -2885,20 +2955,24 @@ function CreateSkillWizard({onClose,userProfile,onSaveDraft}){
       tags:[],
       docsContesto:docsCtx||"",
     };
-    const wizardPrompt=`Sei un esperto di AI per studi di Dottori Commercialisti italiani. Team di revisione attivo: ${agentNomi}.
+    const wizardPrompt=`Sei un architetto di procedure professionali AI per studi di Dottori Commercialisti italiani.
+Team di revisione attivo: ${agentNomi}.
 
-L'utente vuole creare una skill AI con questa idea:
+MISSIONE: Non creare un semplice prompt. Crea una PROCEDURA PROFESSIONALE AUTOMATIZZATA — un sistema operativo fiscale AI premium.
+
+L'utente vuole creare questa skill:
 "${idea}"
 ${docsCtx?`\n\nBase documentale allegata:\n${docsCtx.slice(0,8000)}`:""}
 
-Genera i campi della skill in formato JSON. Rispondi SOLO con il JSON, senza markdown, senza commenti:
+Genera la skill in formato JSON. Rispondi SOLO con JSON valido, senza markdown:
 {
-  "nome": "Nome conciso e professionale (max 6 parole)",
-  "descrizione": "Descrizione completa della skill (2-3 frasi, tono professionale)",
-  "input_atteso": "Cosa deve fornire l'utente per usare la skill",
-  "output_atteso": "Cosa produce la skill in output",
-  "normativa": "Riferimenti normativi italiani pertinenti (oppure stringa vuota se non applicabile)",
-  "tags": ["tag1","tag2","tag3"]
+  "nome": "Nome conciso e professionale (max 6 parole, italiano)",
+  "descrizione": "Descrizione completa (3-4 frasi: cosa fa, per chi, quando usarla, valore aggiunto professionale)",
+  "input_atteso": "TRIAGE — Dati obbligatori che l'utente deve fornire:\\n• Soggetto: [tipo soggetto specifico per questa skill]\\n• Periodo/anno d'imposta: [specificare]\\n• Regime fiscale: [specificare]\\n• [altri dati chiave specifici per questa skill]\\n• Scadenze o urgenze: [sì/no, quali]\\n• Documenti disponibili: [elenco documenti rilevanti]",
+  "output_atteso": "La skill produce — in ordine: 1) Risultato finale immediato | 2) Checklist azioni pratiche con scadenze | 3) Dati utilizzati | 4) Dati mancanti | 5) Spiegazione tecnica normativa | 6) Fonti normative citate con data | 7) Rischi e cautele | 8) Quando serve il professionista",
+  "normativa": "Riferimenti normativi italiani specifici e pertinenti (DPR, D.Lgs, Circolari AdE, OIC, INPS — precisi e verificabili)",
+  "tags": ["tag1","tag2","tag3"],
+  "prompt_procedura": "PROCEDURA PROFESSIONALE — ${idea}\\n\\nOBIETTIVO\\n[obiettivo specifico in 2 righe]\\n\\nQUANDO UTILIZZARLA\\n[casi d'uso concreti, 3-5 punti]\\n\\nTRIAGE INIZIALE OBBLIGATORIO\\nPrima di elaborare, verifica di avere:\\n• [dato critico 1 specifico per questa skill]\\n• [dato critico 2]\\n• [dato critico 3]\\nSe mancano: segnala immediatamente in DATI MANCANTI.\\n\\nFONTI PRIORITARIE DA CITARE\\n• [fonte 1 — es. Circolare AdE n.X/202X]\\n• [fonte 2]\\n• [fonte 3]\\n\\nFLUSSO OPERATIVO\\n1. [step operativo 1]\\n2. [step operativo 2]\\n3. [step operativo 3]\\n4. [step operativo 4]\\n\\nLIMITI DELLA SKILL\\n[cosa non può fare e perché — prudente e onesto]\\n\\nQUANDO PASSARE AL PROFESSIONISTA\\n• [situazione specifica 1]\\n• [situazione specifica 2]\\n\\nNOTE SPECIALI\\n[eventuali avvertenze normative rilevanti per questa skill]"
 }`;
     try{
       const raw=await callAI({
@@ -2917,17 +2991,20 @@ Genera i campi della skill in formato JSON. Rispondi SOLO con il JSON, senza mar
         if(parsed.input_atteso) setInputAtteso(parsed.input_atteso);
         if(parsed.output_atteso) setOutputAtteso(parsed.output_atteso);
         if(parsed.normativa) setNormativa(parsed.normativa);
+        if(parsed.prompt_procedura) setPromptProcedura(parsed.prompt_procedura);
       } else {
         // Fallback: usa l'output come descrizione
         setNome(idea.split(" ").slice(0,4).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" "));
         setDescrizione(raw.slice(0,300));
+        setPromptProcedura("");
       }
     } catch(e){
       // Fallback silenzioso se l'AI non è disponibile
       setNome(idea.split(" ").slice(0,4).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(" "));
       setDescrizione(`Skill che ${idea.toLowerCase()}.`);
-      setInputAtteso("Dati identificativi del cliente o del caso specifico.");
-      setOutputAtteso("Report strutturato con analisi e raccomandazioni operative.");
+      setInputAtteso("Dati obbligatori: soggetto, periodo d'imposta, regime fiscale, scadenze, documenti disponibili.");
+      setOutputAtteso("Risultato finale → Azioni consigliate → Dati utilizzati → Dati mancanti → Spiegazione tecnica → Fonti normative → Rischi → Quando serve il professionista");
+      setPromptProcedura("");
     }
     setElaborating(false);
     setElaborated(true);
@@ -3010,6 +3087,8 @@ Rispondi SOLO con JSON valido: {"simili": ["ID1","ID2"]} oppure {"simili": []} s
       agenti,
       docsContesto: docsContesto||"",
       docsNomi: wizardDocs.filter(d=>d.content&&!d.error).map(d=>d.name),
+      // Procedura professionale generata dall'AI — usata da callAI come skill.prompt
+      prompt: promptProcedura||"",
     };
     if(onSaveDraft)onSaveDraft(draft);
     setPublished(true);
